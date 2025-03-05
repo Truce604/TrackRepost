@@ -8,28 +8,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
-    <p>Promote Your Music, Get More Plays</p>
+     <body>
+    <header>
+        <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
+        <p>Promote Your Music, Get More Plays</p>
+    </header>
 
-    <h2>Login or Sign Up</h2>
-    <input type="email" id="email" placeholder="Enter Email">
-    <input type="password" id="password" placeholder="Enter Password">
-    <button onclick="signupUser()">Sign Up</button>
-    <button onclick="loginUser()">Login</button>
-    <button onclick="logoutUser()">Logout</button>
+    <div class="container">
+        <h2>Login or Sign Up</h2>
+        <input type="email" id="email" placeholder="Enter Email">
+        <input type="password" id="password" placeholder="Enter Password">
+        <div class="button-group">
+            <button onclick="signupUser()">Sign Up</button>
+            <button onclick="loginUser()">Login</button>
+            <button onclick="logoutUser()">Logout</button>
+        </div>
+    </div>
 
-    <h2>Submit Your SoundCloud Track</h2>
-    <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-    <button onclick="submitTrack()">Submit</button>
+    <div class="container">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button onclick="submitTrack()">Submit</button>
+    </div>
 
-    <h2>Your Dashboard</h2>
-    <p>Reposts: <span id="repostCount">0</span></p>
-    <p>Credits: <span id="creditCount">0</span></p>
+    <div class="container">
+        <h2>Your Dashboard</h2>
+        <p>Reposts: <span id="repostCount">0</span></p>
+        <p>Credits: <span id="creditCount">0</span></p>
+    </div>
 
-    <h2>Repost & Earn Credits</h2>
-    <input type="number" id="followerCount" placeholder="Enter Your Followers">
-    <button onclick="saveFollowers()">Save</button>
-    <p>Followers: <span id="followersDisplay">0</span></p>
+    <div class="container">
+        <h2>Repost & Earn Credits</h2>
+        <input type="number" id="followerCount" placeholder="Enter Your Followers">
+        <button onclick="saveFollowers()">Save</button>
+        <p>Followers: <span id="followersDisplay">0</span></p>
+    </div>
 
     <script type="module" src="./auth.js"></script>
     <script type="module">
@@ -59,6 +72,8 @@
             const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
             document.getElementById("followersDisplay").innerText = followerCount;
         };
-    </script>
+   
+</body>
+   </script>
 </body>
 </html>
