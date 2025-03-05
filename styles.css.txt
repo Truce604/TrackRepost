@@ -1,0 +1,58 @@
+/* General Page Styling */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #121212;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header */
+h1 {
+    font-size: 2em;
+    margin-top: 20px;
+    color: #ffcc00;
+}
+
+/* Input Fields */
+input {
+    padding: 10px;
+    margin: 5px;
+    width: 80%;
+    max-width: 300px;
+    border: 1px solid #ffcc00;
+    border-radius: 5px;
+}
+
+/* Buttons */
+button {
+    background-color: #ffcc00;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 1em;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #e6b800;
+}
+
+/* Dashboard & Section Styling */
+h2 {
+    margin-top: 20px;
+    color: #ffcc00;
+}
+
+.container {
+    width: 80%;
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+    background-color: #222;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
