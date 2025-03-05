@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrackRepost - Boost Your Music Reach</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-</head>
 <body>
-     <body>
     <header>
         <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
         <p>Promote Your Music, Get More Plays</p>
@@ -44,6 +34,10 @@
         <p>Followers: <span id="followersDisplay">0</span></p>
     </div>
 
+    <footer>
+        <p>© 2024 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
     <script type="module" src="./auth.js"></script>
     <script type="module">
         import { signup, login, logout } from "./auth.js";
@@ -57,23 +51,4 @@
         };
 
         window.loginUser = function() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            login(email, password)
-                .then(() => alert("Login Successful!"))
-                .catch(err => alert(err.message));
-        };
-
-        window.logoutUser = function() {
-            logout().then(() => alert("Logged Out!"));
-        };
-
-        window.saveFollowers = function() {
-            const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
-            document.getElementById("followersDisplay").innerText = followerCount;
-        };
-   
-</body>
-   </script>
-</body>
-</html>
+            const email = document.getElementById
