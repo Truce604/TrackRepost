@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyC3lFj-JhuXG1-jE2Oc6f9aPdLSQ22cyt8",  // Replace this with your new key
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",  // Replace this with your new API key
     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
     projectId: "YOUR_PROJECT_ID",
     storageBucket: "YOUR_PROJECT_ID.appspot.com",
