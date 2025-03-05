@@ -60,6 +60,87 @@
 
     <div class="footer">
         &copy; 2024 TrackRepost. All Rights Reserved.
-    </div>
+    </div><h2>Login or Sign Up</h2>
+<input type="email" id="email" placeholder="Enter Email">
+<input type="password" id="password" placeholder="Enter Password">
+<button onclick="signupUser()">Sign Up</button>
+<button onclick="loginUser()">Login</button>
+<button onclick="logoutUser()">Logout</button>
+
+<script type="module">
+    import { signup, login, logout } from "./auth.js";
+
+    function signupUser() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        signup(email, password).then(() => alert("Signup Successful!")).catch(err => alert(err.message));
+    }
+
+    function loginUser() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        login(email, password).then(() => alert("Login Successful!")).catch(err => alert(err.message));
+    }
+
+    function logoutUser() {
+        logout().then(() => alert("Logged Out!"));
+    }
+</script>
+<h2>Submit Your SoundCloud Track</h2>
+<input type="text" id="trackURL" placeholder="Enter SoundCloud URL">
+<button onclick="submitTrack()">Submit</button>
+
+<script>
+    function submitTrack() {
+        const url = document.getElementById("trackURL").value;
+        alert("Track Submitted: " + url);
+        // Later, we'll save this in a database
+    }
+</script>
+<h2>Your Dashboard</h2>
+<p>Reposts: <span id="repostCount">0</span></p>
+<p>Credits: <span id="creditCount">0</span></p>
+
+<button onclick="repostTrack()">Repost & Earn Credits</button>
+
+<script>
+    let reposts = 0;
+    let credits = 0;
+
+    function repostTrack() {
+        reposts++;
+        credits += 10; // Later, adjust based on follower count
+        document.getElementById("repostCount").innerText = reposts;
+        document.getElementById("creditCount").innerText = credits;
+    }
+</script>
+<h2>Set Your Follower Count</h2>
+<input type="number" id="followers" placeholder="Enter Your Followers">
+<button onclick="setFollowerCount()">Save</button>
+<p>Followers: <span id="followerCount">0</span></p>
+
+<script>
+    let followerCount = 0;
+
+    function setFollowerCount() {
+        followerCount = document.getElementById("followers").value;
+        document.getElementById("followerCount").innerText = followerCount;
+    }
+</script>
+function repostTrack() {
+    reposts++;
+    
+    if (followerCount >= 1000) {
+        credits += 10;
+    } else if (followerCount >= 500) {
+        credits += 5;
+    } else {
+        credits += 2;
+    }
+
+    document.getElementById("repostCount").innerText = reposts;
+    document.getElementById("creditCount").innerText = credits;
+}
+
 </body>
 </html>
