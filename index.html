@@ -51,4 +51,30 @@
         };
 
         window.loginUser = function() {
-            const email = document.getElementById
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            login(email, password)
+                .then(() => alert("Login Successful!"))
+                .catch(err => alert(err.message));
+        };
+
+        window.logoutUser = function() {
+            logout().then(() => alert("Logged Out!"));
+        };
+
+        window.saveFollowers = function() {
+            const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
+            document.getElementById("followersDisplay").innerText = followerCount;
+        };
+
+        window.submitTrack = function() {
+            const soundcloudUrl = document.getElementById("soundcloudUrl").value;
+            if (soundcloudUrl) {
+                alert("SoundCloud Track Submitted: " + soundcloudUrl);
+            } else {
+                alert("Please enter a valid SoundCloud URL.");
+            }
+        };
+    </script>
+</body>
+</html>
