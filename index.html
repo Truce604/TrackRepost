@@ -71,9 +71,23 @@
     import { signup, login, logout } from "./auth.js";
 
     function signupUser() {
+       <h2>Sign Up</h2>
+<input type="email" id="email" placeholder="Enter Email">
+<input type="password" id="password" placeholder="Enter Password">
+<button onclick="signupUser()">Sign Up</button>
+
+<script type="module">
+    import { signup } from "./auth.js";
+
+    window.signupUser = function() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
-        signup(email, password).then(() => alert("Signup Successful!")).catch(err => alert(err.message));
+        signup(email, password)
+            .then(() => alert("Signup Successful!"))
+            .catch(err => alert(err.message));
+    };
+</script>
+
     }
 
     function loginUser() {
@@ -140,6 +154,36 @@ function repostTrack() {
 
     document.getElementById("repostCount").innerText = reposts;
     document.getElementById("creditCount").innerText = credits;
+}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Signup Function
+export function signup(email, password) {
+    return createUserWithEmailAndPassword(auth, email, password);
+}
+
+// Login Function
+export function login(email, password) {
+    return signInWithEmailAndPassword(auth, email, password);
+}
+
+// Logout Function
+export function logout() {
+    return signOut(auth);
 }
 
 </body>
