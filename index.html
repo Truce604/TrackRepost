@@ -71,9 +71,23 @@
     import { signup, login, logout } from "./auth.js";
 
     function signupUser() {
+       <h2>Sign Up</h2>
+<input type="email" id="email" placeholder="Enter Email">
+<input type="password" id="password" placeholder="Enter Password">
+<button onclick="signupUser()">Sign Up</button>
+
+<script type="module">
+    import { signup } from "./auth.js";
+
+    window.signupUser = function() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
-        signup(email, password).then(() => alert("Signup Successful!")).catch(err => alert(err.message));
+        signup(email, password)
+            .then(() => alert("Signup Successful!"))
+            .catch(err => alert(err.message));
+    };
+</script>
+
     }
 
     function loginUser() {
