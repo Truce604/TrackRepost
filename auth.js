@@ -4,7 +4,7 @@ import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    authDomain: "trackrepost-921f8.firebaseapp.com",
     projectId: "trackrepost-921f8",
     storageBucket: "gs://trackrepost-921f8.firebasestorage.app",
     messagingSenderId:
