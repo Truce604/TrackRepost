@@ -1,29 +1,54 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="styles.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrackRepost - Boost Your Music Reach</title>
+     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
 </head>
 <body>
     <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
-    <p>Promote Your Music, Get More Plays</p>
 
-    <h2>Login or Sign Up</h2>
-    <input type="email" id="email" placeholder="Enter Email">
-    <input type="password" id="password" placeholder="Enter Password">
-    <button onclick="signupUser()">Sign Up</button>
-    <button onclick="loginUser()">Login</button>
-    <button onclick="logoutUser()">Logout</button>
-
-    <h2>Submit Your SoundCloud Track</h2>
-    <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-    <button onclick="submitTrack()">Submit</button>
-
-    <h2>Your Dashboard</h2>
-    <p>Reposts: <span id="repostCount">0</span></p>
+@@ -26,4 +26,38 @@
     <p>Credits: <span id="creditCount">0</span></p>
 
     <h2>Repost & Earn Credits</h2>
     <input type="number" id="followerCou
+    <input type="number" id="followerCount" placeholder="Enter Your Followers">
+    <button onclick="saveFollowers()">Save</button>
+    <p>Followers: <span id="followersDisplay">0</span></p>
+
+    <script type="module" src="./auth.js"></script>
+    <script type="module">
+        import { signup, login, logout } from "./auth.js";
+
+        window.signupUser = function() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            signup(email, password)
+                .then(() => alert("Signup Successful!"))
+                .catch(err => alert(err.message));
+        };
+
+        window.loginUser = function() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            login(email, password)
+                .then(() => alert("Login Successful!"))
+                .catch(err => alert(err.message));
+        };
+
+        window.logoutUser = function() {
+            logout().then(() => alert("Logged Out!"));
+        };
+
+        window.saveFollowers = function() {
+            const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
+            document.getElementById("followersDisplay").innerText = followerCount;
+        };
+    </script>
+</body>
+</html>
