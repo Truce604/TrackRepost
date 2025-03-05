@@ -4,189 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrackRepost - Grow Your Music</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-            background-color: #121212;
-            color: white;
-        }
-        header {
-            background-color: #1DB954;
-            padding: 20px;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .hero {
-            padding: 50px;
-        }
-        .hero h1 {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        .hero p {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background-color: #1DB954;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            font-size: 18px;
-            border-radius: 5px;
-            display: inline-block;
-        }
-        .btn:hover {
-            background-color: #17a84b;
-        }
-        .footer {
-            margin-top: 50px;
-            padding: 20px;
-            background: #1c1c1c;
-        }
-    </style>
+    <title>TrackRepost - Boost Your Music Reach</title>
 </head>
 <body>
-    <header>🎵 TrackRepost - Boost Your Music Reach</header>
+    <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
+    <p>Promote Your Music, Get More Plays</p>
 
-    <div class="hero">
-        <h1>Promote Your Music, Get More Plays</h1>
-        <p>Join TrackRepost to exchange reposts and grow your audience.</p>
-        <a href="#" class="btn">Get Started</a>
-    </div>
+    <h2>Login or Sign Up</h2>
+    <input type="email" id="email" placeholder="Enter Email">
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="signupUser()">Sign Up</button>
+    <button onclick="loginUser()">Login</button>
+    <button onclick="logoutUser()">Logout</button>
 
-    <div class="footer">
-        &copy; 2024 TrackRepost. All Rights Reserved.
-    </div><h2>Login or Sign Up</h2>
-<input type="email" id="email" placeholder="Enter Email">
-<input type="password" id="password" placeholder="Enter Password">
-<button onclick="signupUser()">Sign Up</button>
-<button onclick="loginUser()">Login</button>
-<button onclick="logoutUser()">Logout</button>
+    <h2>Submit Your SoundCloud Track</h2>
+    <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+    <button onclick="submitTrack()">Submit</button>
 
-<script type="module">
-    import { signup, login, logout } from "./auth.js";
+    <h2>Your Dashboard</h2>
+    <p>Reposts: <span id="repostCount">0</span></p>
+    <p>Credits: <span id="creditCount">0</span></p>
 
-    function signupUser() {
-       <h2>Sign Up</h2>
-<input type="email" id="email" placeholder="Enter Email">
-<input type="password" id="password" placeholder="Enter Password">
-<button onclick="signupUser()">Sign Up</button>
-
-<script type="module">
-    import { signup } from "./auth.js";
-
-    window.signupUser = function() {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        signup(email, password)
-            .then(() => alert("Signup Successful!"))
-            .catch(err => alert(err.message));
-    };
-</script>
-
-    }
-
-    function loginUser() {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        login(email, password).then(() => alert("Login Successful!")).catch(err => alert(err.message));
-    }
-
-    function logoutUser() {
-        logout().then(() => alert("Logged Out!"));
-    }
-</script>
-<h2>Submit Your SoundCloud Track</h2>
-<input type="text" id="trackURL" placeholder="Enter SoundCloud URL">
-<button onclick="submitTrack()">Submit</button>
-
-<script>
-    function submitTrack() {
-        const url = document.getElementById("trackURL").value;
-        alert("Track Submitted: " + url);
-        // Later, we'll save this in a database
-    }
-</script>
-<h2>Your Dashboard</h2>
-<p>Reposts: <span id="repostCount">0</span></p>
-<p>Credits: <span id="creditCount">0</span></p>
-
-<button onclick="repostTrack()">Repost & Earn Credits</button>
-
-<script>
-    let reposts = 0;
-    let credits = 0;
-
-    function repostTrack() {
-        reposts++;
-        credits += 10; // Later, adjust based on follower count
-        document.getElementById("repostCount").innerText = reposts;
-        document.getElementById("creditCount").innerText = credits;
-    }
-</script>
-<h2>Set Your Follower Count</h2>
-<input type="number" id="followers" placeholder="Enter Your Followers">
-<button onclick="setFollowerCount()">Save</button>
-<p>Followers: <span id="followerCount">0</span></p>
-
-<script>
-    let followerCount = 0;
-
-    function setFollowerCount() {
-        followerCount = document.getElementById("followers").value;
-        document.getElementById("followerCount").innerText = followerCount;
-    }
-</script>
-function repostTrack() {
-    reposts++;
-    
-    if (followerCount >= 1000) {
-        credits += 10;
-    } else if (followerCount >= 500) {
-        credits += 5;
-    } else {
-        credits += 2;
-    }
-
-    document.getElementById("repostCount").innerText = reposts;
-    document.getElementById("creditCount").innerText = credits;
-}
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "trackrepost-921f8",
-    storageBucket: "trackrepost-921f8.appspot.com",
-    messagingSenderId: "967836604288",
-    appId: "project-967836604288
-"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// Signup Function
-export function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
-}
-
-// Login Function
-export function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
-}
-
-// Logout Function
-export function logout() {
-    return signOut(auth);
-}
-
-</body>
-</html>
+    <h2>Repost & Earn Credits</h2>
+    <input type="number" id="followerCou
