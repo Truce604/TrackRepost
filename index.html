@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,4 +25,38 @@
     <p>Credits: <span id="creditCount">0</span></p>
 
     <h2>Repost & Earn Credits</h2>
-    <input type="number" id="followerCou
+    <input type="number" id="followerCount" placeholder="Enter Your Followers">
+    <button onclick="saveFollowers()">Save</button>
+    <p>Followers: <span id="followersDisplay">0</span></p>
+
+    <script type="module" src="./auth.js"></script>
+    <script type="module">
+        import { signup, login, logout } from "./auth.js";
+
+        window.signupUser = function() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            signup(email, password)
+                .then(() => alert("Signup Successful!"))
+                .catch(err => alert(err.message));
+        };
+
+        window.loginUser = function() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            login(email, password)
+                .then(() => alert("Login Successful!"))
+                .catch(err => alert(err.message));
+        };
+
+        window.logoutUser = function() {
+            logout().then(() => alert("Logged Out!"));
+        };
+
+        window.saveFollowers = function() {
+            const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
+            document.getElementById("followersDisplay").innerText = followerCount;
+        };
+    </script>
+</body>
+</html>
