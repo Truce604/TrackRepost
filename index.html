@@ -58,6 +58,7 @@
         </div>
         <p>Reposts: <span id="repostCount">0</span></p>
         <p>Credits: <span id="creditCount">0</span></p>
+        <button onclick="repostTrack()">Repost & Earn Credits</button>
     </div>
 
     <div class="container">
@@ -67,23 +68,11 @@
         <p id="currentTrackMessage"></p>
     </div>
 
-    <div class="container">
-        <h2>Repost & Earn Credits</h2>
-        <input type="number" id="followerCount" placeholder="Enter Your Followers">
-        <button onclick="saveFollowers()">Save</button>
-        <p>Followers: <span id="followersDisplay">0</span></p>
-    </div>
-
     <footer>
         <p>© 2024 TrackRepost. All Rights Reserved.</p>
     </footer>
 
     <script>
-        function saveFollowers() {
-            const followerCount = parseInt(document.getElementById("followerCount").value) || 0;
-            document.getElementById("followersDisplay").innerText = followerCount;
-        }
-
         function submitTrack() {
             const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
             if (soundcloudUrl) {
