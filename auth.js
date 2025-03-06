@@ -1,51 +1,37 @@
 
-const firebaseConfig = {
-<<<<<<< HEAD
-  
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-  authDomain: "trackrepost-921f8.firebaseapp.com",
-  projectId: "trackrepost-921f8",
-  storageBucket: "trackrepost-921f8.firebasestorage.app",
-  messagingSenderId: "967836604288",
-  appId: "1:967836604288:web:3782d50de7384c9201d365",
-  measurementId: "G-G65Q3HC3R8"
-};
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
     projectId: "trackrepost-921f8",
-    storageBucket: "gs://trackrepost-921f8.firebasestorage.app",
-    messagingSenderId:
- "967836604288",
+    storageBucket: "trackrepost-921f8.appspot.com",
+    messagingSenderId: "967836604288",
     appId: "1:967836604288:web:3782d50de7384c9201d365"
->>>>>>> 14fc7da5e42b0a8654837c5695ba4aecb728ea31
 };
 
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-// Signup Function
-export function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
+
+
+function signup(email, password) {
+    return auth.createUserWithEmailAndPassword(email, password);
 }
 
-// Login Function
-export function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
+
+function login(email, password) {
+    return auth.signInWithEmailAndPassword(email, password);
 }
 
-// Logout Function
-export function logout() {
-    return signOut(auth);
+
+function logout() {
+    return auth.signOut();
 }
 
 // Submit Track Function (Free Users Limited to 1 Track)
-export async function submitTrack() {
+async function submitTrack() {
     const user = auth.currentUser;
     if (!user) {
         alert("You must be logged in to submit a track.");
@@ -58,20 +44,16 @@ export async function submitTrack() {
         return;
     }
 
-    const userTrackRef = doc(db, "users", user.uid);
-    const userTrackSnap = await getDoc(userTrackRef);
+    const userTrackRef = db.collection("users").doc(user.uid);
+    const userTrackSnap = await userTrackRef.get();
 
-    if (userTrackSnap.exists() && userTrackSnap.data().track) {
+    if (userTrackSnap.exists && userTrackSnap.data().track) {
         alert("Free users can only submit one track. Upgrade to submit more.");
         return;
     }
 
-    await setDoc(userTrackRef, { track: soundcloudUrl }, { merge: true });
+    await userTrackRef.set({ track: soundcloudUrl }, { merge: true });
 
     document.getElementById("currentTrackMessage").innerText = "Your current track: " + soundcloudUrl;
     alert("SoundCloud track submitted successfully!");
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 14fc7da5e42b0a8654837c5695ba4aecb728ea31
