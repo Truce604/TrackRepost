@@ -3,13 +3,27 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "trackrepost-921f8",
-    storageBucket: "gs://trackrepost-921f8.firebasestorage.app",
-    messagingSenderId:
- "967836604288",
-    appId: "1:967836604288:web:3782d50de7384c9201d365"
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+  authDomain: "trackrepost-921f8.firebaseapp.com",
+  projectId: "trackrepost-921f8",
+  storageBucket: "trackrepost-921f8.firebasestorage.app",
+  messagingSenderId: "967836604288",
+  appId: "1:967836604288:web:3782d50de7384c9201d365",
+  measurementId: "G-G65Q3HC3R8"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 };
 
 // Initialize Firebase
@@ -59,4 +73,3 @@ export async function submitTrack() {
     document.getElementById("currentTrackMessage").innerText = "Your current track: " + soundcloudUrl;
     alert("SoundCloud track submitted successfully!");
 }
-
