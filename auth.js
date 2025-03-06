@@ -14,10 +14,7 @@ const firebaseConfig = {
   measurementId: "G-G65Q3HC3R8"
 };
 
-// Initialize Firebase
-
-const analytics = getAnalytics(app);
-=======
+const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
     projectId: "trackrepost-921f8",
@@ -28,13 +25,10 @@ const analytics = getAnalytics(app);
 >>>>>>> 14fc7da5e42b0a8654837c5695ba4aecb728ea31
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-
-const db = getFirestore(app);
-
+const db = firebase.firestore();
 // Signup Function
 export function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
