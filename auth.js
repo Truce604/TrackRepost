@@ -3,6 +3,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
+<<<<<<< HEAD
   // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -24,6 +25,15 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+=======
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+    authDomain: "trackrepost-921f8.firebaseapp.com",
+    projectId: "trackrepost-921f8",
+    storageBucket: "gs://trackrepost-921f8.firebasestorage.app",
+    messagingSenderId:
+ "967836604288",
+    appId: "1:967836604288:web:3782d50de7384c9201d365"
+>>>>>>> 14fc7da5e42b0a8654837c5695ba4aecb728ea31
 };
 
 // Initialize Firebase
@@ -72,4 +82,8 @@ export async function submitTrack() {
 
     document.getElementById("currentTrackMessage").innerText = "Your current track: " + soundcloudUrl;
     alert("SoundCloud track submitted successfully!");
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 14fc7da5e42b0a8654837c5695ba4aecb728ea31
