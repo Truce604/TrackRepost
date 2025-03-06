@@ -6,14 +6,15 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <!-- ✅ Load Firebase from Google's CDN -->
+    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js"></script>
 
-    <!-- Load Authentication Script -->
+    <!-- ✅ Load Authentication Script AFTER Firebase -->
     <script src="auth.js" defer></script>
 </head>
+
 <body>
 
     <header>
@@ -63,7 +64,7 @@
         }
 
         function submitTrack() {
-            const soundcloudUrl = document.getElementById("soundcloudUrl").value;
+            const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
             if (soundcloudUrl) {
                 alert("SoundCloud Track Submitted: " + soundcloudUrl);
             } else {
