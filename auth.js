@@ -1,4 +1,4 @@
-// ✅ Firebase Configuration (Use the values from Firebase Console)
+// ✅ Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
