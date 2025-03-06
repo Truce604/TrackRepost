@@ -6,34 +6,26 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase from Google's CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <!-- ✅ Load Firebase from Google's CDN (Firebase v8 for compatibility) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Ensure Firebase is initialized before `auth.js` -->
+    <!-- ✅ Initialize Firebase -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            if (typeof firebase === "undefined") {
-                console.error("🚨 Firebase failed to load! Check if Firebase scripts are included correctly.");
-            } else {
-                console.log("✅ Firebase Loaded Successfully!");
+        var firebaseConfig = {
+            apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+            authDomain: "trackrepost-921f8.firebaseapp.com",
+            projectId: "trackrepost-921f8",
+            storageBucket: "trackrepost-921f8.appspot.com",
+            messagingSenderId: "967836604288",
+            appId: "1:967836604288:web:3782d50de7384c9201d365",
+            measurementId: "G-G65Q3HC3R8"
+        };
 
-                const firebaseConfig = {
-                    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-                    authDomain: "trackrepost-921f8.firebaseapp.com",
-                    projectId: "trackrepost-921f8",
-                    storageBucket: "trackrepost-921f8.appspot.com",
-                    messagingSenderId: "967836604288",
-                    appId: "1:967836604288:web:3782d50de7384c9201d365",
-                    measurementId: "G-G65Q3HC3R8"
-                };
-
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-            }
-        });
+        // ✅ Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        console.log("✅ Firebase Initialized Successfully!");
     </script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
@@ -100,3 +92,4 @@
 
 </body>
 </html>
+
