@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -22,18 +21,14 @@ if (typeof firebase === "undefined") {
             `;
 
             // ✅ Load User Credits & Reposts from Firestore
-            const userRef = db.collection("users").doc(user.uid);
-            userRef.get().then((doc) => {
+            db.collection("users").doc(user.uid).onSnapshot((doc) => {
                 if (doc.exists) {
                     repostCount.innerText = doc.data().reposts || 0;
                     creditCount.innerText = doc.data().credits || 0;
                 } else {
-                    userRef.set({ reposts: 0, credits: 0 });
+                    db.collection("users").doc(user.uid).set({ reposts: 0, credits: 0 });
                 }
-            }).catch((error) => {
-                console.error("Error getting user data:", error);
             });
-
         } else {
             dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
             repostCount.innerText = 0;
@@ -113,8 +108,7 @@ if (typeof firebase === "undefined") {
                 credits += 5; // Earn 5 credits per repost
 
                 userRef.update({ reposts, credits }).then(() => {
-                    document.getElementById("repostCount").innerText = reposts;
-                    document.getElementById("creditCount").innerText = credits;
+                    console.log("✅ Repost updated successfully!");
                     alert("✅ Repost Successful! +5 Credits Earned!");
                 });
             }
