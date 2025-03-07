@@ -23,9 +23,10 @@
             measurementId: "G-G65Q3HC3R8"
         };
 
-        // ✅ Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        console.log("✅ Firebase Initialized Successfully!");
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("✅ Firebase Initialized Successfully!");
+        }
     </script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
