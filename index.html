@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Ensure Firebase is initialized BEFORE loading auth.js -->
+    <!-- ✅ Initialize Firebase -->
     <script>
         var firebaseConfig = {
             apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
@@ -24,12 +24,9 @@
             measurementId: "G-G65Q3HC3R8"
         };
 
-        // ✅ Check if Firebase is already initialized before initializing
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
             console.log("✅ Firebase Initialized Successfully!");
-        } else {
-            console.log("⚠️ Firebase was already initialized.");
         }
     </script>
 
@@ -76,17 +73,6 @@
     <footer>
         <p>© 2024 TrackRepost. All Rights Reserved.</p>
     </footer>
-
-    <script>
-        function submitTrack() {
-            const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-            if (soundcloudUrl) {
-                alert("SoundCloud Track Submitted: " + soundcloudUrl);
-            } else {
-                alert("Please enter a valid SoundCloud URL.");
-            }
-        }
-    </script>
 
 </body>
 </html>
