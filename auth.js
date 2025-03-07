@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -106,12 +105,12 @@ if (typeof firebase === "undefined") {
             let reposts = doc.exists ? doc.data().reposts + 1 : 1;
             let credits = doc.exists ? doc.data().credits + 10 : 10;
 
-            userRef.set({ reposts, credits }, { merge: true });
+            userRef.set({ reposts, credits }, { merge: true }).then(() => {
+                document.getElementById("repostCount").innerText = reposts;
+                document.getElementById("creditCount").innerText = credits;
 
-            document.getElementById("repostCount").innerText = reposts;
-            document.getElementById("creditCount").innerText = credits;
-
-            alert("✅ Track Reposted! You earned 10 credits!");
+                alert("✅ Track Reposted! You earned 10 credits!");
+            });
         }).catch((error) => {
             console.error("❌ Error reposting track:", error);
         });
