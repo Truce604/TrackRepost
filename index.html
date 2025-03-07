@@ -51,32 +51,19 @@
         </div>
     </div>
 
-    <!-- ✅ User Dashboard -->
+    <!-- ✅ This is the ONLY dashboard section -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard">
             <h3>You are not logged in.</h3>
             <p>Please log in or sign up.</p>
         </div>
+        <button onclick="repostTrack()">Repost & Earn Credits</button>
     </div>
 
-    <!-- ✅ Track Submission Section -->
-    <div class="container">
-        <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-        <button onclick="submitTrack()">Submit</button>
-        <p id="currentTrackMessage"></p>
-    </div>
-
-    <!-- ✅ Footer with Auto-Updating Year -->
     <footer>
-        <p>© <span id="currentYear"></span> TrackRepost. All Rights Reserved.</p>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
-
-    <!-- ✅ Script to Automatically Update the Year -->
-    <script>
-        document.getElementById("currentYear").textContent = new Date().getFullYear();
-    </script>
 
 </body>
 </html>
