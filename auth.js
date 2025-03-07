@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -20,7 +21,7 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        // Fetch user data from Firestore
+        // ✅ Listen for live updates from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -116,9 +117,6 @@ if (typeof firebase === "undefined") {
                 reposts: newReposts,
                 credits: newCredits
             });
-
-            document.getElementById("repostCount").innerText = newReposts;
-            document.getElementById("creditCount").innerText = newCredits;
 
             alert("✅ Repost successful! You earned 10 credits.");
         } catch (error) {
