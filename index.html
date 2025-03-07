@@ -6,27 +6,10 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase from Google's CDN (Firebase v8 for compatibility) -->
+    <!-- ✅ Load Firebase from Google's CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- ✅ Initialize Firebase -->
-    <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-            authDomain: "trackrepost-921f8.firebaseapp.com",
-            projectId: "trackrepost-921f8",
-            storageBucket: "trackrepost-921f8.appspot.com",
-            messagingSenderId: "967836604288",
-            appId: "1:967836604288:web:3782d50de7384c9201d365",
-            measurementId: "G-G65Q3HC3R8"
-        };
-
-        // ✅ Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        console.log("✅ Firebase Initialized Successfully!");
-    </script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
     <script src="auth.js" defer></script>
@@ -58,14 +41,7 @@
         </div>
         <p>Reposts: <span id="repostCount">0</span></p>
         <p>Credits: <span id="creditCount">0</span></p>
-        <button id="repostButton" onclick="repostTrack()" disabled>Repost & Earn Credits</button>
-    </div>
-
-    <div class="container">
-        <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-        <button onclick="submitTrack()">Submit</button>
-        <p id="currentTrackMessage"></p>
+        <button onclick="repostTrack()" id="repostButton">Repost & Earn Credits</button>
     </div>
 
     <footer>
@@ -74,3 +50,4 @@
 
 </body>
 </html>
+
