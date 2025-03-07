@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -8,20 +7,19 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Update UI Function
+    // ✅ Update UI Function - Fix the extra counter issue
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
+
         if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            document.getElementById("repostCount").innerText = 0;
-            document.getElementById("creditCount").innerText = 0;
             return;
         }
 
-        // ✅ Listen for live updates from Firestore
+        // ✅ Listen for real-time updates from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -29,6 +27,7 @@ if (typeof firebase === "undefined") {
                     <h2>Welcome, ${user.email}!</h2>
                     <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+                    <button onclick="repostTrack()">Repost & Earn Credits</button>
                     <button onclick="logoutUser()">Logout</button>
                 `;
             } else {
