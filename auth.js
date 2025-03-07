@@ -7,42 +7,36 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Function to Update Dashboard with User Info + Reposts & Credits
+    // ✅ Function to Update Dashboard with User Info
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
+        const repostButton = document.getElementById("repostButton");
+        
         if (user) {
-            const userRef = db.collection("users").doc(user.uid);
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>User ID: ${user.uid}</p>
+                <button onclick="logoutUser()">Logout</button>
+            `;
 
-            userRef.get().then((doc) => {
-                let reposts = 0;
-                let credits = 0;
-
-                if (doc.exists) {
-                    reposts = doc.data().reposts || 0;
-                    credits = doc.data().credits || 0;
-                } else {
-                    // If user doesn't exist in Firestore, create them
-                    userRef.set({ reposts: 0, credits: 0 });
-                }
-
-                dashboard.innerHTML = `
-                    <h2>Welcome, ${user.email}!</h2>
-                    <p>User ID: ${user.uid}</p>
-                    <p>Reposts: <span id="repostCount">${reposts}</span></p>
-                    <p>Credits: <span id="creditCount">${credits}</span></p>
-                    <button onclick="logoutUser()">Logout</button>
-                `;
-            });
+            if (repostButton) {
+                repostButton.disabled = false;
+            }
         } else {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
+
+            if (repostButton) {
+                repostButton.disabled = true;
+            }
         }
     }
 
     // ✅ Listen for Authentication State Changes
     auth.onAuthStateChanged((user) => {
+        console.log("🔥 Auth State Changed:", user);
         updateDashboard(user);
     });
 
@@ -54,7 +48,6 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 alert("✅ Signup Successful! Welcome " + userCredential.user.email);
-                db.collection("users").doc(userCredential.user.uid).set({ reposts: 0, credits: 0 });
                 updateDashboard(userCredential.user);
             })
             .catch((error) => {
@@ -92,7 +85,7 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ REPOST FUNCTION (Earn Credits)
+    // ✅ REPOST & EARN CREDITS FUNCTION
     window.repostTrack = function () {
         const user = auth.currentUser;
         if (!user) {
@@ -100,20 +93,20 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        const userRef = db.collection("users").doc(user.uid);
-        userRef.get().then((doc) => {
-            let reposts = doc.exists ? doc.data().reposts + 1 : 1;
-            let credits = doc.exists ? doc.data().credits + 10 : 10;
+        // Increase repost count & credits
+        let repostCountElement = document.getElementById("repostCount");
+        let creditCountElement = document.getElementById("creditCount");
 
-            userRef.set({ reposts, credits }, { merge: true }).then(() => {
-                document.getElementById("repostCount").innerText = reposts;
-                document.getElementById("creditCount").innerText = credits;
+        let repostCount = parseInt(repostCountElement.innerText) || 0;
+        let credits = parseInt(creditCountElement.innerText) || 0;
 
-                alert("✅ Track Reposted! You earned 10 credits!");
-            });
-        }).catch((error) => {
-            console.error("❌ Error reposting track:", error);
-        });
+        repostCount++;
+        credits += 10; // Earn 10 credits per repost
+
+        repostCountElement.innerText = repostCount;
+        creditCountElement.innerText = credits;
+
+        alert("✅ Track reposted successfully! You earned 10 credits.");
     };
 }
 
