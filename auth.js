@@ -31,7 +31,15 @@ if (typeof firebase === "undefined") {
                 } else {
                     repostCountElement.innerText = "0";
                     creditCountElement.innerText = "0";
+
+                    // ✅ Initialize User Data if missing
+                    db.collection("users").doc(user.uid).set({
+                        reposts: 0,
+                        credits: 0
+                    });
                 }
+            }).catch((error) => {
+                console.error("❌ Error fetching user data:", error);
             });
         } else {
             dashboard.innerHTML = `
@@ -40,7 +48,7 @@ if (typeof firebase === "undefined") {
             `;
             repostButton.disabled = true;
 
-            // ✅ Reset UI (But keep Firestore data)
+            // ✅ Reset UI (But Firestore keeps data)
             repostCountElement.innerText = "0";
             creditCountElement.innerText = "0";
         }
@@ -60,7 +68,7 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 alert("✅ Signup Successful! Welcome " + userCredential.user.email);
-                
+
                 // ✅ Save New User Data to Firestore
                 return db.collection("users").doc(userCredential.user.uid).set({
                     reposts: 0,
@@ -105,7 +113,7 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ REPOST & EARN CREDITS FUNCTION
+    // ✅ REPOST & EARN CREDITS FUNCTION (🔥 FIXED!)
     window.repostTrack = function () {
         const user = auth.currentUser;
         if (!user) {
@@ -113,28 +121,30 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        // Fetch user data from Firestore
         let userRef = db.collection("users").doc(user.uid);
+
+        // ✅ Fetch user data from Firestore & Update
         userRef.get().then((doc) => {
-            if (doc.exists) {
-                let userData = doc.data();
-                let newRepostCount = (userData.reposts || 0) + 1;
-                let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
+            let userData = doc.exists ? doc.data() : { reposts: 0, credits: 0 };
 
-                // ✅ Update Firestore
-                userRef.set({
-                    reposts: newRepostCount,
-                    credits: newCredits
-                }, { merge: true });
+            let newRepostCount = (userData.reposts || 0) + 1;
+            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
 
-                // ✅ Update UI
-                document.getElementById("repostCount").innerText = newRepostCount;
-                document.getElementById("creditCount").innerText = newCredits;
-
+            // ✅ Update Firestore
+            return userRef.set({
+                reposts: newRepostCount,
+                credits: newCredits
+            }, { merge: true });
+        }).then(() => {
+            // ✅ Update UI (🔥 Fix: Updates Immediately!)
+            userRef.get().then((updatedDoc) => {
+                let updatedUserData = updatedDoc.data();
+                document.getElementById("repostCount").innerText = updatedUserData.reposts;
+                document.getElementById("creditCount").innerText = updatedUserData.credits;
                 alert("✅ Track reposted successfully! You earned 10 credits.");
-            }
+            });
         }).catch((error) => {
-            console.error("Error updating repost count:", error);
+            console.error("❌ Error updating repost count:", error);
         });
     };
 }
