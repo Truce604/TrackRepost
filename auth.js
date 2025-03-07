@@ -10,7 +10,6 @@ if (typeof firebase === "undefined") {
     // ✅ Function to Update Dashboard with User Info
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const repostButton = document.getElementById("repostButton");
         const repostCountElement = document.getElementById("repostCount");
         const creditCountElement = document.getElementById("creditCount");
 
@@ -20,35 +19,32 @@ if (typeof firebase === "undefined") {
                 <p>User ID: ${user.uid}</p>
                 <button onclick="logoutUser()">Logout</button>
             `;
-            repostButton.disabled = false;
 
-            // ✅ Load User Data from Firestore
+            // ✅ Fetch user data from Firestore
             db.collection("users").doc(user.uid).get().then((doc) => {
                 if (doc.exists) {
-                    const userData = doc.data();
+                    let userData = doc.data();
                     repostCountElement.innerText = userData.reposts || 0;
                     creditCountElement.innerText = userData.credits || 0;
                 } else {
-                    repostCountElement.innerText = "0";
-                    creditCountElement.innerText = "0";
-
-                    // ✅ Initialize User Data if missing
+                    // ✅ Initialize Firestore data if missing
                     db.collection("users").doc(user.uid).set({
                         reposts: 0,
                         credits: 0
                     });
+                    repostCountElement.innerText = "0";
+                    creditCountElement.innerText = "0";
                 }
             }).catch((error) => {
                 console.error("❌ Error fetching user data:", error);
             });
+
         } else {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            repostButton.disabled = true;
 
-            // ✅ Reset UI (But Firestore keeps data)
             repostCountElement.innerText = "0";
             creditCountElement.innerText = "0";
         }
@@ -68,8 +64,6 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 alert("✅ Signup Successful! Welcome " + userCredential.user.email);
-
-                // ✅ Save New User Data to Firestore
                 return db.collection("users").doc(userCredential.user.uid).set({
                     reposts: 0,
                     credits: 0
@@ -100,7 +94,7 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ LOGOUT FUNCTION (UI resets, but Firestore keeps user data)
+    // ✅ LOGOUT FUNCTION
     window.logoutUser = function () {
         auth.signOut()
             .then(() => {
@@ -123,18 +117,17 @@ if (typeof firebase === "undefined") {
 
         let userRef = db.collection("users").doc(user.uid);
 
-        // ✅ Fetch user data from Firestore & Update
         userRef.get().then((doc) => {
-            let userData = doc.exists ? doc.data() : { reposts: 0, credits: 0 };
+            if (doc.exists) {
+                let userData = doc.data();
+                let newRepostCount = (userData.reposts || 0) + 1;
+                let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
 
-            let newRepostCount = (userData.reposts || 0) + 1;
-            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
-
-            // ✅ Update Firestore
-            return userRef.set({
-                reposts: newRepostCount,
-                credits: newCredits
-            }, { merge: true });
+                return userRef.update({
+                    reposts: newRepostCount,
+                    credits: newCredits
+                });
+            }
         }).then(() => {
             // ✅ Update UI (🔥 Fix: Updates Immediately!)
             userRef.get().then((updatedDoc) => {
