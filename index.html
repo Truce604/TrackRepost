@@ -51,13 +51,21 @@
         </div>
     </div>
 
-    <!-- ✅ This is the ONLY dashboard section -->
+    <!-- ✅ User Dashboard -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard">
             <h3>You are not logged in.</h3>
             <p>Please log in or sign up.</p>
         </div>
+    </div>
+
+    <!-- ✅ Track Submission Section -->
+    <div class="container">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button onclick="submitTrack()">Submit</button>
+        <p id="currentTrackMessage"></p>
     </div>
 
     <!-- ✅ Footer with Auto-Updating Year -->
