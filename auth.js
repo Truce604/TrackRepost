@@ -1,123 +1,36 @@
-// ✅ Ensure Firebase is Loaded
-if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
-} else {
-    console.log("✅ Firebase Loaded Successfully!");
-
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // ✅ Update Dashboard with User Info & Credits
-    function updateDashboard(user) {
-        const dashboard = document.getElementById("userDashboard");
-        const creditDisplay = document.getElementById("creditCount");
-        const repostDisplay = document.getElementById("repostCount");
-
-        if (user) {
-            db.collection("users").doc(user.uid).get().then(doc => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    creditDisplay.innerText = userData.credits || 0;
-                    repostDisplay.innerText = userData.reposts || 0;
-                } else {
-                    // Create user data if it doesn't exist
-                    db.collection("users").doc(user.uid).set({ credits: 0, reposts: 0 });
-                }
-            });
-
-            dashboard.innerHTML = `
-                <h2>Welcome, ${user.email}!</h2>
-                <p>User ID: ${user.uid}</p>
-                <button onclick="logoutUser()">Logout</button>
-            `;
-        } else {
-            dashboard.innerHTML = `
-                <h2>You are not logged in.</h2>
-                <p>Please log in or sign up.</p>
-            `;
-            creditDisplay.innerText = "0"; // Reset credits display on logout
-            repostDisplay.innerText = "0"; // Reset reposts display on logout
-        }
+window.repostTrack = async function () {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in to repost and earn credits.");
+        return;
     }
 
-    // ✅ Listen for Authentication State Changes
-    auth.onAuthStateChanged(user => {
-        updateDashboard(user);
-    });
+    const userRef = db.collection("users").doc(user.uid);
 
-    // ✅ SIGNUP FUNCTION
-    window.signupUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+    try {
+        const userDoc = await userRef.get();
 
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                db.collection("users").doc(userCredential.user.uid).set({ credits: 0, reposts: 0 });
-                alert("✅ Signup Successful! Welcome " + userCredential.user.email);
-                updateDashboard(userCredential.user);
-            })
-            .catch(error => {
-                alert("❌ Signup Error: " + error.message);
-                console.error("Signup Error:", error);
-            });
-    };
-
-    // ✅ LOGIN FUNCTION
-    window.loginUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                alert("✅ Login Successful! Welcome " + userCredential.user.email);
-                updateDashboard(userCredential.user);
-            })
-            .catch(error => {
-                alert("❌ Login Error: " + error.message);
-                console.error("Login Error:", error);
-            });
-    };
-
-    // ✅ LOGOUT FUNCTION
-    window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                updateDashboard(null);
-            })
-            .catch(error => {
-                alert("❌ Logout Error: " + error.message);
-                console.error("Logout Error:", error);
-            });
-    };
-
-    // ✅ REPOST FUNCTION (Earn Credits)
-    window.repostTrack = function () {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("❌ You must be logged in to repost!");
+        if (!userDoc.exists) {
+            alert("User data not found. Please sign up again.");
             return;
         }
 
-        const userRef = db.collection("users").doc(user.uid);
-        userRef.get().then(doc => {
-            if (doc.exists) {
-                let currentCredits = doc.data().credits || 0;
-                let reposts = doc.data().reposts || 0;
+        let userData = userDoc.data();
+        let newReposts = (userData.reposts || 0) + 1;
+        let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
 
-                currentCredits += 10; // Earn 10 credits per repost
-                reposts += 1; // Increment repost count
-
-                userRef.update({ credits: currentCredits, reposts: reposts }).then(() => {
-                    document.getElementById("creditCount").innerText = currentCredits;
-                    document.getElementById("repostCount").innerText = reposts;
-                    alert("✅ You earned 10 credits!");
-                }).catch(error => {
-                    console.error("❌ Error updating credits:", error);
-                });
-            }
-        }).catch(error => {
-            console.error("❌ Error fetching user data:", error);
+        await userRef.update({
+            reposts: newReposts,
+            credits: newCredits
         });
-    };
-}
+
+        document.getElementById("repostCount").innerText = newReposts;
+        document.getElementById("creditCount").innerText = newCredits;
+
+        alert("Repost successful! You earned 10 credits.");
+
+    } catch (error) {
+        console.error("Error updating credits:", error);
+        alert("Error processing repost. Try again.");
+    }
+};
