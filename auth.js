@@ -1,41 +1,62 @@
-// ✅ ADD This to `auth.js`
-window.submitTrack = async function () {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You must be logged in to submit a track.");
-        return;
-    }
+// ✅ Ensure Firebase is Loaded
+if (typeof firebase === "undefined") {
+    console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
+} else {
+    console.log("✅ Firebase Loaded Successfully!");
 
-    const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-    if (!soundcloudUrl) {
-        alert("Please enter a valid SoundCloud URL.");
-        return;
-    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    const userRef = db.collection("users").doc(user.uid);
+    // ✅ SIGNUP FUNCTION
+    window.signupUser = function () {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-    try {
-        await userRef.update({
-            trackUrl: soundcloudUrl
-        });
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                console.log("✅ Signup Successful: ", user);
 
-        document.getElementById("currentTrackMessage").innerText = "Your submitted track: " + soundcloudUrl;
-        alert("✅ Track submitted successfully!");
+                db.collection("users").doc(user.uid).set({
+                    email: user.email,
+                    credits: 0,
+                    reposts: 0
+                }).then(() => {
+                    alert("✅ Signup Successful! Welcome " + user.email);
+                }).catch(error => console.error("Error saving user:", error));
+            })
+            .catch((error) => {
+                console.error("❌ Signup Error:", error);
+                alert("❌ Signup Error: " + error.message);
+            });
+    };
 
-    } catch (error) {
-        console.error("Error submitting track:", error);
-        alert("❌ Error submitting track. Please try again.");
-    }
-};
+    // ✅ LOGIN FUNCTION
+    window.loginUser = function () {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-// ✅ Load the user's track when they log in
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        const userRef = db.collection("users").doc(user.uid);
-        userRef.get().then((doc) => {
-            if (doc.exists && doc.data().trackUrl) {
-                document.getElementById("currentTrackMessage").innerText = "Your submitted track: " + doc.data().trackUrl;
-            }
-        }).catch(error => console.error("Error fetching track data:", error));
-    }
-});
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                console.log("✅ Login Successful: ", userCredential.user);
+                alert("✅ Login Successful! Welcome " + userCredential.user.email);
+            })
+            .catch((error) => {
+                console.error("❌ Login Error:", error);
+                alert("❌ Login Error: " + error.message);
+            });
+    };
+
+    // ✅ LOGOUT FUNCTION
+    window.logoutUser = function () {
+        auth.signOut()
+            .then(() => {
+                console.log("✅ User Logged Out");
+                alert("✅ Logged Out!");
+            })
+            .catch((error) => {
+                console.error("❌ Logout Error:", error);
+                alert("❌ Logout Error: " + error.message);
+            });
+    };
+}
