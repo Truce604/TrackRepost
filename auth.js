@@ -11,26 +11,26 @@ if (typeof firebase === "undefined") {
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
         const repostButton = document.getElementById("repostButton");
-        
+        const repostCountElement = document.getElementById("repostCount");
+        const creditCountElement = document.getElementById("creditCount");
+
         if (user) {
             dashboard.innerHTML = `
                 <h2>Welcome, ${user.email}!</h2>
                 <p>User ID: ${user.uid}</p>
                 <button onclick="logoutUser()">Logout</button>
             `;
-
-            if (repostButton) {
-                repostButton.disabled = false;
-            }
+            repostButton.disabled = false;
         } else {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
+            repostButton.disabled = true;
 
-            if (repostButton) {
-                repostButton.disabled = true;
-            }
+            // ✅ Reset Repost Count & Credits on Logout
+            repostCountElement.innerText = "0";
+            creditCountElement.innerText = "0";
         }
     }
 
@@ -72,7 +72,7 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ LOGOUT FUNCTION
+    // ✅ LOGOUT FUNCTION (Resets UI)
     window.logoutUser = function () {
         auth.signOut()
             .then(() => {
@@ -109,4 +109,3 @@ if (typeof firebase === "undefined") {
         alert("✅ Track reposted successfully! You earned 10 credits.");
     };
 }
-
