@@ -7,39 +7,39 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Update Dashboard Function
+    // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        if (user) {
-            db.collection("users").doc(user.uid).get().then((doc) => {
-                if (doc.exists) {
-                    let data = doc.data();
-                    dashboard.innerHTML = `
-                        <h2>Welcome, ${user.email}!</h2>
-                        <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
-                        <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                        <button onclick="logoutUser()">Logout</button>
-                    `;
-                } else {
-                    console.error("User data missing in Firestore.");
-                }
-            }).catch(error => {
-                console.error("Error fetching user data:", error);
-            });
-        } else {
+        if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
+            document.getElementById("repostCount").innerText = 0;
+            document.getElementById("creditCount").innerText = 0;
+            return;
         }
+
+        // Fetch user data from Firestore
+        db.collection("users").doc(user.uid).onSnapshot((doc) => {
+            if (doc.exists) {
+                let data = doc.data();
+                dashboard.innerHTML = `
+                    <h2>Welcome, ${user.email}!</h2>
+                    <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                    <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+                    <button onclick="logoutUser()">Logout</button>
+                `;
+            } else {
+                console.error("User data missing in Firestore.");
+            }
+        });
     }
 
-    // ✅ Listen for Authentication State Changes
-    auth.onAuthStateChanged((user) => {
-        updateDashboard(user);
-    });
+    // ✅ Listen for Authentication Changes
+    auth.onAuthStateChanged(updateDashboard);
 
-    // ✅ SIGNUP FUNCTION - Store Users in Firestore
+    // ✅ SIGNUP FUNCTION
     window.signupUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
@@ -47,7 +47,6 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
-                // ✅ Store user in Firestore
                 db.collection("users").doc(user.uid).set({
                     email: user.email,
                     credits: 0,
@@ -55,9 +54,7 @@ if (typeof firebase === "undefined") {
                 }).then(() => {
                     alert("✅ Signup Successful! Welcome " + user.email);
                     updateDashboard(user);
-                }).catch(error => {
-                    console.error("Error saving user to Firestore:", error);
-                });
+                }).catch(error => console.error("Error saving user:", error));
             })
             .catch((error) => {
                 alert("❌ Signup Error: " + error.message);
@@ -106,7 +103,6 @@ if (typeof firebase === "undefined") {
 
         try {
             const userDoc = await userRef.get();
-
             if (!userDoc.exists) {
                 alert("User data not found. Please sign up again.");
                 return;
@@ -125,7 +121,6 @@ if (typeof firebase === "undefined") {
             document.getElementById("creditCount").innerText = newCredits;
 
             alert("✅ Repost successful! You earned 10 credits.");
-
         } catch (error) {
             console.error("Error updating credits:", error);
             alert("Error processing repost. Try again.");
