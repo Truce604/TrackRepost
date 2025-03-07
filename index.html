@@ -27,67 +27,6 @@
             firebase.initializeApp(firebaseConfig);
             console.log("✅ Firebase Initialized Successfully!");
         }
-
-        // Firebase references
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // ✅ Function to Update UI with Firestore Data
-        function updateUI(user) {
-            if (!user) {
-                document.getElementById("userDashboard").innerHTML = `
-                    <h3>You are not logged in.</h3>
-                    <p>Please log in or sign up.</p>
-                `;
-                document.getElementById("repostCount").innerText = 0;
-                document.getElementById("creditCount").innerText = 0;
-                return;
-            }
-
-            // Fetch user data from Firestore
-            db.collection("users").doc(user.uid).onSnapshot((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById("userDashboard").innerHTML = `
-                        <h2>Welcome, ${user.email}!</h2>
-                        <p>User ID: ${user.uid}</p>
-                        <button onclick="logoutUser()">Logout</button>
-                    `;
-                    document.getElementById("repostCount").innerText = data.reposts || 0;
-                    document.getElementById("creditCount").innerText = data.credits || 0;
-                }
-            });
-        }
-
-        // ✅ Listen for Authentication State Changes
-        auth.onAuthStateChanged(updateUI);
-
-        // ✅ Function to Repost & Earn Credits
-        window.repostTrack = function () {
-            const user = auth.currentUser;
-            if (!user) {
-                alert("You must be logged in to repost and earn credits.");
-                return;
-            }
-
-            const userRef = db.collection("users").doc(user.uid);
-            userRef.get().then((doc) => {
-                if (doc.exists) {
-                    let userData = doc.data();
-                    let newReposts = (userData.reposts || 0) + 1;
-                    let newCredits = (userData.credits || 0) + 10; // 10 credits per repost
-
-                    userRef.update({
-                        reposts: newReposts,
-                        credits: newCredits
-                    }).then(() => {
-                        console.log("✅ Repost and credits updated!");
-                    }).catch((error) => {
-                        console.error("Error updating credits:", error);
-                    });
-                }
-            });
-        };
     </script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
