@@ -7,7 +7,6 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Setup Button Click Events
     document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("signupBtn").addEventListener("click", signupUser);
         document.getElementById("loginBtn").addEventListener("click", loginUser);
@@ -18,19 +17,16 @@ if (typeof firebase === "undefined") {
     // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const authMessage = document.getElementById("authMessage");
-
         if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            authMessage.innerText = "";
             document.getElementById("currentTrackMessage").innerText = "No active campaign";
             return;
         }
 
-        // Fetch user data from Firestore in real-time
+        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -40,8 +36,6 @@ if (typeof firebase === "undefined") {
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
                     <button id="logoutBtn">Logout</button>
                 `;
-
-                authMessage.innerText = "✅ Logged in successfully!";
 
                 if (data.track) {
                     document.getElementById("currentTrackMessage").innerHTML = `
@@ -56,7 +50,7 @@ if (typeof firebase === "undefined") {
             }
         });
 
-        // Load active campaigns (tracks with credits)
+        // Load all active campaigns
         loadActiveCampaigns();
     }
 
@@ -116,13 +110,11 @@ if (typeof firebase === "undefined") {
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
 
-        // ❌ Reject Shortened SoundCloud Links
         if (soundcloudUrl.includes("on.soundcloud.com")) {
-            alert("❌ Invalid SoundCloud URL. Please paste the FULL track URL (e.g., https://soundcloud.com/artist/track).");
+            alert("❌ Invalid SoundCloud URL. Please paste the FULL track URL.");
             return;
         }
 
-        // ✅ Save campaign to Firestore (only if the user has credits)
         db.collection("users").doc(user.uid).get()
             .then((doc) => {
                 if (doc.exists && doc.data().credits > 0) {
@@ -131,14 +123,9 @@ if (typeof firebase === "undefined") {
                         email: user.email,
                         track: soundcloudUrl,
                         credits: doc.data().credits
-                    })
-                    .then(() => {
+                    }).then(() => {
                         alert("✅ Track submitted as a campaign!");
                         loadActiveCampaigns();
-                    })
-                    .catch(error => {
-                        console.error("Error saving campaign:", error);
-                        alert("❌ Error submitting track.");
                     });
                 } else {
                     alert("❌ You need credits to start a campaign.");
@@ -146,7 +133,7 @@ if (typeof firebase === "undefined") {
             });
     }
 
-    // ✅ LOAD ACTIVE CAMPAIGNS - Only Show Tracks with Credits
+    // ✅ LOAD ACTIVE CAMPAIGNS
     function loadActiveCampaigns() {
         const campaignsDiv = document.getElementById("activeCampaigns");
         campaignsDiv.innerHTML = "<p>Loading...</p>";
@@ -168,6 +155,7 @@ if (typeof firebase === "undefined") {
                                 <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                     src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                                 </iframe>
+                                <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
                             </div>
                         `;
                     }
@@ -177,5 +165,35 @@ if (typeof firebase === "undefined") {
                 console.error("Error loading campaigns:", error);
                 campaignsDiv.innerHTML = "<p>Error loading campaigns.</p>";
             });
+    }
+
+    // ✅ REPOST FUNCTION - Earn Credits
+    function repostTrack(campaignId) {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in to repost and earn credits.");
+            return;
+        }
+
+        const campaignRef = db.collection("campaigns").doc(campaignId);
+        const userRef = db.collection("users").doc(user.uid);
+
+        db.runTransaction(async (transaction) => {
+            const campaignDoc = await transaction.get(campaignRef);
+            const userDoc = await transaction.get(userRef);
+
+            if (!campaignDoc.exists || campaignDoc.data().credits <= 0) {
+                alert("❌ This campaign is no longer available.");
+                return;
+            }
+
+            let campaignData = campaignDoc.data();
+            let userData = userDoc.data();
+
+            transaction.update(campaignRef, { credits: campaignData.credits - 10 });
+            transaction.update(userRef, { credits: (userData.credits || 0) + 10 });
+
+            alert("✅ Repost successful! You earned 10 credits.");
+        }).then(() => loadActiveCampaigns());
     }
 }
