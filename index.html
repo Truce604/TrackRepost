@@ -40,6 +40,7 @@
         <p>Promote Your Music, Get More Plays</p>
     </header>
 
+    <!-- ✅ Login / Signup Section -->
     <div class="container">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
@@ -51,16 +52,24 @@
         </div>
     </div>
 
+    <!-- ✅ User Dashboard -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard"></div>
     </div>
 
+    <!-- ✅ SoundCloud Track Submission -->
     <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
         <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
         <button onclick="submitTrack()">Submit</button>
         <p id="currentTrackMessage">No active campaign</p>
+    </div>
+
+    <!-- ✅ Active Campaigns Section -->
+    <div class="container">
+        <h2>🔥 Active Campaigns</h2>
+        <div id="activeCampaigns"></div>
     </div>
 
     <footer>
@@ -69,4 +78,3 @@
 
 </body>
 </html>
-
