@@ -7,47 +7,17 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Update UI Function
-    function updateDashboard(user) {
-        const dashboard = document.getElementById("userDashboard");
-
-        if (!user) {
-            dashboard.innerHTML = `
-                <h2>You are not logged in.</h2>
-                <p>Please log in or sign up.</p>
-            `;
-            return;
-        }
-
-        db.collection("users").doc(user.uid).onSnapshot((doc) => {
-            if (doc.exists) {
-                let data = doc.data();
-                dashboard.innerHTML = `
-                    <h2>Welcome, ${user.email}!</h2>
-                    <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
-                    <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                    <button onclick="logoutUser()">Logout</button>
-                `;
-
-                if (data.track) {
-                    document.getElementById("currentTrackMessage").innerHTML = `
-                        <p>Active Campaign:</p>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                    `;
-                }
-            }
-        });
-
-        loadActiveCampaigns();
-    }
-
     // ✅ Listen for Authentication Changes
-    auth.onAuthStateChanged(updateDashboard);
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            updateDashboard(user);
+        } else {
+            resetDashboard();
+        }
+    });
 
     // ✅ SIGNUP FUNCTION
-    function signupUser() {
+    window.signupUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
@@ -57,135 +27,58 @@ if (typeof firebase === "undefined") {
                 db.collection("users").doc(user.uid).set({
                     email: user.email,
                     credits: 0,
-                    reposts: 0,
-                    repostedTracks: []
+                    reposts: 0
                 }).then(() => {
                     alert("✅ Signup Successful!");
-                    updateDashboard(user);
-                });
+                }).catch(error => console.error("Error saving user:", error));
             })
             .catch(error => alert("❌ Signup Error: " + error.message));
-    }
+    };
 
     // ✅ LOGIN FUNCTION
-    function loginUser() {
+    window.loginUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
         auth.signInWithEmailAndPassword(email, password)
             .then(userCredential => {
                 alert("✅ Login Successful!");
-                updateDashboard(userCredential.user);
             })
             .catch(error => alert("❌ Login Error: " + error.message));
-    }
+    };
 
     // ✅ LOGOUT FUNCTION
-    function logoutUser() {
+    window.logoutUser = function () {
         auth.signOut()
             .then(() => {
                 alert("✅ Logged Out!");
-                updateDashboard(null);
+                resetDashboard();
             })
             .catch(error => alert("❌ Logout Error: " + error.message));
+    };
+
+    // ✅ RESET DASHBOARD FUNCTION (When Logged Out)
+    function resetDashboard() {
+        document.getElementById("userDashboard").innerHTML = `
+            <h2>You are not logged in.</h2>
+            <p>Please log in or sign up.</p>
+        `;
     }
 
-    // ✅ SUBMIT TRACK FUNCTION
-    function submitTrack() {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to submit a track.");
-            return;
-        }
-
-        let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-        if (!soundcloudUrl.includes("soundcloud.com/")) {
-            alert("❌ Invalid SoundCloud URL. Please enter a valid SoundCloud track link.");
-            return;
-        }
-
-        db.collection("users").doc(user.uid).update({ track: soundcloudUrl, credits: 100 }) // ✅ Give 100 credits for testing
-            .then(() => {
-                alert("✅ Track submitted!");
-                loadActiveCampaigns();
-            });
-    }
-
-    // ✅ REPOST FUNCTION - Earn Credits & Deduct from Campaign Owner
-    function repostTrack(campaignId) {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to repost and earn credits.");
-            return;
-        }
-
-        const campaignRef = db.collection("users").doc(campaignId);
-        const userRef = db.collection("users").doc(user.uid);
-
-        db.runTransaction(async (transaction) => {
-            const campaignDoc = await transaction.get(campaignRef);
-            const userDoc = await transaction.get(userRef);
-
-            if (!campaignDoc.exists || campaignDoc.data().credits <= 0) {
-                alert("❌ This campaign is no longer available.");
-                return;
+    // ✅ UPDATE DASHBOARD FUNCTION (When Logged In)
+    function updateDashboard(user) {
+        db.collection("users").doc(user.uid).get().then((doc) => {
+            if (doc.exists) {
+                let data = doc.data();
+                document.getElementById("userDashboard").innerHTML = `
+                    <h2>Welcome, ${user.email}!</h2>
+                    <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                    <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+                    <button onclick="logoutUser()">Logout</button>
+                `;
+            } else {
+                console.error("User data missing in Firestore.");
             }
-
-            let campaignData = campaignDoc.data();
-            let userData = userDoc.exists ? userDoc.data() : { credits: 0, reposts: 0, repostedTracks: [] };
-
-            // ❌ Prevent double reposting
-            if (userData.repostedTracks && userData.repostedTracks.includes(campaignId)) {
-                alert("❌ You have already reposted this track.");
-                return;
-            }
-
-            // ✅ Reduce credits from campaign owner
-            const newCampaignCredits = campaignData.credits - 10;
-            transaction.update(campaignRef, { credits: newCampaignCredits });
-
-            // ✅ Add credits to the user reposting
-            const newUserCredits = (userData.credits || 0) + 10;
-            const newUserReposts = (userData.reposts || 0) + 1;
-            let updatedRepostedTracks = [...(userData.repostedTracks || []), campaignId];
-
-            transaction.set(userRef, {
-                credits: newUserCredits,
-                reposts: newUserReposts,
-                repostedTracks: updatedRepostedTracks
-            }, { merge: true });
-
-            alert("✅ Repost successful! You earned 10 credits.");
-        }).then(() => loadActiveCampaigns());
-    }
-
-    // ✅ LOAD ACTIVE CAMPAIGNS
-    function loadActiveCampaigns() {
-        const campaignsDiv = document.getElementById("activeCampaigns");
-        campaignsDiv.innerHTML = "<p>Loading...</p>";
-
-        db.collection("users").where("track", "!=", null).get()
-            .then(querySnapshot => {
-                campaignsDiv.innerHTML = "";
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    if (data.credits > 0) {
-                        campaignsDiv.innerHTML += `
-                            <div>
-                                <p>${data.email} is promoting:</p>
-                                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                                </iframe>
-                                <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
-                            </div>
-                        `;
-                    }
-                });
-
-                if (campaignsDiv.innerHTML === "") {
-                    campaignsDiv.innerHTML = "<p>No active campaigns.</p>";
-                }
-            })
-            .catch(error => console.error("Error loading campaigns:", error));
+        }).catch(error => console.error("Error fetching user data:", error));
     }
 }
