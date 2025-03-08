@@ -56,7 +56,7 @@ if (typeof firebase === "undefined") {
             }
         });
 
-        // Load active campaigns
+        // Load active campaigns (tracks with credits)
         loadActiveCampaigns();
     }
 
@@ -106,7 +106,7 @@ if (typeof firebase === "undefined") {
             .catch(error => alert("❌ Logout Error: " + error.message));
     }
 
-    // ✅ FIXED: SUBMIT TRACK FUNCTION - Only Allows FULL SoundCloud URLs
+    // ✅ SUBMIT TRACK FUNCTION
     function submitTrack() {
         const user = auth.currentUser;
         if (!user) {
@@ -122,24 +122,36 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        // ✅ Save to Firestore
-        db.collection("users").doc(user.uid).update({ track: soundcloudUrl })
-            .then(() => {
-                alert("✅ Track submitted!");
-                loadActiveCampaigns();
-            })
-            .catch(error => {
-                console.error("Error saving track:", error);
-                alert("❌ Error submitting track.");
+        // ✅ Save campaign to Firestore (only if the user has credits)
+        db.collection("users").doc(user.uid).get()
+            .then((doc) => {
+                if (doc.exists && doc.data().credits > 0) {
+                    db.collection("campaigns").doc(user.uid).set({
+                        userId: user.uid,
+                        email: user.email,
+                        track: soundcloudUrl,
+                        credits: doc.data().credits
+                    })
+                    .then(() => {
+                        alert("✅ Track submitted as a campaign!");
+                        loadActiveCampaigns();
+                    })
+                    .catch(error => {
+                        console.error("Error saving campaign:", error);
+                        alert("❌ Error submitting track.");
+                    });
+                } else {
+                    alert("❌ You need credits to start a campaign.");
+                }
             });
     }
 
-    // ✅ LOAD ACTIVE CAMPAIGNS - Display Public SoundCloud Tracks
+    // ✅ LOAD ACTIVE CAMPAIGNS - Only Show Tracks with Credits
     function loadActiveCampaigns() {
         const campaignsDiv = document.getElementById("activeCampaigns");
         campaignsDiv.innerHTML = "<p>Loading...</p>";
 
-        db.collection("users").where("track", "!=", null).get()
+        db.collection("campaigns").where("credits", ">", 0).get()
             .then(querySnapshot => {
                 campaignsDiv.innerHTML = "";
                 if (querySnapshot.empty) {
