@@ -7,22 +7,21 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Update UI Function
+    // ✅ Function to Update Dashboard
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const trackMessage = document.getElementById("currentTrackMessage");
-        const soundcloudSection = document.getElementById("soundcloudSection");
+        const campaignContainer = document.getElementById("activeCampaigns");
 
         if (!user) {
-            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-            trackMessage.innerHTML = "No active campaign";
-            soundcloudSection.style.display = "none";
+            dashboard.innerHTML = `
+                <h2>You are not logged in.</h2>
+                <p>Please log in or sign up.</p>
+            `;
+            campaignContainer.innerHTML = "";
             return;
         }
 
-        soundcloudSection.style.display = "block";
-
-        // ✅ Fetch user data from Firestore
+        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -33,14 +32,34 @@ if (typeof firebase === "undefined") {
                     <button onclick="logoutUser()">Logout</button>
                 `;
 
-                if (data.trackUrl) {
-                    displayTrackInfo(data.trackUrl);
+                // If user has a campaign, display it
+                if (data.track) {
+                    document.getElementById("currentTrackMessage").innerHTML = `
+                        <h3>Your Active Campaign</h3>
+                        <p><strong>Track:</strong> <a href="${data.track}" target="_blank">${data.track}</a></p>
+                        <button onclick="endCampaign()">End Campaign</button>
+                    `;
                 } else {
-                    trackMessage.innerHTML = "No active campaign";
+                    document.getElementById("currentTrackMessage").innerHTML = "No active campaign.";
                 }
-            } else {
-                console.error("User data missing in Firestore.");
             }
+        });
+
+        // Fetch active campaigns from Firestore
+        db.collection("users").where("track", "!=", "").onSnapshot((querySnapshot) => {
+            campaignContainer.innerHTML = "<h2>🔥 Active Campaigns</h2>";
+            querySnapshot.forEach((doc) => {
+                let trackData = doc.data();
+                if (trackData.track) {
+                    campaignContainer.innerHTML += `
+                        <div class="campaign">
+                            <p><strong>${doc.id}</strong></p>
+                            <p><a href="${trackData.track}" target="_blank">${trackData.track}</a></p>
+                            <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
+                        </div>
+                    `;
+                }
+            });
         });
     }
 
@@ -59,7 +78,7 @@ if (typeof firebase === "undefined") {
                     email: user.email,
                     credits: 0,
                     reposts: 0,
-                    trackUrl: ""
+                    track: ""
                 }).then(() => {
                     alert("✅ Signup Successful! Welcome " + user.email);
                     updateDashboard(user);
@@ -100,57 +119,66 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ SUBMIT TRACK FUNCTION
-    window.submitTrack = async function () {
+    // ✅ REPOST FUNCTION - Earn Credits
+    window.repostTrack = async function (userId) {
         const user = auth.currentUser;
         if (!user) {
-            alert("You must be logged in to submit a track.");
-            return;
-        }
-
-        const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-        if (!soundcloudUrl) {
-            alert("Please enter a valid SoundCloud URL.");
+            alert("You must be logged in to repost and earn credits.");
             return;
         }
 
         const userRef = db.collection("users").doc(user.uid);
+        const targetUserRef = db.collection("users").doc(userId);
 
         try {
             const userDoc = await userRef.get();
-            if (userDoc.exists && userDoc.data().trackUrl) {
-                alert("Free users can only run one campaign at a time. Upgrade to add more.");
+            const targetUserDoc = await targetUserRef.get();
+
+            if (!userDoc.exists || !targetUserDoc.exists) {
+                alert("Error finding user data.");
                 return;
             }
 
-            await userRef.update({
-                trackUrl: soundcloudUrl
-            });
+            let userData = userDoc.data();
+            let targetData = targetUserDoc.data();
 
-            displayTrackInfo(soundcloudUrl);
-            alert("✅ SoundCloud track submitted successfully!");
+            if (userData.credits < 5) {
+                alert("Not enough credits to repost.");
+                return;
+            }
 
+            // Deduct credits and update repost count
+            let newCredits = userData.credits - 5;
+            let newReposts = (userData.reposts || 0) + 1;
+
+            await userRef.update({ credits: newCredits, reposts: newReposts });
+
+            // Reward the track owner
+            let ownerNewCredits = (targetData.credits || 0) + 5;
+            await targetUserRef.update({ credits: ownerNewCredits });
+
+            document.getElementById("repostCount").innerText = newReposts;
+            document.getElementById("creditCount").innerText = newCredits;
+
+            alert("✅ Repost successful! You used 5 credits.");
         } catch (error) {
-            console.error("Error updating track:", error);
-            alert("Error submitting track. Try again.");
+            console.error("Error updating credits:", error);
+            alert("Error processing repost. Try again.");
         }
     };
 
-    // ✅ DISPLAY TRACK INFO WITH ARTWORK
-    function displayTrackInfo(url) {
-        const trackMessage = document.getElementById("currentTrackMessage");
-        fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`)
-            .then(response => response.json())
-            .then(data => {
-                trackMessage.innerHTML = `
-                    <p>Your active campaign:</p>
-                    <img src="${data.thumbnail_url}" alt="SoundCloud Artwork" style="width:100%; max-width:300px; border-radius:10px;">
-                    <p><a href="${url}" target="_blank">${data.title}</a></p>
-                `;
-            })
-            .catch(error => {
-                console.error("Error fetching SoundCloud data:", error);
-                trackMessage.innerHTML = "Error loading track artwork.";
-            });
-    }
+    // ✅ END CAMPAIGN FUNCTION
+    window.endCampaign = async function () {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in.");
+            return;
+        }
+
+        const userRef = db.collection("users").doc(user.uid);
+        await userRef.update({ track: "" });
+
+        document.getElementById("currentTrackMessage").innerHTML = "No active campaign.";
+        alert("✅ Campaign ended.");
+    };
 }
