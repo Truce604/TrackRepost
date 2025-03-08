@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -7,8 +8,16 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Listen for Authentication Changes
-    auth.onAuthStateChanged(updateDashboard);
+    // ✅ LISTEN FOR AUTH CHANGES
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            console.log("✅ User is logged in:", user.email);
+            updateDashboard(user);
+        } else {
+            console.log("🚨 No user logged in.");
+            updateDashboard(null);
+        }
+    });
 
     // ✅ SIGNUP FUNCTION
     function signupUser() {
@@ -18,16 +27,20 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then(userCredential => {
                 const user = userCredential.user;
-                db.collection("users").doc(user.uid).set({
+                return db.collection("users").doc(user.uid).set({
                     email: user.email,
                     credits: 0,
                     reposts: 0
-                }).then(() => {
-                    alert("✅ Signup Successful!");
-                    updateDashboard(user);
                 });
             })
-            .catch(error => alert("❌ Signup Error: " + error.message));
+            .then(() => {
+                alert("✅ Signup Successful!");
+                updateDashboard(auth.currentUser);
+            })
+            .catch(error => {
+                console.error("❌ Signup Error:", error);
+                alert("❌ Signup Error: " + error.message);
+            });
     }
 
     // ✅ LOGIN FUNCTION
@@ -40,7 +53,10 @@ if (typeof firebase === "undefined") {
                 alert("✅ Login Successful!");
                 updateDashboard(userCredential.user);
             })
-            .catch(error => alert("❌ Login Error: " + error.message));
+            .catch(error => {
+                console.error("❌ Login Error:", error);
+                alert("❌ Login Error: " + error.message);
+            });
     }
 
     // ✅ LOGOUT FUNCTION
@@ -50,10 +66,13 @@ if (typeof firebase === "undefined") {
                 alert("✅ Logged Out!");
                 updateDashboard(null);
             })
-            .catch(error => alert("❌ Logout Error: " + error.message));
+            .catch(error => {
+                console.error("❌ Logout Error:", error);
+                alert("❌ Logout Error: " + error.message);
+            });
     }
 
-    // ✅ UPDATE DASHBOARD
+    // ✅ UPDATE DASHBOARD FUNCTION
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
         const authMessage = document.getElementById("authMessage");
@@ -61,12 +80,10 @@ if (typeof firebase === "undefined") {
         if (!user) {
             dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
             authMessage.innerText = "";
-            document.getElementById("currentTrackMessage").innerText = "No active campaign";
             return;
         }
 
-        // Fetch user data from Firestore
-        db.collection("users").doc(user.uid).onSnapshot((doc) => {
+        db.collection("users").doc(user.uid).get().then(doc => {
             if (doc.exists) {
                 let data = doc.data();
                 dashboard.innerHTML = `
@@ -76,20 +93,12 @@ if (typeof firebase === "undefined") {
                     <button onclick="logoutUser()">Logout</button>
                 `;
                 authMessage.innerText = "✅ Logged in successfully!";
-
-                if (data.track) {
-                    document.getElementById("currentTrackMessage").innerHTML = `
-                        <p>Active Campaign:</p>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                    `;
-                }
+            } else {
+                console.warn("🚨 User data not found in Firestore!");
             }
+        }).catch(error => {
+            console.error("❌ Error loading user data:", error);
         });
-
-        // Load active campaigns
-        loadActiveCampaigns();
     }
 
     // ✅ SUBMIT TRACK FUNCTION
@@ -109,13 +118,12 @@ if (typeof firebase === "undefined") {
         db.collection("campaigns").add({
             owner: user.uid,
             track: soundcloudUrl,
-            credits: 10 // Default credits for new campaigns
-        })
-        .then(() => {
+            credits: 10
+        }).then(() => {
             alert("✅ Track submitted!");
-            loadActiveCampaigns();
-        })
-        .catch(error => console.error("Error submitting track:", error));
+        }).catch(error => {
+            console.error("Error submitting track:", error);
+        });
     }
 
     // ✅ LOAD ACTIVE CAMPAIGNS
@@ -130,7 +138,7 @@ if (typeof firebase === "undefined") {
                     let data = doc.data();
                     campaignsDiv.innerHTML += `
                         <div>
-                            <p>${data.owner} is promoting:</p>
+                            <p>Track from ${data.owner}:</p>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
@@ -138,8 +146,7 @@ if (typeof firebase === "undefined") {
                         </div>
                     `;
                 });
-            })
-            .catch(error => console.error("Error loading campaigns:", error));
+            }).catch(error => console.error("Error loading campaigns:", error));
     }
 
     // ✅ REPOST FUNCTION
@@ -155,23 +162,20 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        // Update credits and reposts in Firestore
         db.runTransaction(async (transaction) => {
-            const campaignRef = db.collection("campaigns").doc(campaignId);
             const userRef = db.collection("users").doc(user.uid);
             const ownerRef = db.collection("users").doc(campaignOwner);
 
-            const campaignDoc = await transaction.get(campaignRef);
             const userDoc = await transaction.get(userRef);
             const ownerDoc = await transaction.get(ownerRef);
 
-            if (!campaignDoc.exists || !userDoc.exists || !ownerDoc.exists) {
-                throw new Error("Document does not exist!");
+            if (!userDoc.exists || !ownerDoc.exists) {
+                throw new Error("User data not found!");
             }
 
-            let newCredits = ownerDoc.data().credits - 10; // Deduct 10 credits from the owner
-            let userEarnedCredits = userDoc.data().credits + 10; // Earn 10 credits for reposting
-            let userReposts = userDoc.data().reposts + 1;
+            let newCredits = ownerDoc.data().credits - 10;
+            let userEarnedCredits = userDoc.data().credits + 10;
+            let userReposts = (userDoc.data().reposts || 0) + 1;
 
             transaction.update(userRef, { credits: userEarnedCredits, reposts: userReposts });
             transaction.update(ownerRef, { credits: newCredits });
