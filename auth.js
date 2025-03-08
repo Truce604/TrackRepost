@@ -15,17 +15,14 @@ if (typeof firebase === "undefined") {
         document.getElementById("submitTrackBtn").addEventListener("click", submitTrack);
     });
 
-    // ✅ Update Dashboard UI
+    // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const authMessage = document.getElementById("authMessage");
-
         if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            authMessage.innerText = "";
             document.getElementById("currentTrackMessage").innerText = "No active campaign";
             return;
         }
@@ -40,8 +37,6 @@ if (typeof firebase === "undefined") {
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
                     <button onclick="logoutUser()">Logout</button>
                 `;
-
-                authMessage.innerText = "✅ Logged in successfully!";
 
                 if (data.track) {
                     document.getElementById("currentTrackMessage").innerHTML = `
@@ -118,11 +113,15 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        db.collection("users").doc(user.uid).update({ track: soundcloudUrl })
-            .then(() => {
-                alert("✅ Track submitted!");
-                loadActiveCampaigns();
-            });
+        db.collection("campaigns").add({
+            owner: user.uid,
+            track: soundcloudUrl,
+            email: user.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            alert("✅ Track submitted!");
+            loadActiveCampaigns();
+        });
     }
 
     // ✅ LOAD ACTIVE CAMPAIGNS
@@ -130,7 +129,7 @@ if (typeof firebase === "undefined") {
         const campaignsDiv = document.getElementById("activeCampaigns");
         campaignsDiv.innerHTML = "<p>Loading...</p>";
 
-        db.collection("users").where("track", "!=", null).get()
+        db.collection("campaigns").orderBy("createdAt", "desc").get()
             .then(querySnapshot => {
                 campaignsDiv.innerHTML = "";
                 querySnapshot.forEach(doc => {
@@ -141,9 +140,33 @@ if (typeof firebase === "undefined") {
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
+                            <button onclick="repostTrack('${doc.id}')">Repost</button>
                         </div>
                     `;
                 });
             });
+    }
+
+    // ✅ REPOST FUNCTION
+    function repostTrack(campaignId) {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in to repost.");
+            return;
+        }
+
+        db.collection("users").doc(user.uid).get().then(userDoc => {
+            if (!userDoc.exists || userDoc.data().credits < 10) {
+                alert("Not enough credits to repost.");
+                return;
+            }
+
+            db.collection("users").doc(user.uid).update({
+                credits: firebase.firestore.FieldValue.increment(-10),
+                reposts: firebase.firestore.FieldValue.increment(1)
+            }).then(() => {
+                alert("✅ Reposted successfully! -10 credits");
+            });
+        });
     }
 }
