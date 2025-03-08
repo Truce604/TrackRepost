@@ -6,7 +6,7 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase from Google's CDN (Firebase v8 for compatibility) -->
+    <!-- ✅ Load Firebase (Firebase v8 for compatibility) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -49,11 +49,14 @@
             <button onclick="loginUser()">Login</button>
             <button onclick="logoutUser()">Logout</button>
         </div>
+        <p id="authMessage"></p>
     </div>
 
     <div class="container">
         <h2>Your Dashboard</h2>
-        <div id="userDashboard"></div>
+        <div id="userDashboard">
+            <p>Loading...</p>
+        </div>
     </div>
 
     <div class="container" id="soundcloudSection">
