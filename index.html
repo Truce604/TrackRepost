@@ -6,14 +6,14 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase (Optimized for Performance) -->
+    <!-- ✅ Load Firebase (Ensuring Proper Order) -->
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Initialize Firebase -->
+    <!-- ✅ Initialize Firebase First -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             var firebaseConfig = {
                 apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
                 authDomain: "trackrepost-921f8.firebaseapp.com",
@@ -31,7 +31,7 @@
         });
     </script>
 
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
+    <!-- ✅ Ensure auth.js Loads AFTER Firebase is Initialized -->
     <script defer src="auth.js"></script>
 </head>
 
@@ -61,7 +61,7 @@
 
     <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL (Example: https://soundcloud.com/artist/track)">
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
         <button id="submitTrackBtn" onclick="submitTrack()">Submit</button>
         <p id="currentTrackMessage">No active campaign</p>
     </div>
