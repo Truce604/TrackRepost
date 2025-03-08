@@ -1,4 +1,3 @@
-// ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
 } else {
@@ -19,15 +18,10 @@ if (typeof firebase === "undefined") {
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
         if (!user) {
-            dashboard.innerHTML = `
-                <h2>You are not logged in.</h2>
-                <p>Please log in or sign up.</p>
-            `;
-            document.getElementById("currentTrackMessage").innerText = "No active campaign";
+            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
             return;
         }
 
-        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -37,26 +31,13 @@ if (typeof firebase === "undefined") {
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
                     <button onclick="logoutUser()">Logout</button>
                 `;
-
-                if (data.track) {
-                    document.getElementById("currentTrackMessage").innerHTML = `
-                        <p>Active Campaign:</p>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                    `;
-                }
+                loadActiveCampaigns();
             }
         });
-
-        // Load active campaigns
-        loadActiveCampaigns();
     }
 
-    // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(updateDashboard);
 
-    // ✅ SIGNUP FUNCTION
     function signupUser() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
@@ -76,7 +57,6 @@ if (typeof firebase === "undefined") {
             .catch(error => alert("❌ Signup Error: " + error.message));
     }
 
-    // ✅ LOGIN FUNCTION
     function loginUser() {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
@@ -89,84 +69,21 @@ if (typeof firebase === "undefined") {
             .catch(error => alert("❌ Login Error: " + error.message));
     }
 
-    // ✅ LOGOUT FUNCTION
     function logoutUser() {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                updateDashboard(null);
-            })
-            .catch(error => alert("❌ Logout Error: " + error.message));
+        auth.signOut().then(() => {
+            alert("✅ Logged Out!");
+            updateDashboard(null);
+        });
     }
 
-    // ✅ SUBMIT TRACK FUNCTION
     function submitTrack() {
         const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to submit a track.");
-            return;
-        }
+        if (!user) return alert("Login to submit a track.");
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-        if (!soundcloudUrl.includes("soundcloud.com/")) {
-            alert("Invalid SoundCloud URL.");
-            return;
-        }
+        if (!soundcloudUrl.includes("soundcloud.com/")) return alert("Invalid SoundCloud URL.");
 
-        db.collection("campaigns").add({
-            owner: user.uid,
-            track: soundcloudUrl,
-            email: user.email,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            alert("✅ Track submitted!");
-            loadActiveCampaigns();
-        });
-    }
-
-    // ✅ LOAD ACTIVE CAMPAIGNS
-    function loadActiveCampaigns() {
-        const campaignsDiv = document.getElementById("activeCampaigns");
-        campaignsDiv.innerHTML = "<p>Loading...</p>";
-
-        db.collection("campaigns").orderBy("createdAt", "desc").get()
-            .then(querySnapshot => {
-                campaignsDiv.innerHTML = "";
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div>
-                            <p>${data.email} is promoting:</p>
-                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}')">Repost</button>
-                        </div>
-                    `;
-                });
-            });
-    }
-
-    // ✅ REPOST FUNCTION
-    function repostTrack(campaignId) {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to repost.");
-            return;
-        }
-
-        db.collection("users").doc(user.uid).get().then(userDoc => {
-            if (!userDoc.exists || userDoc.data().credits < 10) {
-                alert("Not enough credits to repost.");
-                return;
-            }
-
-            db.collection("users").doc(user.uid).update({
-                credits: firebase.firestore.FieldValue.increment(-10),
-                reposts: firebase.firestore.FieldValue.increment(1)
-            }).then(() => {
-                alert("✅ Reposted successfully! -10 credits");
-            });
-        });
+        db.collection("campaigns").doc(user.uid).set({ track: soundcloudUrl, owner: user.uid })
+            .then(() => alert("✅ Track submitted!"));
     }
 }
