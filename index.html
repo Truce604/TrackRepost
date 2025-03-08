@@ -34,6 +34,7 @@
 </head>
 
 <body>
+
     <header>
         <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
         <p>Promote Your Music, Get More Plays</p>
@@ -50,7 +51,7 @@
         </div>
     </div>
 
-    <!-- ✅ User Dashboard -->
+    <!-- ✅ Dashboard Section -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard">
@@ -59,16 +60,18 @@
         </div>
     </div>
 
-    <!-- ✅ Submit a SoundCloud Track (Campaigns) -->
-    <div class="container" id="campaignSection" style="display:none;">
+    <!-- ✅ SoundCloud Track Submission -->
+    <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
         <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
         <button onclick="submitTrack()">Submit</button>
-        <p id="currentTrackMessage"></p>
+        <p id="currentTrackMessage">No active campaign</p>
     </div>
 
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
 </body>
 </html>
+
