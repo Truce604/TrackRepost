@@ -7,6 +7,11 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ✅ Enable Firestore Offline Mode for Faster Performance
+    db.enablePersistence()
+        .then(() => console.log("✅ Firestore offline mode enabled"))
+        .catch(error => console.warn("⚠️ Firestore persistence error:", error));
+
     // ✅ Set Firebase Auth Persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
@@ -16,46 +21,31 @@ if (typeof firebase === "undefined") {
             console.error("❌ Error setting auth persistence:", error.message);
         });
 
-    // ✅ LISTEN FOR AUTH CHANGES
-    auth.onAuthStateChanged(user => {
+    // ✅ LISTEN FOR AUTH CHANGES WITH SESSION CHECK
+    auth.onAuthStateChanged(async user => {
         if (user) {
             console.log("✅ User is logged in:", user.email);
-            console.log("🔄 Refreshing session...");
-            auth.currentUser.reload().then(() => {
+            try {
+                await user.reload();
                 console.log("🔄 User session refreshed.");
-                updateDashboard(auth.currentUser);
-            }).catch(error => {
+                updateDashboard(user);
+            } catch (error) {
                 console.error("❌ Error refreshing user session:", error);
-            });
+            }
         } else {
-            console.warn("🚨 User is NOT logged in.");
-            updateDashboard(null);
+            console.warn("🚨 No user logged in. Checking session...");
+            auth.getRedirectResult().then(result => {
+                if (result.user) {
+                    console.log("✅ Restored session:", result.user.email);
+                    updateDashboard(result.user);
+                } else {
+                    updateDashboard(null);
+                }
+            }).catch(error => {
+                console.error("❌ Error retrieving session:", error);
+            });
         }
     });
-
-    // ✅ SIGNUP FUNCTION
-    function signupUser() {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                const user = userCredential.user;
-                return db.collection("users").doc(user.uid).set({
-                    email: user.email,
-                    credits: 0,
-                    reposts: 0
-                });
-            })
-            .then(() => {
-                alert("✅ Signup Successful!");
-                updateDashboard(auth.currentUser);
-            })
-            .catch(error => {
-                console.error("❌ Signup Error:", error);
-                alert("❌ Signup Error: " + error.message);
-            });
-    }
 
     // ✅ LOGIN FUNCTION
     function loginUser() {
@@ -120,3 +110,4 @@ if (typeof firebase === "undefined") {
         });
     }
 }
+
