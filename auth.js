@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -6,6 +7,14 @@ if (typeof firebase === "undefined") {
 
     const auth = firebase.auth();
     const db = firebase.firestore();
+
+    // ✅ Setup Button Click Events
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("signupBtn").addEventListener("click", signupUser);
+        document.getElementById("loginBtn").addEventListener("click", loginUser);
+        document.getElementById("logoutBtn").addEventListener("click", logoutUser);
+        document.getElementById("submitTrackBtn").addEventListener("click", submitTrack);
+    });
 
     // ✅ Update UI Function
     function updateDashboard(user) {
@@ -53,8 +62,51 @@ if (typeof firebase === "undefined") {
     // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(updateDashboard);
 
+    // ✅ SIGNUP FUNCTION
+    function signupUser() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                const user = userCredential.user;
+                db.collection("users").doc(user.uid).set({
+                    email: user.email,
+                    credits: 0,
+                    reposts: 0
+                }).then(() => {
+                    alert("✅ Signup Successful!");
+                    updateDashboard(user);
+                });
+            })
+            .catch(error => alert("❌ Signup Error: " + error.message));
+    }
+
+    // ✅ LOGIN FUNCTION
+    function loginUser() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                alert("✅ Login Successful!");
+                updateDashboard(userCredential.user);
+            })
+            .catch(error => alert("❌ Login Error: " + error.message));
+    }
+
+    // ✅ LOGOUT FUNCTION
+    function logoutUser() {
+        auth.signOut()
+            .then(() => {
+                alert("✅ Logged Out!");
+                updateDashboard(null);
+            })
+            .catch(error => alert("❌ Logout Error: " + error.message));
+    }
+
     // ✅ SUBMIT TRACK FUNCTION
-    window.submitTrack = function () {
+    function submitTrack() {
         const user = auth.currentUser;
         if (!user) {
             alert("You must be logged in to submit a track.");
@@ -62,10 +114,8 @@ if (typeof firebase === "undefined") {
         }
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-
-        // ✅ Ensure URL is in correct format
         if (!soundcloudUrl.includes("soundcloud.com/")) {
-            alert("Invalid SoundCloud URL. Example: https://soundcloud.com/artist/track");
+            alert("Invalid SoundCloud URL.");
             return;
         }
 
@@ -73,9 +123,8 @@ if (typeof firebase === "undefined") {
             .then(() => {
                 alert("✅ Track submitted!");
                 loadActiveCampaigns();
-            })
-            .catch(error => console.error("Error submitting track:", error));
-    };
+            });
+    }
 
     // ✅ LOAD ACTIVE CAMPAIGNS
     function loadActiveCampaigns() {
@@ -88,39 +137,14 @@ if (typeof firebase === "undefined") {
                 querySnapshot.forEach(doc => {
                     let data = doc.data();
                     campaignsDiv.innerHTML += `
-                        <div class="campaign">
-                            <p><strong>${data.email}</strong> is promoting:</p>
+                        <div>
+                            <p>${data.email} is promoting:</p>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
                         </div>
                     `;
                 });
-            })
-            .catch(error => console.error("Error loading campaigns:", error));
+            });
     }
-
-    // ✅ REPOST FUNCTION
-    window.repostTrack = function (userId) {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to repost.");
-            return;
-        }
-
-        const userRef = db.collection("users").doc(user.uid);
-
-        userRef.get().then(userDoc => {
-            if (userDoc.exists) {
-                let userData = userDoc.data();
-                let newCredits = (userData.credits || 0) + 10;
-
-                return userRef.update({ credits: newCredits });
-            }
-        }).then(() => {
-            alert("✅ Reposted! You earned 10 credits.");
-        }).catch(error => console.error("Error reposting:", error));
-    };
 }
-
