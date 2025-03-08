@@ -10,27 +10,34 @@ if (typeof firebase === "undefined") {
     // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
+        const trackMessage = document.getElementById("currentTrackMessage");
+        const soundcloudSection = document.getElementById("soundcloudSection");
+
         if (!user) {
-            dashboard.innerHTML = `
-                <h2>You are not logged in.</h2>
-                <p>Please log in or sign up.</p>
-            `;
+            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+            trackMessage.innerHTML = "No active campaign";
+            soundcloudSection.style.display = "none";
             return;
         }
 
-        // Fetch user data from Firestore
+        soundcloudSection.style.display = "block";
+
+        // ✅ Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
-                let campaignStatus = data.track ? `Current Campaign: ${data.track}` : "No active campaign";
-                
                 dashboard.innerHTML = `
                     <h2>Welcome, ${user.email}!</h2>
                     <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                    <p>${campaignStatus}</p>
                     <button onclick="logoutUser()">Logout</button>
                 `;
+
+                if (data.trackUrl) {
+                    displayTrackInfo(data.trackUrl);
+                } else {
+                    trackMessage.innerHTML = "No active campaign";
+                }
             } else {
                 console.error("User data missing in Firestore.");
             }
@@ -52,8 +59,7 @@ if (typeof firebase === "undefined") {
                     email: user.email,
                     credits: 0,
                     reposts: 0,
-                    track: null, // No campaign yet
-                    premium: false // Default to free user
+                    trackUrl: ""
                 }).then(() => {
                     alert("✅ Signup Successful! Welcome " + user.email);
                     updateDashboard(user);
@@ -94,11 +100,11 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ SUBMIT TRACK FUNCTION - Free users limited to 1 campaign
+    // ✅ SUBMIT TRACK FUNCTION
     window.submitTrack = async function () {
         const user = auth.currentUser;
         if (!user) {
-            alert("You must be logged in to submit a campaign.");
+            alert("You must be logged in to submit a track.");
             return;
         }
 
@@ -109,63 +115,42 @@ if (typeof firebase === "undefined") {
         }
 
         const userRef = db.collection("users").doc(user.uid);
-        const userDoc = await userRef.get();
-
-        if (!userDoc.exists) {
-            alert("User data not found. Please sign up again.");
-            return;
-        }
-
-        let userData = userDoc.data();
-        if (!userData.premium && userData.track) {
-            alert("Free users can only run ONE campaign at a time. Upgrade to premium to run multiple.");
-            return;
-        }
-
-        try {
-            await userRef.update({
-                track: soundcloudUrl
-            });
-
-            alert("✅ SoundCloud campaign submitted successfully!");
-            updateDashboard(user);
-
-        } catch (error) {
-            console.error("Error submitting track:", error);
-            alert("Error processing campaign. Try again.");
-        }
-    };
-
-    // ✅ REPOST FUNCTION - Earn Credits
-    window.repostTrack = async function () {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in to repost and earn credits.");
-            return;
-        }
-
-        const userRef = db.collection("users").doc(user.uid);
 
         try {
             const userDoc = await userRef.get();
-            if (!userDoc.exists) {
-                alert("User data not found. Please sign up again.");
+            if (userDoc.exists && userDoc.data().trackUrl) {
+                alert("Free users can only run one campaign at a time. Upgrade to add more.");
                 return;
             }
 
-            let userData = userDoc.data();
-            let newReposts = (userData.reposts || 0) + 1;
-            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
-
             await userRef.update({
-                reposts: newReposts,
-                credits: newCredits
+                trackUrl: soundcloudUrl
             });
 
-            alert("✅ Repost successful! You earned 10 credits.");
+            displayTrackInfo(soundcloudUrl);
+            alert("✅ SoundCloud track submitted successfully!");
+
         } catch (error) {
-            console.error("Error updating credits:", error);
-            alert("Error processing repost. Try again.");
+            console.error("Error updating track:", error);
+            alert("Error submitting track. Try again.");
         }
     };
+
+    // ✅ DISPLAY TRACK INFO WITH ARTWORK
+    function displayTrackInfo(url) {
+        const trackMessage = document.getElementById("currentTrackMessage");
+        fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`)
+            .then(response => response.json())
+            .then(data => {
+                trackMessage.innerHTML = `
+                    <p>Your active campaign:</p>
+                    <img src="${data.thumbnail_url}" alt="SoundCloud Artwork" style="width:100%; max-width:300px; border-radius:10px;">
+                    <p><a href="${url}" target="_blank">${data.title}</a></p>
+                `;
+            })
+            .catch(error => {
+                console.error("Error fetching SoundCloud data:", error);
+                trackMessage.innerHTML = "Error loading track artwork.";
+            });
+    }
 }
