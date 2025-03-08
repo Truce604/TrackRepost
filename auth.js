@@ -24,15 +24,19 @@ if (typeof firebase === "undefined") {
         auth.createUserWithEmailAndPassword(email, password)
             .then(userCredential => {
                 const user = userCredential.user;
-                db.collection("users").doc(user.uid).set({
+                return db.collection("users").doc(user.uid).set({
                     email: user.email,
                     credits: 0,
                     reposts: 0
                 }).then(() => {
                     alert("✅ Signup Successful!");
-                }).catch(error => console.error("Error saving user:", error));
+                    updateDashboard(user);
+                });
             })
-            .catch(error => alert("❌ Signup Error: " + error.message));
+            .catch(error => {
+                alert("❌ Signup Error: " + error.message);
+                console.error("Signup Error:", error);
+            });
     };
 
     // ✅ LOGIN FUNCTION
@@ -43,8 +47,12 @@ if (typeof firebase === "undefined") {
         auth.signInWithEmailAndPassword(email, password)
             .then(userCredential => {
                 alert("✅ Login Successful!");
+                updateDashboard(userCredential.user);
             })
-            .catch(error => alert("❌ Login Error: " + error.message));
+            .catch(error => {
+                alert("❌ Login Error: " + error.message);
+                console.error("Login Error:", error);
+            });
     };
 
     // ✅ LOGOUT FUNCTION
@@ -54,7 +62,10 @@ if (typeof firebase === "undefined") {
                 alert("✅ Logged Out!");
                 resetDashboard();
             })
-            .catch(error => alert("❌ Logout Error: " + error.message));
+            .catch(error => {
+                alert("❌ Logout Error: " + error.message);
+                console.error("Logout Error:", error);
+            });
     };
 
     // ✅ RESET DASHBOARD FUNCTION (When Logged Out)
