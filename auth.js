@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -48,13 +47,16 @@ if (typeof firebase === "undefined") {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
+        console.log("Attempting login with:", email);
+
         auth.signInWithEmailAndPassword(email, password)
             .then(userCredential => {
+                console.log("✅ Login Successful:", userCredential);
                 alert("✅ Login Successful!");
                 updateDashboard(userCredential.user);
             })
             .catch(error => {
-                console.error("❌ Login Error:", error);
+                console.error("❌ Login Error:", error.code, error.message);
                 alert("❌ Login Error: " + error.message);
             });
     }
