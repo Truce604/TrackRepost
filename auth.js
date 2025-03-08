@@ -1,4 +1,3 @@
-// ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
 } else {
@@ -7,18 +6,13 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Update Dashboard Function (Restores Reposts & Credits Display)
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
         if (!user) {
-            dashboard.innerHTML = `
-                <h2>You are not logged in.</h2>
-                <p>Please log in or sign up.</p>
-            `;
+            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
             return;
         }
 
-        // Fetch user data from Firestore in real time
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -28,16 +22,21 @@ if (typeof firebase === "undefined") {
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
                     <button onclick="logoutUser()">Logout</button>
                 `;
+
+                // ✅ Show Active SoundCloud Campaign
+                if (data.track) {
+                    document.getElementById("trackTitle").innerText = data.track.title;
+                    document.getElementById("trackArtwork").src = data.track.artwork;
+                    document.getElementById("trackArtwork").style.display = "block";
+                }
             } else {
                 console.error("User data missing in Firestore.");
             }
         });
     }
 
-    // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(updateDashboard);
 
-    // ✅ SIGNUP FUNCTION
     window.signupUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
@@ -49,18 +48,13 @@ if (typeof firebase === "undefined") {
                     email: user.email,
                     credits: 0,
                     reposts: 0
-                }).then(() => {
-                    alert("✅ Signup Successful! Welcome " + user.email);
-                    updateDashboard(user);
-                }).catch(error => console.error("Error saving user:", error));
+                });
+                alert("✅ Signup Successful! Welcome " + user.email);
+                updateDashboard(user);
             })
-            .catch((error) => {
-                alert("❌ Signup Error: " + error.message);
-                console.error("Signup Error:", error);
-            });
+            .catch((error) => alert("❌ Signup Error: " + error.message));
     };
 
-    // ✅ LOGIN FUNCTION
     window.loginUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
@@ -70,58 +64,48 @@ if (typeof firebase === "undefined") {
                 alert("✅ Login Successful! Welcome " + userCredential.user.email);
                 updateDashboard(userCredential.user);
             })
-            .catch((error) => {
-                alert("❌ Login Error: " + error.message);
-                console.error("Login Error:", error);
-            });
+            .catch((error) => alert("❌ Login Error: " + error.message));
     };
 
-    // ✅ LOGOUT FUNCTION
     window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                updateDashboard(null);
-            })
-            .catch((error) => {
-                alert("❌ Logout Error: " + error.message);
-                console.error("Logout Error:", error);
-            });
+        auth.signOut().then(() => {
+            alert("✅ Logged Out!");
+            updateDashboard(null);
+        }).catch((error) => alert("❌ Logout Error: " + error.message));
     };
 
-    // ✅ REPOST FUNCTION - Earn Credits
-    window.repostTrack = async function () {
+    window.submitTrack = async function () {
         const user = auth.currentUser;
         if (!user) {
-            alert("You must be logged in to repost and earn credits.");
+            alert("You must be logged in to submit a track.");
             return;
         }
 
-        const userRef = db.collection("users").doc(user.uid);
+        const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+        if (!soundcloudUrl.includes("soundcloud.com")) {
+            alert("Please enter a valid SoundCloud URL.");
+            return;
+        }
 
         try {
-            const userDoc = await userRef.get();
-            if (!userDoc.exists) {
-                alert("User data not found. Please sign up again.");
-                return;
-            }
+            let response = await fetch(`https://soundcloud.com/oembed?format=json&url=${soundcloudUrl}`);
+            let data = await response.json();
 
-            let userData = userDoc.data();
-            let newReposts = (userData.reposts || 0) + 1;
-            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
+            const trackInfo = {
+                title: data.title,
+                artwork: data.thumbnail_url,
+                url: soundcloudUrl
+            };
 
-            await userRef.update({
-                reposts: newReposts,
-                credits: newCredits
-            });
+            await db.collection("users").doc(user.uid).update({ track: trackInfo });
 
-            document.getElementById("repostCount").innerText = newReposts;
-            document.getElementById("creditCount").innerText = newCredits;
+            document.getElementById("trackTitle").innerText = trackInfo.title;
+            document.getElementById("trackArtwork").src = trackInfo.artwork;
+            document.getElementById("trackArtwork").style.display = "block";
 
-            alert("✅ Repost successful! You earned 10 credits.");
+            alert("✅ SoundCloud Track Submitted!");
         } catch (error) {
-            console.error("Error updating credits:", error);
-            alert("Error processing repost. Try again.");
+            alert("❌ Error fetching track details. Please try again.");
         }
     };
 }
