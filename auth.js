@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -111,19 +110,27 @@ if (typeof firebase === "undefined") {
 
         db.collection("campaigns").get()
             .then(querySnapshot => {
+                console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
                 campaignsDiv.innerHTML = "";
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div>
-                            <p>Track from ${data.owner}:</p>
-                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', ${data.credits})">Repost</button>
-                        </div>
-                    `;
-                });
-            }).catch(error => console.error("Error loading campaigns:", error));
+
+                if (querySnapshot.empty) {
+                    campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+                } else {
+                    querySnapshot.forEach(doc => {
+                        let data = doc.data();
+                        console.log("🎵 Campaign Data:", data);
+                        campaignsDiv.innerHTML += `
+                            <div>
+                                <p>Track from ${data.owner}:</p>
+                                <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                                </iframe>
+                                <button onclick="repostTrack('${doc.id}', '${data.owner}', ${data.credits})">Repost</button>
+                            </div>
+                        `;
+                    });
+                }
+            })
+            .catch(error => console.error("❌ Error loading campaigns:", error));
     };
 }
