@@ -37,7 +37,10 @@ if (typeof firebase === "undefined") {
 
                 if (data.track) {
                     document.getElementById("currentTrackMessage").innerHTML = `
-                        <p>Active Campaign: <a href="${data.track}" target="_blank">${data.track}</a></p>
+                        <p>Active Campaign:</p>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                        </iframe>
                     `;
                 }
             }
@@ -136,7 +139,9 @@ if (typeof firebase === "undefined") {
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <p><strong>${data.email}</strong> is promoting:</p>
-                            <a href="${data.track}" target="_blank">${data.track}</a>
+                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                            </iframe>
                             <button onclick="repostTrack('${doc.id}', '${data.track}')">Repost & Earn Credits</button>
                         </div>
                     `;
