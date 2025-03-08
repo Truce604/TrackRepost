@@ -51,14 +51,28 @@
         </div>
     </div>
 
-    <!-- ✅ This is the ONLY dashboard section -->
+    <!-- ✅ Dashboard -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard">
             <h3>You are not logged in.</h3>
             <p>Please log in or sign up.</p>
         </div>
-        <button onclick="repostTrack()">Repost & Earn Credits</button>
+    </div>
+
+    <!-- ✅ SoundCloud Track Submission -->
+    <div class="container">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button onclick="submitTrack()">Submit</button>
+        <p id="currentTrackMessage"></p>
+        
+        <!-- ✅ Display User's Active Campaign -->
+        <div id="activeCampaign">
+            <h3>Current Campaign</h3>
+            <p id="trackTitle">No track submitted</p>
+            <img id="trackArtwork" src="" alt="Track Artwork" style="max-width: 100px; display: none;">
+        </div>
     </div>
 
     <footer>
