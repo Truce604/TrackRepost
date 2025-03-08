@@ -53,57 +53,6 @@ if (typeof firebase === "undefined") {
     // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(updateDashboard);
 
-    // ✅ SIGNUP FUNCTION
-    window.signupUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                return db.collection("users").doc(user.uid).set({
-                    email: user.email,
-                    credits: 0,
-                    reposts: 0,
-                    track: null
-                });
-            })
-            .then(() => {
-                alert("✅ Signup Successful!");
-            })
-            .catch(error => {
-                alert("❌ Signup Error: " + error.message);
-                console.error(error);
-            });
-    };
-
-    // ✅ LOGIN FUNCTION
-    window.loginUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                alert("✅ Login Successful!");
-            })
-            .catch(error => {
-                alert("❌ Login Error: " + error.message);
-                console.error(error);
-            });
-    };
-
-    // ✅ LOGOUT FUNCTION
-    window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-            })
-            .catch(error => {
-                alert("❌ Logout Error: " + error.message);
-                console.error(error);
-            });
-    };
-
     // ✅ SUBMIT TRACK FUNCTION
     window.submitTrack = function () {
         const user = auth.currentUser;
@@ -112,9 +61,11 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-        if (!soundcloudUrl) {
-            alert("Please enter a valid SoundCloud URL.");
+        let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+
+        // ✅ Ensure URL is in correct format
+        if (!soundcloudUrl.includes("soundcloud.com/")) {
+            alert("Invalid SoundCloud URL. Example: https://soundcloud.com/artist/track");
             return;
         }
 
@@ -142,11 +93,33 @@ if (typeof firebase === "undefined") {
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.track}')">Repost & Earn Credits</button>
+                            <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
                         </div>
                     `;
                 });
             })
             .catch(error => console.error("Error loading campaigns:", error));
     }
+
+    // ✅ REPOST FUNCTION
+    window.repostTrack = function (userId) {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in to repost.");
+            return;
+        }
+
+        const userRef = db.collection("users").doc(user.uid);
+
+        userRef.get().then(userDoc => {
+            if (userDoc.exists) {
+                let userData = userDoc.data();
+                let newCredits = (userData.credits || 0) + 10;
+
+                return userRef.update({ credits: newCredits });
+            }
+        }).then(() => {
+            alert("✅ Reposted! You earned 10 credits.");
+        }).catch(error => console.error("Error reposting:", error));
+    };
 }
