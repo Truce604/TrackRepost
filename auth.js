@@ -20,7 +20,13 @@ if (typeof firebase === "undefined") {
     auth.onAuthStateChanged(user => {
         if (user) {
             console.log("✅ User is logged in:", user.email);
-            updateDashboard(user);
+            console.log("🔄 Refreshing session...");
+            auth.currentUser.reload().then(() => {
+                console.log("🔄 User session refreshed.");
+                updateDashboard(auth.currentUser);
+            }).catch(error => {
+                console.error("❌ Error refreshing user session:", error);
+            });
         } else {
             console.warn("🚨 User is NOT logged in.");
             updateDashboard(null);
