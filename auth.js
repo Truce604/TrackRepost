@@ -9,79 +9,26 @@ if (typeof firebase === "undefined") {
 
     // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged((user) => {
-        if (user) {
-            updateDashboard(user);
-        } else {
-            resetDashboard();
-        }
+        updateDashboard(user);
     });
 
-    // ✅ SIGNUP FUNCTION
-    window.signupUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                const user = userCredential.user;
-                return db.collection("users").doc(user.uid).set({
-                    email: user.email,
-                    credits: 0,
-                    reposts: 0
-                }).then(() => {
-                    alert("✅ Signup Successful!");
-                    updateDashboard(user);
-                });
-            })
-            .catch(error => {
-                alert("❌ Signup Error: " + error.message);
-                console.error("Signup Error:", error);
-            });
-    };
-
-    // ✅ LOGIN FUNCTION
-    window.loginUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                alert("✅ Login Successful!");
-                updateDashboard(userCredential.user);
-            })
-            .catch(error => {
-                alert("❌ Login Error: " + error.message);
-                console.error("Login Error:", error);
-            });
-    };
-
-    // ✅ LOGOUT FUNCTION
-    window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                resetDashboard();
-            })
-            .catch(error => {
-                alert("❌ Logout Error: " + error.message);
-                console.error("Logout Error:", error);
-            });
-    };
-
-    // ✅ RESET DASHBOARD FUNCTION (When Logged Out)
-    function resetDashboard() {
-        document.getElementById("userDashboard").innerHTML = `
-            <h2>You are not logged in.</h2>
-            <p>Please log in or sign up.</p>
-        `;
-    }
-
-    // ✅ UPDATE DASHBOARD FUNCTION (When Logged In)
+    // ✅ Update Dashboard Function
     function updateDashboard(user) {
+        const dashboard = document.getElementById("userDashboard");
+
+        if (!user) {
+            dashboard.innerHTML = `
+                <h2>You are not logged in.</h2>
+                <p>Please log in or sign up.</p>
+            `;
+            return;
+        }
+
+        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).get().then((doc) => {
             if (doc.exists) {
                 let data = doc.data();
-                document.getElementById("userDashboard").innerHTML = `
+                dashboard.innerHTML = `
                     <h2>Welcome, ${user.email}!</h2>
                     <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
@@ -90,6 +37,70 @@ if (typeof firebase === "undefined") {
             } else {
                 console.error("User data missing in Firestore.");
             }
-        }).catch(error => console.error("Error fetching user data:", error));
+        }).catch(error => {
+            console.error("Error fetching user data:", error);
+        });
     }
+
+    // ✅ SIGNUP FUNCTION
+    function signupUser() {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!email || !password) {
+            alert("❌ Please enter an email and password.");
+            return;
+        }
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                const user = userCredential.user;
+
+                // ✅ Save user in Firestore
+                db.collection("users").doc(user.uid).set({
+                    email: user.email,
+                    credits: 0,
+                    reposts: 0
+                }).then(() => {
+                    alert("✅ Signup Successful! Welcome " + user.email);
+                    updateDashboard(user);
+                });
+            })
+            .catch(error => alert("❌ Signup Error: " + error.message));
+    }
+
+    // ✅ LOGIN FUNCTION
+    function loginUser() {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!email || !password) {
+            alert("❌ Please enter your email and password.");
+            return;
+        }
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                alert("✅ Login Successful!");
+                updateDashboard(userCredential.user);
+            })
+            .catch(error => alert("❌ Login Error: " + error.message));
+    }
+
+    // ✅ LOGOUT FUNCTION
+    function logoutUser() {
+        auth.signOut()
+            .then(() => {
+                alert("✅ Logged Out!");
+                updateDashboard(null);
+            })
+            .catch(error => alert("❌ Logout Error: " + error.message));
+    }
+
+    // ✅ Attach Event Listeners
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("signupBtn").addEventListener("click", signupUser);
+        document.getElementById("loginBtn").addEventListener("click", loginUser);
+        document.getElementById("logoutBtn").addEventListener("click", logoutUser);
+    });
 }
