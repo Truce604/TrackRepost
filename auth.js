@@ -7,17 +7,15 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ✅ Function to Update Dashboard
+    // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const campaignContainer = document.getElementById("activeCampaigns");
-
         if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            campaignContainer.innerHTML = "";
+            document.getElementById("currentTrackMessage").innerText = "No active campaign";
             return;
         }
 
@@ -32,35 +30,16 @@ if (typeof firebase === "undefined") {
                     <button onclick="logoutUser()">Logout</button>
                 `;
 
-                // If user has a campaign, display it
                 if (data.track) {
                     document.getElementById("currentTrackMessage").innerHTML = `
-                        <h3>Your Active Campaign</h3>
-                        <p><strong>Track:</strong> <a href="${data.track}" target="_blank">${data.track}</a></p>
-                        <button onclick="endCampaign()">End Campaign</button>
+                        <p>Active Campaign: <a href="${data.track}" target="_blank">${data.track}</a></p>
                     `;
-                } else {
-                    document.getElementById("currentTrackMessage").innerHTML = "No active campaign.";
                 }
             }
         });
 
-        // Fetch active campaigns from Firestore
-        db.collection("users").where("track", "!=", "").onSnapshot((querySnapshot) => {
-            campaignContainer.innerHTML = "<h2>🔥 Active Campaigns</h2>";
-            querySnapshot.forEach((doc) => {
-                let trackData = doc.data();
-                if (trackData.track) {
-                    campaignContainer.innerHTML += `
-                        <div class="campaign">
-                            <p><strong>${doc.id}</strong></p>
-                            <p><a href="${trackData.track}" target="_blank">${trackData.track}</a></p>
-                            <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
-                        </div>
-                    `;
-                }
-            });
-        });
+        // Load active campaigns
+        loadActiveCampaigns();
     }
 
     // ✅ Listen for Authentication Changes
@@ -78,7 +57,7 @@ if (typeof firebase === "undefined") {
                     email: user.email,
                     credits: 0,
                     reposts: 0,
-                    track: ""
+                    track: null
                 }).then(() => {
                     alert("✅ Signup Successful! Welcome " + user.email);
                     updateDashboard(user);
@@ -119,66 +98,103 @@ if (typeof firebase === "undefined") {
             });
     };
 
+    // ✅ SUBMIT TRACK FUNCTION (Save in Firestore)
+    window.submitTrack = async function () {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in to submit a track.");
+            return;
+        }
+
+        const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+        if (!soundcloudUrl) {
+            alert("Please enter a valid SoundCloud URL.");
+            return;
+        }
+
+        const userRef = db.collection("users").doc(user.uid);
+        try {
+            await userRef.update({ track: soundcloudUrl });
+
+            document.getElementById("currentTrackMessage").innerHTML = `
+                <p>Active Campaign: <a href="${soundcloudUrl}" target="_blank">${soundcloudUrl}</a></p>
+            `;
+
+            alert("✅ SoundCloud track submitted successfully!");
+            loadActiveCampaigns();
+        } catch (error) {
+            console.error("Error submitting track:", error);
+            alert("Error submitting track. Try again.");
+        }
+    };
+
+    // ✅ LOAD ACTIVE CAMPAIGNS FUNCTION
+    function loadActiveCampaigns() {
+        const campaignsDiv = document.getElementById("activeCampaigns");
+        campaignsDiv.innerHTML = ""; // Clear existing campaigns
+
+        db.collection("users").where("track", "!=", null).get().then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                campaignsDiv.innerHTML = "<p>No active campaigns.</p>";
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                if (data.track) {
+                    campaignsDiv.innerHTML += `
+                        <div class="campaign">
+                            <p><strong>${data.email}</strong> is promoting:</p>
+                            <a href="${data.track}" target="_blank">${data.track}</a>
+                            <button onclick="repostTrack('${doc.id}', '${data.track}')">Repost & Earn Credits</button>
+                        </div>
+                    `;
+                }
+            });
+        }).catch(error => {
+            console.error("Error loading campaigns:", error);
+        });
+    }
+
     // ✅ REPOST FUNCTION - Earn Credits
-    window.repostTrack = async function (userId) {
+    window.repostTrack = async function (userId, trackUrl) {
         const user = auth.currentUser;
         if (!user) {
             alert("You must be logged in to repost and earn credits.");
             return;
         }
 
-        const userRef = db.collection("users").doc(user.uid);
-        const targetUserRef = db.collection("users").doc(userId);
-
-        try {
-            const userDoc = await userRef.get();
-            const targetUserDoc = await targetUserRef.get();
-
-            if (!userDoc.exists || !targetUserDoc.exists) {
-                alert("Error finding user data.");
-                return;
-            }
-
-            let userData = userDoc.data();
-            let targetData = targetUserDoc.data();
-
-            if (userData.credits < 5) {
-                alert("Not enough credits to repost.");
-                return;
-            }
-
-            // Deduct credits and update repost count
-            let newCredits = userData.credits - 5;
-            let newReposts = (userData.reposts || 0) + 1;
-
-            await userRef.update({ credits: newCredits, reposts: newReposts });
-
-            // Reward the track owner
-            let ownerNewCredits = (targetData.credits || 0) + 5;
-            await targetUserRef.update({ credits: ownerNewCredits });
-
-            document.getElementById("repostCount").innerText = newReposts;
-            document.getElementById("creditCount").innerText = newCredits;
-
-            alert("✅ Repost successful! You used 5 credits.");
-        } catch (error) {
-            console.error("Error updating credits:", error);
-            alert("Error processing repost. Try again.");
-        }
-    };
-
-    // ✅ END CAMPAIGN FUNCTION
-    window.endCampaign = async function () {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("You must be logged in.");
+        if (user.uid === userId) {
+            alert("You cannot repost your own track.");
             return;
         }
 
         const userRef = db.collection("users").doc(user.uid);
-        await userRef.update({ track: "" });
+        const trackRef = db.collection("users").doc(userId);
 
-        document.getElementById("currentTrackMessage").innerHTML = "No active campaign.";
-        alert("✅ Campaign ended.");
+        try {
+            const userDoc = await userRef.get();
+            const trackDoc = await trackRef.get();
+
+            if (!userDoc.exists || !trackDoc.exists) {
+                alert("Error finding user or track.");
+                return;
+            }
+
+            let userData = userDoc.data();
+            let newReposts = (userData.reposts || 0) + 1;
+            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
+
+            await userRef.update({
+                reposts: newReposts,
+                credits: newCredits
+            });
+
+            alert(`✅ You reposted ${trackUrl} and earned 10 credits!`);
+            updateDashboard(user);
+        } catch (error) {
+            console.error("Error updating credits:", error);
+            alert("Error processing repost. Try again.");
+        }
     };
 }
