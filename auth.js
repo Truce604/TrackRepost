@@ -45,59 +45,6 @@ if (typeof firebase === "undefined") {
     // ✅ Listen for Authentication Changes
     auth.onAuthStateChanged(updateDashboard);
 
-    // ✅ SIGNUP FUNCTION
-    window.signupUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                db.collection("users").doc(user.uid).set({
-                    email: user.email,
-                    credits: 0,
-                    reposts: 0,
-                    track: null
-                }).then(() => {
-                    alert("✅ Signup Successful! Welcome " + user.email);
-                    updateDashboard(user);
-                }).catch(error => console.error("Error saving user:", error));
-            })
-            .catch((error) => {
-                alert("❌ Signup Error: " + error.message);
-                console.error("Signup Error:", error);
-            });
-    };
-
-    // ✅ LOGIN FUNCTION
-    window.loginUser = function () {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                alert("✅ Login Successful! Welcome " + userCredential.user.email);
-                updateDashboard(userCredential.user);
-            })
-            .catch((error) => {
-                alert("❌ Login Error: " + error.message);
-                console.error("Login Error:", error);
-            });
-    };
-
-    // ✅ LOGOUT FUNCTION
-    window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                updateDashboard(null);
-            })
-            .catch((error) => {
-                alert("❌ Logout Error: " + error.message);
-                console.error("Logout Error:", error);
-            });
-    };
-
     // ✅ SUBMIT TRACK FUNCTION (Save in Firestore)
     window.submitTrack = async function () {
         const user = auth.currentUser;
@@ -170,20 +117,17 @@ if (typeof firebase === "undefined") {
         }
 
         const userRef = db.collection("users").doc(user.uid);
-        const trackRef = db.collection("users").doc(userId);
 
         try {
             const userDoc = await userRef.get();
-            const trackDoc = await trackRef.get();
-
-            if (!userDoc.exists || !trackDoc.exists) {
-                alert("Error finding user or track.");
+            if (!userDoc.exists) {
+                alert("Error finding user.");
                 return;
             }
 
             let userData = userDoc.data();
             let newReposts = (userData.reposts || 0) + 1;
-            let newCredits = (userData.credits || 0) + 10; // Earn 10 credits per repost
+            let newCredits = (userData.credits || 0) + 10;
 
             await userRef.update({
                 reposts: newReposts,
