@@ -18,8 +18,6 @@ if (typeof firebase === "undefined") {
     // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
-        const authMessage = document.getElementById("authMessage");
-
         if (!user) {
             dashboard.innerHTML = `<p>Please log in or sign up.</p>`;
             document.getElementById("currentTrackMessage").innerText = "No active campaign";
@@ -27,7 +25,6 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -197,6 +194,7 @@ if (typeof firebase === "undefined") {
 
             alert("✅ You reposted & earned 5 credits!");
             updateDashboard(user);
+            loadActiveCampaigns();
         } catch (error) {
             console.error("❌ Error reposting track:", error);
             alert("❌ Error reposting. Try again.");
