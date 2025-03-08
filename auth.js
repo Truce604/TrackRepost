@@ -98,7 +98,7 @@ if (typeof firebase === "undefined") {
             });
     };
 
-    // ✅ FIX: Ensure campaigns load correctly
+    // ✅ FIX: Ensure campaigns load correctly with SoundCloud data
     window.loadActiveCampaigns = function () {
         const campaignsDiv = document.getElementById("activeCampaigns");
         if (!campaignsDiv) {
@@ -116,12 +116,27 @@ if (typeof firebase === "undefined") {
                 if (querySnapshot.empty) {
                     campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
                 } else {
-                    querySnapshot.forEach(doc => {
+                    querySnapshot.forEach(async doc => {
                         let data = doc.data();
                         console.log("🎵 Campaign Data:", data);
+
+                        let trackTitle = "Unknown Track";
+                        let artistName = "Unknown Artist";
+
+                        try {
+                            const response = await fetch(`https://api.soundcloud.com/resolve?url=${data.track}&client_id=YOUR_SOUNDCLOUD_CLIENT_ID`);
+                            const trackInfo = await response.json();
+                            if (trackInfo && trackInfo.title) {
+                                trackTitle = trackInfo.title;
+                                artistName = trackInfo.user ? trackInfo.user.username : "Unknown Artist";
+                            }
+                        } catch (error) {
+                            console.error("❌ Error fetching SoundCloud track info:", error);
+                        }
+
                         campaignsDiv.innerHTML += `
                             <div>
-                                <p>Track from ${data.owner}:</p>
+                                <p><strong>${trackTitle}</strong> by ${artistName}</p>
                                 <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                     src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                                 </iframe>
@@ -132,40 +147,6 @@ if (typeof firebase === "undefined") {
                 }
             })
             .catch(error => console.error("❌ Error loading campaigns:", error));
-    };
-
-    // ✅ FIX: Define updateDashboard function
-    window.updateDashboard = function (user) {
-        const dashboard = document.getElementById("userDashboard");
-        const authMessage = document.getElementById("authMessage");
-
-        if (!dashboard || !authMessage) {
-            console.error("❌ Dashboard elements not found.");
-            return;
-        }
-
-        if (!user) {
-            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-            authMessage.innerText = "";
-            return;
-        }
-
-        db.collection("users").doc(user.uid).get().then(doc => {
-            if (doc.exists) {
-                let data = doc.data();
-                dashboard.innerHTML = `
-                    <h2>Welcome, ${user.email}!</h2>
-                    <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
-                    <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                    <button onclick="logoutUser()">Logout</button>
-                `;
-                authMessage.innerText = "✅ Logged in successfully!";
-            } else {
-                console.warn("🚨 User data not found in Firestore!");
-            }
-        }).catch(error => {
-            console.error("❌ Error loading user data:", error);
-        });
     };
 }
 
