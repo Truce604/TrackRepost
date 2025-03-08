@@ -45,9 +45,9 @@
         <input type="email" id="email" placeholder="Enter Email">
         <input type="password" id="password" placeholder="Enter Password">
         <div class="button-group">
-            <button onclick="signupUser()">Sign Up</button>
-            <button onclick="loginUser()">Login</button>
-            <button onclick="logoutUser()">Logout</button>
+            <button id="signupBtn">Sign Up</button>
+            <button id="loginBtn">Login</button>
+            <button id="logoutBtn">Logout</button>
         </div>
         <p id="authMessage"></p>
     </div>
@@ -60,7 +60,7 @@
     <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
         <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL (Example: https://soundcloud.com/artist/track)">
-        <button onclick="submitTrack()">Submit</button>
+        <button id="submitTrackBtn">Submit</button>
         <p id="currentTrackMessage">No active campaign</p>
     </div>
 
