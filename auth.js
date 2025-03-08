@@ -106,8 +106,8 @@ if (typeof firebase === "undefined") {
             .catch(error => alert("❌ Logout Error: " + error.message));
     }
 
-    // ✅ FIXED: SUBMIT TRACK FUNCTION - Converts `on.soundcloud.com` Links to Valid Links
-    async function submitTrack() {
+    // ✅ FIXED: SUBMIT TRACK FUNCTION - Only Allows FULL SoundCloud URLs
+    function submitTrack() {
         const user = auth.currentUser;
         if (!user) {
             alert("You must be logged in to submit a track.");
@@ -116,23 +116,13 @@ if (typeof firebase === "undefined") {
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
 
-        // Convert `on.soundcloud.com` links to direct SoundCloud links
+        // ❌ Reject Shortened SoundCloud Links
         if (soundcloudUrl.includes("on.soundcloud.com")) {
-            try {
-                soundcloudUrl = await convertShortUrl(soundcloudUrl);
-            } catch (error) {
-                alert("❌ Failed to convert SoundCloud URL. Please try again.");
-                return;
-            }
-        }
-
-        // Validate SoundCloud URL (must contain soundcloud.com)
-        if (!soundcloudUrl.includes("soundcloud.com/")) {
-            alert("❌ Invalid SoundCloud URL. Please enter a valid SoundCloud track link.");
+            alert("❌ Invalid SoundCloud URL. Please paste the FULL track URL (e.g., https://soundcloud.com/artist/track).");
             return;
         }
 
-        // Save to Firestore
+        // ✅ Save to Firestore
         db.collection("users").doc(user.uid).update({ track: soundcloudUrl })
             .then(() => {
                 alert("✅ Track submitted!");
@@ -142,17 +132,6 @@ if (typeof firebase === "undefined") {
                 console.error("Error saving track:", error);
                 alert("❌ Error submitting track.");
             });
-    }
-
-    // ✅ Convert SoundCloud Short URL to Full URL
-    async function convertShortUrl(shortUrl) {
-        try {
-            const response = await fetch(shortUrl, { method: "HEAD", redirect: "follow" });
-            return response.url;
-        } catch (error) {
-            console.error("Error resolving SoundCloud short URL:", error);
-            throw error;
-        }
     }
 
     // ✅ LOAD ACTIVE CAMPAIGNS - Display Public SoundCloud Tracks
