@@ -7,26 +7,18 @@ if (typeof firebase === "undefined") {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("signupBtn").addEventListener("click", signupUser);
-        document.getElementById("loginBtn").addEventListener("click", loginUser);
-        document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-        document.getElementById("submitTrackBtn").addEventListener("click", submitTrack);
-    });
-
     // ✅ Update UI Function
     function updateDashboard(user) {
         const dashboard = document.getElementById("userDashboard");
+
         if (!user) {
             dashboard.innerHTML = `
                 <h2>You are not logged in.</h2>
                 <p>Please log in or sign up.</p>
             `;
-            document.getElementById("currentTrackMessage").innerText = "No active campaign";
             return;
         }
 
-        // Fetch user data from Firestore
         db.collection("users").doc(user.uid).onSnapshot((doc) => {
             if (doc.exists) {
                 let data = doc.data();
@@ -34,7 +26,7 @@ if (typeof firebase === "undefined") {
                     <h2>Welcome, ${user.email}!</h2>
                     <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
                     <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                    <button id="logoutBtn">Logout</button>
+                    <button onclick="logoutUser()">Logout</button>
                 `;
 
                 if (data.track) {
@@ -44,13 +36,10 @@ if (typeof firebase === "undefined") {
                             src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                         </iframe>
                     `;
-                } else {
-                    document.getElementById("currentTrackMessage").innerText = "No active campaign";
                 }
             }
         });
 
-        // Load all active campaigns
         loadActiveCampaigns();
     }
 
@@ -68,7 +57,8 @@ if (typeof firebase === "undefined") {
                 db.collection("users").doc(user.uid).set({
                     email: user.email,
                     credits: 0,
-                    reposts: 0
+                    reposts: 0,
+                    repostedTracks: []
                 }).then(() => {
                     alert("✅ Signup Successful!");
                     updateDashboard(user);
@@ -109,65 +99,19 @@ if (typeof firebase === "undefined") {
         }
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-
-        if (soundcloudUrl.includes("on.soundcloud.com")) {
-            alert("❌ Invalid SoundCloud URL. Please paste the FULL track URL.");
+        if (!soundcloudUrl.includes("soundcloud.com/")) {
+            alert("❌ Invalid SoundCloud URL. Please enter a valid SoundCloud track link.");
             return;
         }
 
-        db.collection("users").doc(user.uid).get()
-            .then((doc) => {
-                if (doc.exists && doc.data().credits > 0) {
-                    db.collection("campaigns").doc(user.uid).set({
-                        userId: user.uid,
-                        email: user.email,
-                        track: soundcloudUrl,
-                        credits: doc.data().credits
-                    }).then(() => {
-                        alert("✅ Track submitted as a campaign!");
-                        loadActiveCampaigns();
-                    });
-                } else {
-                    alert("❌ You need credits to start a campaign.");
-                }
+        db.collection("users").doc(user.uid).update({ track: soundcloudUrl, credits: 100 }) // ✅ Give 100 credits for testing
+            .then(() => {
+                alert("✅ Track submitted!");
+                loadActiveCampaigns();
             });
     }
 
-    // ✅ LOAD ACTIVE CAMPAIGNS
-    function loadActiveCampaigns() {
-        const campaignsDiv = document.getElementById("activeCampaigns");
-        campaignsDiv.innerHTML = "<p>Loading...</p>";
-
-        db.collection("campaigns").where("credits", ">", 0).get()
-            .then(querySnapshot => {
-                campaignsDiv.innerHTML = "";
-                if (querySnapshot.empty) {
-                    campaignsDiv.innerHTML = "<p>No active campaigns.</p>";
-                    return;
-                }
-
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    if (data.track) {
-                        campaignsDiv.innerHTML += `
-                            <div class="campaign">
-                                <p>${data.email} is promoting:</p>
-                                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                                </iframe>
-                                <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
-                            </div>
-                        `;
-                    }
-                });
-            })
-            .catch(error => {
-                console.error("Error loading campaigns:", error);
-                campaignsDiv.innerHTML = "<p>Error loading campaigns.</p>";
-            });
-    }
-
-    // ✅ REPOST FUNCTION - Earn Credits
+    // ✅ REPOST FUNCTION - Earn Credits & Deduct from Campaign Owner
     function repostTrack(campaignId) {
         const user = auth.currentUser;
         if (!user) {
@@ -175,7 +119,7 @@ if (typeof firebase === "undefined") {
             return;
         }
 
-        const campaignRef = db.collection("campaigns").doc(campaignId);
+        const campaignRef = db.collection("users").doc(campaignId);
         const userRef = db.collection("users").doc(user.uid);
 
         db.runTransaction(async (transaction) => {
@@ -188,12 +132,60 @@ if (typeof firebase === "undefined") {
             }
 
             let campaignData = campaignDoc.data();
-            let userData = userDoc.data();
+            let userData = userDoc.exists ? userDoc.data() : { credits: 0, reposts: 0, repostedTracks: [] };
 
-            transaction.update(campaignRef, { credits: campaignData.credits - 10 });
-            transaction.update(userRef, { credits: (userData.credits || 0) + 10 });
+            // ❌ Prevent double reposting
+            if (userData.repostedTracks && userData.repostedTracks.includes(campaignId)) {
+                alert("❌ You have already reposted this track.");
+                return;
+            }
+
+            // ✅ Reduce credits from campaign owner
+            const newCampaignCredits = campaignData.credits - 10;
+            transaction.update(campaignRef, { credits: newCampaignCredits });
+
+            // ✅ Add credits to the user reposting
+            const newUserCredits = (userData.credits || 0) + 10;
+            const newUserReposts = (userData.reposts || 0) + 1;
+            let updatedRepostedTracks = [...(userData.repostedTracks || []), campaignId];
+
+            transaction.set(userRef, {
+                credits: newUserCredits,
+                reposts: newUserReposts,
+                repostedTracks: updatedRepostedTracks
+            }, { merge: true });
 
             alert("✅ Repost successful! You earned 10 credits.");
         }).then(() => loadActiveCampaigns());
+    }
+
+    // ✅ LOAD ACTIVE CAMPAIGNS
+    function loadActiveCampaigns() {
+        const campaignsDiv = document.getElementById("activeCampaigns");
+        campaignsDiv.innerHTML = "<p>Loading...</p>";
+
+        db.collection("users").where("track", "!=", null).get()
+            .then(querySnapshot => {
+                campaignsDiv.innerHTML = "";
+                querySnapshot.forEach(doc => {
+                    let data = doc.data();
+                    if (data.credits > 0) {
+                        campaignsDiv.innerHTML += `
+                            <div>
+                                <p>${data.email} is promoting:</p>
+                                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                                </iframe>
+                                <button onclick="repostTrack('${doc.id}')">Repost & Earn Credits</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (campaignsDiv.innerHTML === "") {
+                    campaignsDiv.innerHTML = "<p>No active campaigns.</p>";
+                }
+            })
+            .catch(error => console.error("Error loading campaigns:", error));
     }
 }
