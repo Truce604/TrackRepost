@@ -106,8 +106,8 @@ if (typeof firebase === "undefined") {
             .catch(error => alert("❌ Logout Error: " + error.message));
     }
 
-    // ✅ SUBMIT TRACK FUNCTION - Validates & Saves SoundCloud Track
-    function submitTrack() {
+    // ✅ FIXED: SUBMIT TRACK FUNCTION - Converts `on.soundcloud.com` Links to Valid Links
+    async function submitTrack() {
         const user = auth.currentUser;
         if (!user) {
             alert("You must be logged in to submit a track.");
@@ -115,9 +115,19 @@ if (typeof firebase === "undefined") {
         }
 
         let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-        
-        // Validate SoundCloud URL
-        if (!soundcloudUrl.match(/^(https:\/\/)?(www\.)?(m\.)?soundcloud\.com\/.+/)) {
+
+        // Convert `on.soundcloud.com` links to direct SoundCloud links
+        if (soundcloudUrl.includes("on.soundcloud.com")) {
+            try {
+                soundcloudUrl = await convertShortUrl(soundcloudUrl);
+            } catch (error) {
+                alert("❌ Failed to convert SoundCloud URL. Please try again.");
+                return;
+            }
+        }
+
+        // Validate SoundCloud URL (must contain soundcloud.com)
+        if (!soundcloudUrl.includes("soundcloud.com/")) {
             alert("❌ Invalid SoundCloud URL. Please enter a valid SoundCloud track link.");
             return;
         }
@@ -132,6 +142,17 @@ if (typeof firebase === "undefined") {
                 console.error("Error saving track:", error);
                 alert("❌ Error submitting track.");
             });
+    }
+
+    // ✅ Convert SoundCloud Short URL to Full URL
+    async function convertShortUrl(shortUrl) {
+        try {
+            const response = await fetch(shortUrl, { method: "HEAD", redirect: "follow" });
+            return response.url;
+        } catch (error) {
+            console.error("Error resolving SoundCloud short URL:", error);
+            throw error;
+        }
     }
 
     // ✅ LOAD ACTIVE CAMPAIGNS - Display Public SoundCloud Tracks
