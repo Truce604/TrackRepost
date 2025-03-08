@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -7,11 +6,6 @@ if (typeof firebase === "undefined") {
 
     const auth = firebase.auth();
     const db = firebase.firestore();
-
-    // ✅ Enable Firestore Offline Mode for Faster Performance
-    db.enablePersistence()
-        .then(() => console.log("✅ Firestore offline mode enabled"))
-        .catch(error => console.warn("⚠️ Firestore persistence error:", error));
 
     // ✅ Set Firebase Auth Persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
@@ -23,30 +17,13 @@ if (typeof firebase === "undefined") {
         });
 
     // ✅ LISTEN FOR AUTH CHANGES WITH SESSION CHECK
-    auth.onAuthStateChanged(async user => {
+    auth.onAuthStateChanged(user => {
         if (user) {
             console.log("✅ User detected:", user.email);
-            try {
-                await user.reload();
-                console.log("🔄 Session refreshed:", user.email);
-                updateDashboard(user);
-            } catch (error) {
-                console.error("❌ Session refresh error:", error);
-            }
+            updateDashboard(user);
         } else {
-            console.warn("🚨 No user detected. Checking session...");
-            auth.getRedirectResult()
-                .then(result => {
-                    if (result.user) {
-                        console.log("✅ Restored session:", result.user.email);
-                        updateDashboard(result.user);
-                    } else {
-                        updateDashboard(null);
-                    }
-                })
-                .catch(error => {
-                    console.error("❌ Error retrieving session:", error);
-                });
+            console.warn("🚨 No user detected.");
+            updateDashboard(null);
         }
     });
 
@@ -54,6 +31,8 @@ if (typeof firebase === "undefined") {
     window.signupUser = function () {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
+
+        console.log("📧 Signing up user:", email);
 
         auth.createUserWithEmailAndPassword(email, password)
             .then(userCredential => {
@@ -111,3 +90,4 @@ if (typeof firebase === "undefined") {
             });
     };
 }
+
