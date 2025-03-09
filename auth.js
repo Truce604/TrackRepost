@@ -33,7 +33,7 @@ if (typeof firebase === "undefined") {
         }
     });
 
-    // ✅ LOAD ACTIVE CAMPAIGNS FUNCTION
+    // ✅ LOAD ACTIVE CAMPAIGNS FUNCTION (Removed 'status' filter)
     window.loadActiveCampaigns = function () {
         const campaignsDiv = document.getElementById("activeCampaigns");
         if (!campaignsDiv) {
@@ -43,9 +43,9 @@ if (typeof firebase === "undefined") {
 
         campaignsDiv.innerHTML = "<p>Loading...</p>";
 
-        db.collection("campaigns").where("status", "==", "active").get()
+        db.collection("campaigns").get() // ✅ Removed .where("status", "==", "active")
             .then(async (querySnapshot) => {
-                console.log(`🔍 Found ${querySnapshot.size} active campaigns in Firestore`);
+                console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
                 campaignsDiv.innerHTML = "";
 
                 if (querySnapshot.empty) {
@@ -171,5 +171,6 @@ if (typeof firebase === "undefined") {
             });
     };
 }
+
 
 
