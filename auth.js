@@ -5,7 +5,7 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Firebase Configuration (Only Declare Once)
+// ✅ Initialize Firebase (Only Declare Once)
 if (!firebase.apps.length) {
     firebase.initializeApp({
         apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
@@ -19,14 +19,14 @@ if (!firebase.apps.length) {
     console.log("✅ Firebase Initialized Successfully!");
 }
 
-// ✅ Ensure auth and db are globally accessible
+// ✅ Firebase Services
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ LISTEN FOR AUTH CHANGES
+// ✅ Listen for Auth Changes
 auth.onAuthStateChanged(user => {
     if (user) {
-        console.log("✅ User detected:", user.email);
+        console.log(`✅ User logged in: ${user.email}`);
         updateDashboard(user);
         loadActiveCampaigns();
     } else {
@@ -35,7 +35,7 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ LOGIN FUNCTION (Make Sure it's Attached to Window)
+// ✅ LOGIN FUNCTION
 window.loginUser = function () {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -47,7 +47,7 @@ window.loginUser = function () {
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
-            alert("❌ Login Error: " + error.message);
+            alert(`❌ Login Error: ${error.message}`);
         });
 };
 
@@ -60,7 +60,7 @@ window.signupUser = function () {
         .then(userCredential => {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
-                credits: 10, 
+                credits: 10,
                 reposts: 0
             });
         })
@@ -70,7 +70,7 @@ window.signupUser = function () {
         })
         .catch(error => {
             console.error("❌ Signup Error:", error);
-            alert("❌ Signup Error: " + error.message);
+            alert(`❌ Signup Error: ${error.message}`);
         });
 };
 
@@ -105,7 +105,7 @@ window.loadActiveCampaigns = function () {
 
     campaignsDiv.innerHTML = "<p>Loading...</p>";
 
-    db.collection("campaigns").get()
+    db.collection("campaigns").orderBy("credits", "desc").get()
         .then(querySnapshot => {
             campaignsDiv.innerHTML = "";
 
@@ -115,11 +115,12 @@ window.loadActiveCampaigns = function () {
                 querySnapshot.forEach(doc => {
                     let data = doc.data();
                     campaignsDiv.innerHTML += `
-                        <div id="campaign-${doc.id}">
-                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                        <div id="campaign-${doc.id}" class="campaign">
+                            <h3>🔥 Now Promoting:</h3>
+                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
                         </div>
                     `;
                 });
@@ -129,7 +130,7 @@ window.loadActiveCampaigns = function () {
 };
 
 // ✅ FUNCTION: REPOST TRACK & EARN CREDITS
-window.repostTrack = function (campaignId, ownerId, cost, trackUrl) {
+window.repostTrack = function (campaignId, ownerId, cost) {
     const user = auth.currentUser;
     if (!user) {
         alert("You must be logged in to repost.");
@@ -141,36 +142,45 @@ window.repostTrack = function (campaignId, ownerId, cost, trackUrl) {
         return;
     }
 
-    db.runTransaction(transaction => {
-        return transaction.get(db.collection("users").doc(user.uid)).then(userDoc => {
-            if (!userDoc.exists) {
-                throw "User does not exist!";
-            }
+    db.runTransaction(async (transaction) => {
+        const userRef = db.collection("users").doc(user.uid);
+        const ownerRef = db.collection("users").doc(ownerId);
+        const campaignRef = db.collection("campaigns").doc(campaignId);
 
-            let userData = userDoc.data();
-            let newCredits = userData.credits + 5;
+        const userDoc = await transaction.get(userRef);
+        const ownerDoc = await transaction.get(ownerRef);
+        const campaignDoc = await transaction.get(campaignRef);
 
-            // ✅ Update user credits
-            transaction.update(db.collection("users").doc(user.uid), { credits: newCredits });
+        if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
+            throw new Error("Invalid user or campaign data.");
+        }
 
-            // ✅ Deduct credits from campaign owner
-            let campaignOwnerRef = db.collection("users").doc(ownerId);
-            return transaction.get(campaignOwnerRef).then(ownerDoc => {
-                if (!ownerDoc.exists) {
-                    throw "Campaign owner does not exist!";
-                }
+        let userCredits = userDoc.data().credits;
+        let ownerCredits = ownerDoc.data().credits;
 
-                let ownerData = ownerDoc.data();
-                let updatedOwnerCredits = ownerData.credits - cost;
+        let updatedUserCredits = userCredits + 5; // ✅ Reward user 5 credits
+        let updatedOwnerCredits = ownerCredits - cost; // ✅ Deduct cost from campaign owner
 
-                transaction.update(campaignOwnerRef, { credits: updatedOwnerCredits });
-            });
-        });
+        if (updatedOwnerCredits < 0) {
+            throw new Error("Campaign owner does not have enough credits.");
+        }
+
+        transaction.update(userRef, { credits: updatedUserCredits });
+        transaction.update(ownerRef, { credits: updatedOwnerCredits });
+
+        console.log("✅ Repost transaction successful!");
+
     }).then(() => {
         alert("✅ Repost successful! You earned 5 credits.");
         updateDashboard(user);
+        loadActiveCampaigns();
     }).catch(error => {
         console.error("❌ Error reposting:", error);
-        alert("❌ Error reposting: " + error.message);
+        alert(`❌ Error reposting: ${error.message}`);
     });
 };
+
+// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
+document.addEventListener("DOMContentLoaded", () => {
+    loadActiveCampaigns();
+});
