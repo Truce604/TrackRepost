@@ -183,5 +183,3 @@ if (typeof firebase === "undefined") {
         });
     };
 }
-
-
