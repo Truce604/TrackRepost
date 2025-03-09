@@ -4,6 +4,19 @@ if (typeof firebase === "undefined") {
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 
+    const firebaseConfig = {
+        apiKey: "YOUR_FIREBASE_API_KEY",
+        authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+        projectId: "YOUR_FIREBASE_PROJECT_ID",
+        storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+        appId: "YOUR_FIREBASE_APP_ID"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
     const auth = firebase.auth();
     const db = firebase.firestore();
 
@@ -14,15 +27,19 @@ if (typeof firebase === "undefined") {
 
     // ✅ Set Firebase Auth Persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => console.log("✅ Auth Persistence Set to LOCAL"))
-        .catch(error => console.error("❌ Error setting auth persistence:", error.message));
+        .then(() => {
+            console.log("✅ Auth Persistence Set to LOCAL");
+        })
+        .catch(error => {
+            console.error("❌ Error setting auth persistence:", error.message);
+        });
 
     // ✅ LISTEN FOR AUTH CHANGES WITH SESSION CHECK
     auth.onAuthStateChanged(user => {
         if (user) {
             console.log("✅ User detected:", user.email);
             updateDashboard(user);
-            loadActiveCampaigns();
+            loadActiveCampaigns(); // ✅ Ensure campaigns load when user logs in
         } else {
             console.warn("🚨 No user detected.");
             updateDashboard(null);
