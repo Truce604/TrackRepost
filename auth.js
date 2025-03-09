@@ -88,15 +88,62 @@ window.signupUser = function () {
         });
 };
 
-// ✅ LOGOUT FUNCTION
-window.logoutUser = function () {
-    auth.signOut()
-        .then(() => {
-            alert("✅ Logged Out!");
-            updateDashboard(null);
+// ✅ FUNCTION: SUBMIT SOUNDCLOUD TRACK
+window.submitTrack = function () {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in to submit a track.");
+        return;
+    }
+
+    let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+    if (!soundcloudUrl.includes("soundcloud.com/")) {
+        alert("Invalid SoundCloud URL.");
+        return;
+    }
+
+    db.collection("campaigns").add({
+        owner: user.uid,
+        track: soundcloudUrl,
+        credits: 10
+    }).then(() => {
+        alert("✅ Track submitted!");
+        loadActiveCampaigns(); // Refresh campaigns
+    }).catch(error => {
+        console.error("Error submitting track:", error);
+    });
+};
+
+// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
+window.loadActiveCampaigns = function () {
+    const campaignsDiv = document.getElementById("activeCampaigns");
+    if (!campaignsDiv) {
+        console.error("❌ Campaigns section not found");
+        return;
+    }
+
+    campaignsDiv.innerHTML = "<p>Loading...</p>";
+
+    db.collection("campaigns").get()
+        .then(querySnapshot => {
+            console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
+            campaignsDiv.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+            } else {
+                querySnapshot.forEach(doc => {
+                    let data = doc.data();
+                    campaignsDiv.innerHTML += `
+                        <div id="campaign-${doc.id}">
+                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                            </iframe>
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
+                        </div>
+                    `;
+                });
+            }
         })
-        .catch(error => {
-            console.error("❌ Logout Error:", error);
-            alert("❌ Logout Error: " + error.message);
-        });
+        .catch(error => console.error("❌ Error loading campaigns:", error));
 };
