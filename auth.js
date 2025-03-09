@@ -37,7 +37,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => console.log("✅ Auth Persistence Set to LOCAL"))
     .catch(error => console.error("❌ Error setting auth persistence:", error.message));
 
-// ✅ LISTEN FOR AUTH CHANGES WITH SESSION CHECK
+// ✅ LISTEN FOR AUTH CHANGES
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log("✅ User detected:", user.email);
@@ -74,7 +74,7 @@ window.signupUser = function () {
         .then(userCredential => {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
-                credits: 0,
+                credits: 10, // ✅ Start with 10 free credits
                 reposts: 0
             });
         })
@@ -87,6 +87,27 @@ window.signupUser = function () {
             alert("❌ Signup Error: " + error.message);
         });
 };
+
+// ✅ FUNCTION: UPDATE DASHBOARD
+function updateDashboard(user) {
+    const dashboard = document.getElementById("userDashboard");
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        return;
+    }
+
+    db.collection("users").doc(user.uid).get().then(doc => {
+        if (doc.exists) {
+            let data = doc.data();
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+            `;
+        }
+    });
+}
 
 // ✅ FUNCTION: SUBMIT SOUNDCLOUD TRACK
 window.submitTrack = function () {
@@ -146,4 +167,51 @@ window.loadActiveCampaigns = function () {
             }
         })
         .catch(error => console.error("❌ Error loading campaigns:", error));
+};
+
+// ✅ FUNCTION: REPOST TRACK & EARN CREDITS
+window.repostTrack = function (campaignId, ownerId, cost, trackUrl) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in to repost.");
+        return;
+    }
+
+    if (user.uid === ownerId) {
+        alert("You cannot repost your own track.");
+        return;
+    }
+
+    db.runTransaction(transaction => {
+        return transaction.get(db.collection("users").doc(user.uid)).then(userDoc => {
+            if (!userDoc.exists) {
+                throw "User does not exist!";
+            }
+
+            let userData = userDoc.data();
+            let newCredits = userData.credits + 5; // ✅ Earn 5 credits per repost
+
+            // ✅ Update user credits
+            transaction.update(db.collection("users").doc(user.uid), { credits: newCredits });
+
+            // ✅ Deduct credits from campaign owner
+            let campaignOwnerRef = db.collection("users").doc(ownerId);
+            return transaction.get(campaignOwnerRef).then(ownerDoc => {
+                if (!ownerDoc.exists) {
+                    throw "Campaign owner does not exist!";
+                }
+
+                let ownerData = ownerDoc.data();
+                let updatedOwnerCredits = ownerData.credits - cost;
+
+                transaction.update(campaignOwnerRef, { credits: updatedOwnerCredits });
+            });
+        });
+    }).then(() => {
+        alert("✅ Repost successful! You earned 5 credits.");
+        updateDashboard(user);
+    }).catch(error => {
+        console.error("❌ Error reposting:", error);
+        alert("❌ Error reposting: " + error.message);
+    });
 };
