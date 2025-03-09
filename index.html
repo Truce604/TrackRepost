@@ -6,28 +6,10 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase (Ensuring Proper Order) -->
+    <!-- ✅ Load Firebase (Ensure Proper Order) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- ✅ Initialize Firebase First -->
-    <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-            authDomain: "trackrepost-921f8.firebaseapp.com",
-            projectId: "trackrepost-921f8",
-            storageBucket: "trackrepost-921f8.appspot.com",
-            messagingSenderId: "967836604288",
-            appId: "1:967836604288:web:3782d50de7384c9201d365",
-            measurementId: "G-G65Q3HC3R8"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log("✅ Firebase Initialized Successfully!");
-        }
-    </script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
     <script src="auth.js" defer></script>
@@ -59,7 +41,7 @@
 
     <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL (Example: https://soundcloud.com/artist/track)">
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
         <button id="submitTrackBtn" onclick="submitTrack()">Submit</button>
         <p id="currentTrackMessage">No active campaign</p>
     </div>
