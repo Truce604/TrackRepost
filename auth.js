@@ -33,6 +33,40 @@ if (typeof firebase === "undefined") {
         }
     });
 
+    // ✅ UPDATE DASHBOARD FUNCTION
+    window.updateDashboard = function (user) {
+        const dashboard = document.getElementById("userDashboard");
+        const authMessage = document.getElementById("authMessage");
+
+        if (!dashboard || !authMessage) {
+            console.error("❌ Dashboard elements not found.");
+            return;
+        }
+
+        if (!user) {
+            dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+            authMessage.innerText = "";
+            return;
+        }
+
+        db.collection("users").doc(user.uid).get().then(doc => {
+            if (doc.exists) {
+                let data = doc.data();
+                dashboard.innerHTML = `
+                    <h2>Welcome, ${user.email}!</h2>
+                    <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                    <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+                    <button onclick="logoutUser()">Logout</button>
+                `;
+                authMessage.innerText = "✅ Logged in successfully!";
+            } else {
+                console.warn("🚨 User data not found in Firestore!");
+            }
+        }).catch(error => {
+            console.error("❌ Error loading user data:", error);
+        });
+    };
+
     // ✅ Ensure Functions are Globally Accessible
     window.signupUser = function () {
         const email = document.getElementById("email").value;
@@ -97,73 +131,5 @@ if (typeof firebase === "undefined") {
                 alert("❌ Logout Error: " + error.message);
             });
     };
-
-    // ✅ CONNECT TO SOUNDCLOUD
-    window.connectSoundCloud = function () {
-        const clientId = "YOUR_SOUNDCLOUD_CLIENT_ID";
-        const redirectUri = encodeURIComponent(window.location.href);
-        window.location.href = `https://soundcloud.com/connect?client_id=${clientId}&response_type=token&scope=non-expiring&redirect_uri=${redirectUri}`;
-    };
-
-    window.extractSoundCloudToken = function () {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        if (accessToken) {
-            localStorage.setItem("soundcloud_access_token", accessToken);
-            console.log("✅ SoundCloud Access Token Stored!");
-            alert("✅ SoundCloud Account Connected!");
-        }
-    };
-
-    window.onload = function () {
-        extractSoundCloudToken();
-    };
-
-    // ✅ REPOST TRACK TO SOUNDCLOUD
-    window.repostTrack = async function (campaignId, campaignOwner, campaignCredits, trackUrl) {
-        const user = auth.currentUser;
-        if (!user) {
-            alert("❌ You must be logged in to repost.");
-            return;
-        }
-
-        if (user.uid === campaignOwner) {
-            alert("❌ You cannot repost your own campaign.");
-            return;
-        }
-
-        let accessToken = localStorage.getItem("soundcloud_access_token");
-        if (!accessToken) {
-            alert("❌ You need to connect your SoundCloud account.");
-            connectSoundCloud();
-            return;
-        }
-
-        let trackId;
-        try {
-            let response = await fetch(`https://api.soundcloud.com/resolve?url=${trackUrl}&client_id=YOUR_SOUNDCLOUD_CLIENT_ID`);
-            let trackData = await response.json();
-            trackId = trackData.id;
-        } catch (error) {
-            console.error("❌ Error fetching SoundCloud track ID:", error);
-            alert("❌ Failed to find track on SoundCloud.");
-            return;
-        }
-
-        try {
-            let repostResponse = await fetch(`https://api.soundcloud.com/me/favorites/${trackId}?oauth_token=${accessToken}`, {
-                method: "PUT"
-            });
-
-            if (repostResponse.ok) {
-                alert("✅ Track reposted successfully!");
-            } else {
-                alert("❌ Failed to repost track on SoundCloud.");
-            }
-        } catch (error) {
-            console.error("❌ Error reposting track:", error);
-            alert(error.message);
-        }
-    };
 }
+
