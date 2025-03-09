@@ -32,8 +32,8 @@ db.enablePersistence()
     .then(() => console.log("✅ Firestore offline mode enabled"))
     .catch(error => console.warn("⚠️ Firestore persistence error:", error));
 
-// ✅ Set Firebase Auth Persistence
-auth.sauetPersistence(firebase.auth.Auth.Persistence.LOCAL)
+// ✅ Set Firebase Auth Persistence (Fixed Typo)
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => console.log("✅ Auth Persistence Set to LOCAL"))
     .catch(error => console.error("❌ Error setting auth persistence:", error.message));
 
@@ -49,64 +49,56 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ FUNCTION: SUBMIT SOUNDCLOUD TRACK
-window.submitTrack = function () {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You must be logged in to submit a track.");
-        return;
-    }
+// ✅ LOGIN FUNCTION
+window.loginUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-    if (!soundcloudUrl.includes("soundcloud.com/")) {
-        alert("Invalid SoundCloud URL.");
-        return;
-    }
-
-    db.collection("campaigns").add({
-        owner: user.uid,
-        track: soundcloudUrl,
-        credits: 10
-    }).then(() => {
-        alert("✅ Track submitted!");
-        loadActiveCampaigns(); // Refresh campaigns
-    }).catch(error => {
-        console.error("Error submitting track:", error);
-    });
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            alert("✅ Login Successful!");
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            alert("❌ Login Error: " + error.message);
+        });
 };
 
-// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
-window.loadActiveCampaigns = function () {
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found");
-        return;
-    }
+// ✅ SIGNUP FUNCTION
+window.signupUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    campaignsDiv.innerHTML = "<p>Loading...</p>";
-
-    db.collection("campaigns").get()
-        .then(querySnapshot => {
-            console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
-            campaignsDiv.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div id="campaign-${doc.id}">
-                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
-                        </div>
-                    `;
-                });
-            }
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            return db.collection("users").doc(userCredential.user.uid).set({
+                email: userCredential.user.email,
+                credits: 0,
+                reposts: 0
+            });
         })
-        .catch(error => console.error("❌ Error loading campaigns:", error));
+        .then(() => {
+            alert("✅ Signup Successful!");
+            updateDashboard(auth.currentUser);
+        })
+        .catch(error => {
+            console.error("❌ Signup Error:", error);
+            alert("❌ Signup Error: " + error.message);
+        });
+};
+
+// ✅ LOGOUT FUNCTION
+window.logoutUser = function () {
+    auth.signOut()
+        .then(() => {
+            alert("✅ Logged Out!");
+            updateDashboard(null);
+        })
+        .catch(error => {
+            console.error("❌ Logout Error:", error);
+            alert("❌ Logout Error: " + error.message);
+        });
 };
 
 
