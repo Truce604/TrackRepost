@@ -49,40 +49,6 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ UPDATE DASHBOARD FUNCTION
-window.updateDashboard = function (user) {
-    const dashboard = document.getElementById("userDashboard");
-    const authMessage = document.getElementById("authMessage");
-
-    if (!dashboard || !authMessage) {
-        console.error("❌ Dashboard elements not found.");
-        return;
-    }
-
-    if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-        authMessage.innerText = "";
-        return;
-    }
-
-    db.collection("users").doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-            let data = doc.data();
-            dashboard.innerHTML = `
-                <h2>Welcome, ${user.email}!</h2>
-                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
-                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                <button onclick="logoutUser()">Logout</button>
-            `;
-            authMessage.innerText = "✅ Logged in successfully!";
-        } else {
-            console.warn("🚨 User data not found in Firestore!");
-        }
-    }).catch(error => {
-        console.error("❌ Error loading user data:", error);
-    });
-};
-
 // ✅ FUNCTION: SUBMIT SOUNDCLOUD TRACK
 window.submitTrack = function () {
     const user = auth.currentUser;
@@ -141,4 +107,44 @@ window.loadActiveCampaigns = function () {
             }
         })
         .catch(error => console.error("❌ Error loading campaigns:", error));
+};
+
+// ✅ FUNCTION: REPOST TRACK (Needs SoundCloud API Integration)
+window.repostTrack = function (campaignId, campaignOwner, campaignCredits, trackUrl) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in to repost.");
+        return;
+    }
+
+    if (user.uid === campaignOwner) {
+        alert("You cannot repost your own campaign.");
+        return;
+    }
+
+    db.runTransaction(async (transaction) => {
+        const userRef = db.collection("users").doc(user.uid);
+        const ownerRef = db.collection("users").doc(campaignOwner);
+
+        const userDoc = await transaction.get(userRef);
+        const ownerDoc = await transaction.get(ownerRef);
+
+        if (!userDoc.exists || !ownerDoc.exists) {
+            throw new Error("User data not found!");
+        }
+
+        let newCredits = ownerDoc.data().credits - 10;
+        let userEarnedCredits = userDoc.data().credits + 10;
+        let userReposts = (userDoc.data().reposts || 0) + 1;
+
+        transaction.update(userRef, { credits: userEarnedCredits, reposts: userReposts });
+        transaction.update(ownerRef, { credits: newCredits });
+
+        return Promise.resolve();
+    })
+    .then(() => {
+        alert("✅ Reposted successfully! You earned 10 credits.");
+        updateDashboard(user);
+    })
+    .catch(error => console.error("Error reposting:", error));
 };
