@@ -5,12 +5,13 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 
     const firebaseConfig = {
-        apiKey: "YOUR_FIREBASE_API_KEY",
-        authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
-        projectId: "YOUR_FIREBASE_PROJECT_ID",
-        storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
-        appId: "YOUR_FIREBASE_APP_ID"
+        apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+        authDomain: "trackrepost-921f8.firebaseapp.com",
+        projectId: "trackrepost-921f8",
+        storageBucket: "trackrepost-921f8.appspot.com",
+        messagingSenderId: "967836604288",
+        appId: "1:967836604288:web:3782d50de7384c9201d365",
+        measurementId: "G-G65Q3HC3R8"
     };
 
     if (!firebase.apps.length) {
@@ -131,39 +132,5 @@ window.updateDashboard = function (user) {
     }).catch(error => {
         console.error("❌ Error loading user data:", error);
     });
-};
-
-// ✅ LOAD ACTIVE CAMPAIGNS FUNCTION
-window.loadActiveCampaigns = function () {
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found");
-        return;
-    }
-
-    campaignsDiv.innerHTML = "<p>Loading...</p>";
-
-    db.collection("campaigns").get()
-        .then(querySnapshot => {
-            console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
-            campaignsDiv.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div id="campaign-${doc.id}">
-                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
-                        </div>
-                    `;
-                });
-            }
-        })
-        .catch(error => console.error("❌ Error loading campaigns:", error));
 };
 
