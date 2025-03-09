@@ -1,3 +1,5 @@
+// ✅ auth.js - Authentication & Firestore Handling
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -47,7 +49,7 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ LOGIN FUNCTION (Ensuring auth is always available)
+// ✅ LOGIN FUNCTION
 window.loginUser = function () {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
