@@ -1,3 +1,4 @@
+
 // ✅ auth.js - Authentication & Firestore Handling
 
 // ✅ Ensure Firebase is Loaded
@@ -48,6 +49,40 @@ auth.onAuthStateChanged(user => {
         updateDashboard(null);
     }
 });
+
+// ✅ UPDATE DASHBOARD FUNCTION
+window.updateDashboard = function (user) {
+    const dashboard = document.getElementById("userDashboard");
+    const authMessage = document.getElementById("authMessage");
+
+    if (!dashboard || !authMessage) {
+        console.error("❌ Dashboard elements not found.");
+        return;
+    }
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        authMessage.innerText = "";
+        return;
+    }
+
+    db.collection("users").doc(user.uid).get().then(doc => {
+        if (doc.exists) {
+            let data = doc.data();
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+                <button onclick="logoutUser()">Logout</button>
+            `;
+            authMessage.innerText = "✅ Logged in successfully!";
+        } else {
+            console.warn("🚨 User data not found in Firestore!");
+        }
+    }).catch(error => {
+        console.error("❌ Error loading user data:", error);
+    });
+};
 
 // ✅ LOGIN FUNCTION
 window.loginUser = function () {
@@ -100,5 +135,3 @@ window.logoutUser = function () {
             alert("❌ Logout Error: " + error.message);
         });
 };
-
-
