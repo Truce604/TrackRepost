@@ -49,76 +49,101 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ FUNCTION: UPDATE DASHBOARD
-window.updateDashboard = function (user) {
-    const dashboard = document.getElementById("userDashboard");
-    const authMessage = document.getElementById("authMessage");
+// ✅ LOGIN FUNCTION
+window.loginUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    if (!dashboard || !authMessage) {
-        console.error("❌ Dashboard elements not found.");
-        return;
-    }
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            alert("✅ Login Successful!");
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            alert("❌ Login Error: " + error.message);
+        });
+};
 
+// ✅ SIGNUP FUNCTION
+window.signupUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            return db.collection("users").doc(userCredential.user.uid).set({
+                email: userCredential.user.email,
+                credits: 0,
+                reposts: 0
+            });
+        })
+        .then(() => {
+            alert("✅ Signup Successful!");
+            updateDashboard(auth.currentUser);
+        })
+        .catch(error => {
+            console.error("❌ Signup Error:", error);
+            alert("❌ Signup Error: " + error.message);
+        });
+};
+
+// ✅ FUNCTION: SUBMIT SOUNDCLOUD TRACK
+window.submitTrack = function () {
+    const user = auth.currentUser;
     if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-        authMessage.innerText = "";
+        alert("You must be logged in to submit a track.");
         return;
     }
 
-    db.collection("users").doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-            let data = doc.data();
-            dashboard.innerHTML = `
-                <h2>Welcome, ${user.email}!</h2>
-                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
-                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
-                <button onclick="logoutUser()">Logout</button>
-            `;
-            authMessage.innerText = "✅ Logged in successfully!";
-        } else {
-            console.warn("🚨 User data not found in Firestore!");
-        }
+    let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+    if (!soundcloudUrl.includes("soundcloud.com/")) {
+        alert("Invalid SoundCloud URL.");
+        return;
+    }
+
+    db.collection("campaigns").add({
+        owner: user.uid,
+        track: soundcloudUrl,
+        credits: 10
+    }).then(() => {
+        alert("✅ Track submitted!");
+        loadActiveCampaigns(); // Refresh campaigns
     }).catch(error => {
-        console.error("❌ Error loading user data:", error);
+        console.error("Error submitting track:", error);
     });
 };
 
-// ✅ FUNCTION: REPOST A TRACK
-window.repostTrack = function (campaignId, campaignOwner, campaignCredits, trackUrl) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You must be logged in to repost.");
+// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
+window.loadActiveCampaigns = function () {
+    const campaignsDiv = document.getElementById("activeCampaigns");
+    if (!campaignsDiv) {
+        console.error("❌ Campaigns section not found");
         return;
     }
 
-    if (user.uid === campaignOwner) {
-        alert("You cannot repost your own campaign.");
-        return;
-    }
+    campaignsDiv.innerHTML = "<p>Loading...</p>";
 
-    db.runTransaction(async (transaction) => {
-        const userRef = db.collection("users").doc(user.uid);
-        const ownerRef = db.collection("users").doc(campaignOwner);
+    db.collection("campaigns").get()
+        .then(querySnapshot => {
+            console.log(`🔍 Found ${querySnapshot.size} campaigns in Firestore`);
+            campaignsDiv.innerHTML = "";
 
-        const userDoc = await transaction.get(userRef);
-        const ownerDoc = await transaction.get(ownerRef);
-
-        if (!userDoc.exists || !ownerDoc.exists) {
-            throw new Error("User data not found!");
-        }
-
-        let newCredits = ownerDoc.data().credits - 10;
-        let userEarnedCredits = userDoc.data().credits + 10;
-        let userReposts = (userDoc.data().reposts || 0) + 1;
-
-        transaction.update(userRef, { credits: userEarnedCredits, reposts: userReposts });
-        transaction.update(ownerRef, { credits: newCredits });
-
-        return Promise.resolve();
-    })
-    .then(() => {
-        alert("✅ Reposted successfully! You earned 10 credits.");
-        updateDashboard(user);
-    })
-    .catch(error => console.error("Error reposting:", error));
+            if (querySnapshot.empty) {
+                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+            } else {
+                querySnapshot.forEach(doc => {
+                    let data = doc.data();
+                    campaignsDiv.innerHTML += `
+                        <div id="campaign-${doc.id}">
+                            <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                            </iframe>
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
+                        </div>
+                    `;
+                });
+            }
+        })
+        .catch(error => console.error("❌ Error loading campaigns:", error));
 };
