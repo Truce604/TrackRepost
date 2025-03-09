@@ -33,6 +33,57 @@ if (typeof firebase === "undefined") {
         }
     });
 
+    // ✅ LOAD ACTIVE CAMPAIGNS FUNCTION
+    window.loadActiveCampaigns = function () {
+        const campaignsDiv = document.getElementById("activeCampaigns");
+        if (!campaignsDiv) {
+            console.error("❌ Campaigns section not found");
+            return;
+        }
+
+        campaignsDiv.innerHTML = "<p>Loading...</p>";
+
+        db.collection("campaigns").where("status", "==", "active").get()
+            .then(async (querySnapshot) => {
+                console.log(`🔍 Found ${querySnapshot.size} active campaigns in Firestore`);
+                campaignsDiv.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+                } else {
+                    for (const doc of querySnapshot.docs) {
+                        let data = doc.data();
+                        console.log("🎵 Campaign Data:", data);
+
+                        let trackTitle = "Unknown Track";
+                        let artistName = "Unknown Artist";
+
+                        try {
+                            const response = await fetch(`https://api.soundcloud.com/resolve?url=${data.track}&client_id=YOUR_SOUNDCLOUD_CLIENT_ID`);
+                            const trackInfo = await response.json();
+                            if (trackInfo && trackInfo.title) {
+                                trackTitle = trackInfo.title;
+                                artistName = trackInfo.user ? trackInfo.user.username : "Unknown Artist";
+                            }
+                        } catch (error) {
+                            console.error("❌ Error fetching SoundCloud track info:", error);
+                        }
+
+                        campaignsDiv.innerHTML += `
+                            <div id="campaign-${doc.id}">
+                                <p><strong>${trackTitle}</strong> by ${artistName}</p>
+                                <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                                </iframe>
+                                <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}', '${data.track}')">Repost</button>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => console.error("❌ Error loading campaigns:", error));
+    };
+
     // ✅ UPDATE DASHBOARD FUNCTION
     window.updateDashboard = function (user) {
         const dashboard = document.getElementById("userDashboard");
@@ -117,18 +168,6 @@ if (typeof firebase === "undefined") {
             .catch(error => {
                 console.error("❌ Login Error:", error.code, error.message);
                 alert("❌ Login Error: " + error.message);
-            });
-    };
-
-    window.logoutUser = function () {
-        auth.signOut()
-            .then(() => {
-                alert("✅ Logged Out!");
-                updateDashboard(null);
-            })
-            .catch(error => {
-                console.error("❌ Logout Error:", error);
-                alert("❌ Logout Error: " + error.message);
             });
     };
 }
