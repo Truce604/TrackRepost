@@ -11,24 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Initialize Firebase -->
-    <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
-            authDomain: "trackrepost-921f8.firebaseapp.com",
-            projectId: "trackrepost-921f8",
-            storageBucket: "trackrepost-921f8.appspot.com",
-            messagingSenderId: "967836604288",
-            appId: "1:967836604288:web:3782d50de7384c9201d365",
-            measurementId: "G-G65Q3HC3R8"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log("✅ Firebase Initialized Successfully!");
-        }
-    </script>
-
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
     <script src="auth.js" defer></script>
 </head>
@@ -40,6 +22,7 @@
         <p>Promote Your Music, Get More Plays</p>
     </header>
 
+    <!-- ✅ LOGIN / SIGNUP FORM -->
     <div class="container">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
@@ -47,16 +30,18 @@
         <div class="button-group">
             <button id="signupBtn" onclick="signupUser()">Sign Up</button>
             <button id="loginBtn" onclick="loginUser()">Login</button>
-            <button id="logoutBtn" onclick="logoutUser()">Logout</button>
+            <button id="logoutBtn" onclick="logoutUser()" style="display:none;">Logout</button>
         </div>
-        <p id="authMessage"></p>
+        <p id="authMessage" style="color:red;"></p>
     </div>
 
+    <!-- ✅ DASHBOARD -->
     <div class="container">
         <h2>Your Dashboard</h2>
         <div id="userDashboard"></div>
     </div>
 
+    <!-- ✅ SUBMIT TRACK -->
     <div class="container" id="soundcloudSection">
         <h2>Submit Your SoundCloud Track</h2>
         <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
@@ -64,17 +49,18 @@
         <p id="currentTrackMessage">No active campaign</p>
     </div>
 
+    <!-- ✅ ACTIVE CAMPAIGNS -->
     <div class="container">
         <h2>Active Campaigns</h2>
         <div id="activeCampaigns">
-            <p>Loading campaigns...</p>
+            <p><span id="loadingSpinner">⏳ Loading campaigns...</span></p>
         </div>
     </div>
 
+    <!-- ✅ FOOTER -->
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
 </body>
 </html>
-
