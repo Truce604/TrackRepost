@@ -27,10 +27,12 @@ const db = firebase.firestore();
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
+        document.getElementById("logoutBtn").style.display = "block"; // Show logout button
         updateDashboard(user);
         loadActiveCampaigns();
     } else {
         console.warn("🚨 No user detected.");
+        document.getElementById("logoutBtn").style.display = "none"; // Hide logout button
         updateDashboard(null);
     }
 });
@@ -42,12 +44,11 @@ window.loginUser = function () {
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
-            alert("✅ Login Successful!");
+            document.getElementById("authMessage").textContent = "✅ Login Successful!";
             updateDashboard(userCredential.user);
         })
         .catch(error => {
-            console.error("❌ Login Error:", error);
-            alert(`❌ Login Error: ${error.message}`);
+            document.getElementById("authMessage").textContent = `❌ Login Error: ${error.message}`;
         });
 };
 
@@ -65,13 +66,22 @@ window.signupUser = function () {
             });
         })
         .then(() => {
-            alert("✅ Signup Successful!");
+            document.getElementById("authMessage").textContent = "✅ Signup Successful!";
             updateDashboard(auth.currentUser);
         })
         .catch(error => {
-            console.error("❌ Signup Error:", error);
-            alert(`❌ Signup Error: ${error.message}`);
+            document.getElementById("authMessage").textContent = `❌ Signup Error: ${error.message}`;
         });
+};
+
+// ✅ LOGOUT FUNCTION
+window.logoutUser = function () {
+    auth.signOut().then(() => {
+        document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
+        updateDashboard(null);
+    }).catch(error => {
+        document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
+    });
 };
 
 // ✅ FUNCTION: UPDATE DASHBOARD
@@ -83,7 +93,7 @@ function updateDashboard(user) {
         return;
     }
 
-    db.collection("users").doc(user.uid).get().then(doc => {
+    db.collection("users").doc(user.uid).onSnapshot(doc => {
         if (doc.exists) {
             let data = doc.data();
             dashboard.innerHTML = `
@@ -103,30 +113,28 @@ window.loadActiveCampaigns = function () {
         return;
     }
 
-    campaignsDiv.innerHTML = "<p>Loading...</p>";
+    campaignsDiv.innerHTML = "<p>⏳ Loading campaigns...</p>";
 
-    db.collection("campaigns").orderBy("credits", "desc").get()
-        .then(querySnapshot => {
-            campaignsDiv.innerHTML = "";
+    db.collection("campaigns").orderBy("credits", "desc").onSnapshot(snapshot => {
+        campaignsDiv.innerHTML = "";
 
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    let data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div id="campaign-${doc.id}" class="campaign">
-                            <h3>🔥 Now Promoting:</h3>
-                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
-                        </div>
-                    `;
-                });
-            }
-        })
-        .catch(error => console.error("❌ Error loading campaigns:", error));
+        if (snapshot.empty) {
+            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+        } else {
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                campaignsDiv.innerHTML += `
+                    <div id="campaign-${doc.id}" class="campaign">
+                        <h3>🔥 Now Promoting:</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                        </iframe>
+                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
+                    </div>
+                `;
+            });
+        }
+    });
 };
 
 // ✅ FUNCTION: REPOST TRACK & EARN CREDITS
