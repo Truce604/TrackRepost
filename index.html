@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -81,25 +82,57 @@
         </div>
     </div>
 
+    <!-- ✅ Payment Buttons Section -->
+    <div id="credit-buttons-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+        <!-- Button 1 (500 Credits) -->
+        <div style="overflow: auto; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; width: 259px; background: #FFFFFF; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: -2px 10px 5px rgba(0, 0, 0, 0); border-radius: 10px; font-family: SQ Market, SQ Market, Helvetica, Arial, sans-serif;">
+            <div style="padding: 20px;">
+                <p style="font-size: 18px; line-height: 20px;">500 Credits</p>
+                <p style="font-size: 18px; line-height: 20px; font-weight: 600;">$24.99</p>
+                <a target="_blank" href="https://square.link/u/i99mOWKT?src=embed" style="display: inline-block; font-size: 18px; line-height: 48px; height: 48px; color: #ffffff; min-width: 212px; background-color: #006aff; text-align: center; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; border-radius: 6px;">Buy now</a>
+            </div>
+        </div>
+
+        <!-- Button 2 (1000 Credits) -->
+        <div style="overflow: auto; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; width: 259px; background: #FFFFFF; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: -2px 10px 5px rgba(0, 0, 0, 0); border-radius: 10px; font-family: SQ Market, SQ Market, Helvetica, Arial, sans-serif;">
+            <div style="padding: 20px;">
+                <p style="font-size: 18px; line-height: 20px;">1000 Credits</p>
+                <p style="font-size: 18px; line-height: 20px; font-weight: 600;">$34.99</p>
+                <a target="_blank" href="https://square.link/u/WVdzubsu?src=embed" style="display: inline-block; font-size: 18px; line-height: 48px; height: 48px; color: #ffffff; min-width: 212px; background-color: #006aff; text-align: center; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; border-radius: 6px;">Buy now</a>
+            </div>
+        </div>
+
+        <!-- Button 3 (2500 Credits) -->
+        <div style="overflow: auto; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; width: 259px; background: #FFFFFF; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: -2px 10px 5px rgba(0, 0, 0, 0); border-radius: 10px; font-family: SQ Market, SQ Market, Helvetica, Arial, sans-serif;">
+            <div style="padding: 20px;">
+                <p style="font-size: 18px; line-height: 20px;">2500 Credits</p>
+                <p style="font-size: 18px; line-height: 20px; font-weight: 600;">$79.99</p>
+                <a target="_blank" href="https://square.link/u/2UA8zQ5D?src=embed" style="display: inline-block; font-size: 18px; line-height: 48px; height: 48px; color: #ffffff; min-width: 212px; background-color: #006aff; text-align: center; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; border-radius: 6px;">Buy now</a>
+            </div>
+        </div>
+
+        <!-- Button 4 (5000 Credits) -->
+        <div style="overflow: auto; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; width: 259px; background: #FFFFFF; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: -2px 10px 5px rgba(0, 0, 0, 0); border-radius: 10px; font-family: SQ Market, SQ Market, Helvetica, Arial, sans-serif;">
+            <div style="padding: 20px;">
+                <p style="font-size: 18px; line-height: 20px;">5000 Credits</p>
+                <p style="font-size: 18px; line-height: 20px; font-weight: 600;">$139.99</p>
+                <a target="_blank" href="https://square.link/u/xIcjDvkN?src=embed" style="display: inline-block; font-size: 18px; line-height: 48px; height: 48px; color: #ffffff; min-width: 212px; background-color: #006aff; text-align: center; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; border-radius: 6px;">Buy now</a>
+            </div>
+        </div>
+
+        <!-- Button 5 (25000 Credits) -->
+        <div style="overflow: auto; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; width: 259px; background: #FFFFFF; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: -2px 10px 5px rgba(0, 0, 0, 0); border-radius: 10px; font-family: SQ Market, SQ Market, Helvetica, Arial, sans-serif;">
+            <div style="padding: 20px;">
+                <p style="font-size: 18px; line-height: 20px;">25000 Credits</p>
+                <p style="font-size: 18px; line-height: 20px; font-weight: 600;">$549.99</p>
+                <a target="_blank" href="https://square.link/u/fwujekvR?src=embed" style="display: inline-block; font-size: 18px; line-height: 48px; height: 48px; color: #ffffff; min-width: 212px; background-color: #006aff; text-align: center; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; border-radius: 6px;">Buy now</a>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
-
-    <!-- ✅ JavaScript to Handle Reposts -->
-    <script>
-        // ✅ Ensure that the `Repost` buttons work properly
-        document.addEventListener("click", function(event) {
-            if (event.target && event.target.matches(".repostBtn")) {
-                let campaignId = event.target.getAttribute("data-campaign-id");
-                let ownerId = event.target.getAttribute("data-owner-id");
-                let credits = event.target.getAttribute("data-credits");
-
-                if (campaignId && ownerId && credits) {
-                    repostTrack(campaignId, ownerId, credits);
-                }
-            }
-        });
-    </script>
 
 </body>
 </html>
