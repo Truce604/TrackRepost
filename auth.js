@@ -23,9 +23,10 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ SoundCloud Integration
+// ✅ SoundCloud Integration (Ensure you replace with your actual client ID)
+const SOUNDCLOUD_CLIENT_ID = "YOUR_SOUNDCLOUD_CLIENT_ID";
 SC.initialize({
-    client_id: "YOUR_SOUNDCLOUD_CLIENT_ID",
+    client_id: SOUNDCLOUD_CLIENT_ID,
     redirect_uri: "https://trackrepost.com/callback"
 });
 
@@ -103,6 +104,34 @@ window.loginWithSoundCloud = function () {
     });
 };
 
+// ✅ FUNCTION: SUBMIT A NEW TRACK
+window.submitTrack = function () {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("🚨 You must be logged in to submit a track.");
+        return;
+    }
+
+    let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
+    if (!soundcloudUrl.includes("soundcloud.com/")) {
+        alert("🚨 Invalid SoundCloud URL. Make sure it's a valid SoundCloud link.");
+        return;
+    }
+
+    db.collection("campaigns").add({
+        owner: user.uid,
+        track: soundcloudUrl,
+        credits: 10, // Initial credit value
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        alert("✅ Track successfully submitted!");
+        loadActiveCampaigns();
+    }).catch(error => {
+        console.error("❌ Error submitting track:", error);
+        alert("❌ Error submitting track: " + error.message);
+    });
+};
+
 // ✅ FUNCTION: UPDATE DASHBOARD
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
@@ -134,7 +163,7 @@ window.loadActiveCampaigns = function () {
 
     campaignsDiv.innerHTML = "<p>⏳ Loading campaigns...</p>";
 
-    db.collection("campaigns").orderBy("credits", "desc").onSnapshot(snapshot => {
+    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         campaignsDiv.innerHTML = "";
 
         if (snapshot.empty) {
@@ -153,57 +182,6 @@ window.loadActiveCampaigns = function () {
                 `;
             });
         }
-    });
-};
-
-// ✅ FUNCTION: REPOST TRACK & EARN CREDITS
-window.repostTrack = function (campaignId, ownerId, cost) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You must be logged in to repost.");
-        return;
-    }
-
-    if (user.uid === ownerId) {
-        alert("You cannot repost your own track.");
-        return;
-    }
-
-    db.runTransaction(async (transaction) => {
-        const userRef = db.collection("users").doc(user.uid);
-        const ownerRef = db.collection("users").doc(ownerId);
-        const campaignRef = db.collection("campaigns").doc(campaignId);
-
-        const userDoc = await transaction.get(userRef);
-        const ownerDoc = await transaction.get(ownerRef);
-        const campaignDoc = await transaction.get(campaignRef);
-
-        if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
-            throw new Error("Invalid user or campaign data.");
-        }
-
-        let userCredits = userDoc.data().credits;
-        let ownerCredits = ownerDoc.data().credits;
-
-        let updatedUserCredits = userCredits + 5;
-        let updatedOwnerCredits = ownerCredits - cost;
-
-        if (updatedOwnerCredits < 0) {
-            throw new Error("Campaign owner does not have enough credits.");
-        }
-
-        transaction.update(userRef, { credits: updatedUserCredits });
-        transaction.update(ownerRef, { credits: updatedOwnerCredits });
-
-        console.log("✅ Repost transaction successful!");
-
-    }).then(() => {
-        alert("✅ Repost successful! You earned 5 credits.");
-        updateDashboard(user);
-        loadActiveCampaigns();
-    }).catch(error => {
-        console.error("❌ Error reposting:", error);
-        alert(`❌ Error reposting: ${error.message}`);
     });
 };
 
