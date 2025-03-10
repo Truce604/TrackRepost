@@ -73,7 +73,7 @@ window.loginUser = function () {
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
             document.getElementById("authMessage").textContent = "✅ Login Successful!";
-            updateDashboard(userCredential.user);
+            updateDashboard(userCredential.user);  // Update dashboard after login
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
@@ -90,13 +90,13 @@ window.signupUser = function () {
         .then(userCredential => {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
-                credits: 10,
-                reposts: 0
+                credits: 10,  // Default starting credits
+                reposts: 0    // Default reposts
             });
         })
         .then(() => {
             document.getElementById("authMessage").textContent = "✅ Signup Successful!";
-            updateDashboard(auth.currentUser);
+            updateDashboard(auth.currentUser);  // Update dashboard after signup
         })
         .catch(error => {
             console.error("❌ Signup Error:", error);
@@ -157,6 +157,26 @@ window.loadActiveCampaigns = function () {
         campaignsDiv.innerHTML = "";
 
         if (snapshot.empty) {
-            campaignsDiv.innerHTML = "<p
+            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+        } else {
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                campaignsDiv.innerHTML += `
+                    <div id="campaign-${doc.id}" class="campaign">
+                        <h3>🔥 Now Promoting:</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                        </iframe>
+                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
+                    </div>
+                `;
+            });
+        }
+    });
+};
 
+// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
+document.addEventListener("DOMContentLoaded", () => {
+    loadActiveCampaigns();
+});
 
