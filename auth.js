@@ -157,26 +157,6 @@ window.loadActiveCampaigns = function () {
         campaignsDiv.innerHTML = "";
 
         if (snapshot.empty) {
-            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-        } else {
-            snapshot.forEach(doc => {
-                let data = doc.data();
-                campaignsDiv.innerHTML += `
-                    <div id="campaign-${doc.id}" class="campaign">
-                        <h3>🔥 Now Promoting:</h3>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
-                    </div>
-                `;
-            });
-        }
-    });
-};
+            campaignsDiv.innerHTML = "<p
 
-// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
-document.addEventListener("DOMContentLoaded", () => {
-    loadActiveCampaigns();
-});
 
