@@ -168,8 +168,64 @@ window.loadActiveCampaigns = function () {
                             src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                         </iframe>
                         <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
+                        <button onclick="trackInteraction('${doc.id}')">Like & Comment to Earn More Credits</button>
                     </div>
                 `;
+            });
+        }
+    });
+};
+
+// ✅ FUNCTION: HANDLE TRACK INTERACTIONS (LIKE, COMMENT)
+window.trackInteraction = function (campaignId) {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("🚨 You must be logged in to interact with this track.");
+        return;
+    }
+
+    // Get the campaign data
+    const campaignRef = db.collection("campaigns").doc(campaignId);
+    campaignRef.get().then(doc => {
+        if (doc.exists) {
+            const campaignData = doc.data();
+
+            let additionalCredits = 0;
+
+            // Get the track iframe
+            const iframe = document.getElementById('sc-widget');
+            const widget = SC.Widget(iframe);
+
+            // Listen for the like event
+            widget.bind(SC.Widget.Events.PLAY, function() {
+                widget.isLiked(function(liked) {
+                    if (liked) {
+                        additionalCredits += 1; // 1 credit for liking the track
+                    }
+                });
+            });
+
+            // Listen for the comment event
+            widget.bind(SC.Widget.Events.FINISH, function() {
+                // Assume the user comments here, we will add 2 credits for commenting
+                additionalCredits += 2; // 2 credits for leaving a comment
+            });
+
+            // Update credits in Firestore after interaction
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.get().then(userDoc => {
+                const userData = userDoc.data();
+                const newCredits = userData.credits + additionalCredits;
+
+                userRef.update({
+                    credits: newCredits
+                }).then(() => {
+                    alert(`You earned ${additionalCredits} extra credits!`);
+                    loadActiveCampaigns(); // Reload campaigns to reflect changes
+                }).catch(error => {
+                    console.error("❌ Error updating credits: ", error);
+                    alert("An error occurred while updating credits.");
+                });
             });
         }
     });
