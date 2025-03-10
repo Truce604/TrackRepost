@@ -23,20 +23,44 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Ensure Elements Exist Before Using
-const logoutBtn = document.getElementById("logoutBtn") || { style: {} };
-const authMessage = document.getElementById("authMessage") || { textContent: "" };
+// ✅ FUNCTION: UPDATE DASHBOARD
+window.updateDashboard = function (user) {
+    const dashboard = document.getElementById("userDashboard");
+
+    if (!dashboard) {
+        console.error("❌ Dashboard element not found in the DOM.");
+        return;
+    }
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        return;
+    }
+
+    db.collection("users").doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            let data = doc.data();
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+            `;
+        } else {
+            console.warn("⚠️ No user data found in Firestore.");
+        }
+    });
+};
 
 // ✅ Listen for Auth Changes
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
-        logoutBtn.style.display = "block";
+        document.getElementById("logoutBtn").style.display = "block";
         updateDashboard(user);
         loadActiveCampaigns();
     } else {
         console.warn("🚨 No user detected.");
-        logoutBtn.style.display = "none";
+        document.getElementById("logoutBtn").style.display = "none";
         updateDashboard(null);
     }
 });
@@ -48,11 +72,12 @@ window.loginUser = function () {
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
-            authMessage.textContent = "✅ Login Successful!";
+            document.getElementById("authMessage").textContent = "✅ Login Successful!";
             updateDashboard(userCredential.user);
         })
         .catch(error => {
-            authMessage.textContent = `❌ Login Error: ${error.message}`;
+            console.error("❌ Login Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Login Error: ${error.message}`;
         });
 };
 
@@ -70,21 +95,23 @@ window.signupUser = function () {
             });
         })
         .then(() => {
-            authMessage.textContent = "✅ Signup Successful!";
+            document.getElementById("authMessage").textContent = "✅ Signup Successful!";
             updateDashboard(auth.currentUser);
         })
         .catch(error => {
-            authMessage.textContent = `❌ Signup Error: ${error.message}`;
+            console.error("❌ Signup Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Signup Error: ${error.message}`;
         });
 };
 
 // ✅ LOGOUT FUNCTION
 window.logoutUser = function () {
     auth.signOut().then(() => {
-        authMessage.textContent = "✅ Logged out successfully!";
+        document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
         updateDashboard(null);
     }).catch(error => {
-        authMessage.textContent = `❌ Logout Error: ${error.message}`;
+        console.error("❌ Logout Error:", error);
+        document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
     });
 };
 
@@ -105,7 +132,7 @@ window.submitTrack = function () {
     db.collection("campaigns").add({
         owner: user.uid,
         track: soundcloudUrl,
-        credits: 10,
+        credits: 10, // Initial credit value
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
         alert("✅ Track successfully submitted!");
@@ -113,53 +140,6 @@ window.submitTrack = function () {
     }).catch(error => {
         console.error("❌ Error submitting track:", error);
         alert("❌ Error submitting track: " + error.message);
-    });
-};
-
-// ✅ FUNCTION: REPOST TRACK
-window.repostTrack = function (campaignId, ownerId, cost) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You must be logged in to repost.");
-        return;
-    }
-
-    if (user.uid === ownerId) {
-        alert("You cannot repost your own track.");
-        return;
-    }
-
-    db.runTransaction(async (transaction) => {
-        const userRef = db.collection("users").doc(user.uid);
-        const ownerRef = db.collection("users").doc(ownerId);
-        const campaignRef = db.collection("campaigns").doc(campaignId);
-
-        const userDoc = await transaction.get(userRef);
-        const ownerDoc = await transaction.get(ownerRef);
-        const campaignDoc = await transaction.get(campaignRef);
-
-        if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
-            throw new Error("Invalid user or campaign data.");
-        }
-
-        let userCredits = userDoc.data().credits;
-        let ownerCredits = ownerDoc.data().credits;
-
-        if (ownerCredits < cost) {
-            throw new Error("Campaign owner does not have enough credits.");
-        }
-
-        transaction.update(userRef, { credits: userCredits + 5 });
-        transaction.update(ownerRef, { credits: ownerCredits - cost });
-
-        console.log("✅ Repost transaction successful!");
-    }).then(() => {
-        alert("✅ Repost successful! You earned 5 credits.");
-        updateDashboard(user);
-        loadActiveCampaigns();
-    }).catch(error => {
-        console.error("❌ Error reposting:", error);
-        alert(`❌ Error reposting: ${error.message}`);
     });
 };
 
