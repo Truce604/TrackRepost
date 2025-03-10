@@ -23,16 +23,22 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ✅ SoundCloud Integration
+SC.initialize({
+    client_id: "YOUR_SOUNDCLOUD_CLIENT_ID",
+    redirect_uri: "https://trackrepost.com/callback"
+});
+
 // ✅ Listen for Auth Changes
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
-        document.getElementById("logoutBtn").style.display = "block"; // Show logout button
+        document.getElementById("logoutBtn").style.display = "block";
         updateDashboard(user);
         loadActiveCampaigns();
     } else {
         console.warn("🚨 No user detected.");
-        document.getElementById("logoutBtn").style.display = "none"; // Hide logout button
+        document.getElementById("logoutBtn").style.display = "none";
         updateDashboard(null);
     }
 });
@@ -81,6 +87,19 @@ window.logoutUser = function () {
         updateDashboard(null);
     }).catch(error => {
         document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
+    });
+};
+
+// ✅ LOGIN WITH SOUNDCLOUD
+window.loginWithSoundCloud = function () {
+    SC.connect().then(() => {
+        return SC.get('/me');
+    }).then(user => {
+        console.log("✅ SoundCloud User:", user);
+        alert(`Logged in as ${user.username}`);
+    }).catch(error => {
+        console.error("❌ SoundCloud Login Error:", error);
+        alert("Error logging into SoundCloud.");
     });
 };
 
@@ -166,8 +185,8 @@ window.repostTrack = function (campaignId, ownerId, cost) {
         let userCredits = userDoc.data().credits;
         let ownerCredits = ownerDoc.data().credits;
 
-        let updatedUserCredits = userCredits + 5; // ✅ Reward user 5 credits
-        let updatedOwnerCredits = ownerCredits - cost; // ✅ Deduct cost from campaign owner
+        let updatedUserCredits = userCredits + 5;
+        let updatedOwnerCredits = ownerCredits - cost;
 
         if (updatedOwnerCredits < 0) {
             throw new Error("Campaign owner does not have enough credits.");
