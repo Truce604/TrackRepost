@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackRepost - Campaigns</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="auth.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>🔥 Active Campaigns</h1>
+        <p>Explore the campaigns and repost to earn credits!</p>
+    </header>
+
+    <div id="campaignsContainer">
+        <p>Loading campaigns...</p>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Loading active campaigns into this page
+        window.loadCampaigns = function () {
+            const campaignsDiv = document.getElementById("campaignsContainer");
+
+            firebase.firestore().collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+                campaignsDiv.innerHTML = "";  // Clear before adding new
+
+                if (snapshot.empty) {
+                    campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+                } else {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        campaignsDiv.innerHTML += `
+                            <div class="campaign">
+                                <h3>🔥 ${data.track}</h3>
+                                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}"></iframe>
+                                <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        };
+
+        document.addEventListener("DOMContentLoaded", loadCampaigns);
+    </script>
+</body>
+</html>
