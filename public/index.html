@@ -1,53 +1,81 @@
-<!-- ✅ Load Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackRepost - Boost Your Music Reach</title>
+    <link rel="stylesheet" href="styles.css">
 
-<!-- ✅ Load Firebase Configuration -->
-<script type="module">
-    import firebaseConfig from './firebaseConfig.js';
-    firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Initialized Successfully!");
-</script>
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-<!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-<script src="auth.js" defer></script><!-- ✅ Authentication Section -->
-<div class="container">
-    <h2>Login or Sign Up</h2>
-    <input type="email" id="email" placeholder="Enter Email">
-    <input type="password" id="password" placeholder="Enter Password">
-    <div class="button-group">
-        <button id="signupBtn" onclick="signupUser()">Sign Up</button>
-        <button id="loginBtn" onclick="loginUser()">Login</button>
-        <button id="logoutBtn" onclick="logoutUser()" style="display:none;">Logout</button>
+    <!-- ✅ Load SoundCloud SDK -->
+    <script src="https://connect.soundcloud.com/sdk.js"></script>
+
+    <!-- ✅ Load Firebase Config -->
+    <script type="module">
+        import firebaseConfig from './firebaseConfig.js';
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("✅ Firebase Initialized Successfully!");
+        }
+    </script>
+
+    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
+    <script src="auth.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
+        <p>Promote Your Music, Get More Plays</p>
+    </header>
+
+    <!-- ✅ Authentication Section -->
+    <div class="container">
+        <h2>Login or Sign Up</h2>
+        <input type="email" id="email" placeholder="Enter Email">
+        <input type="password" id="password" placeholder="Enter Password">
+        <div class="button-group">
+            <button id="signupBtn" onclick="signupUser()">Sign Up</button>
+            <button id="loginBtn" onclick="loginUser()">Login</button>
+            <button id="logoutBtn" onclick="logoutUser()" style="display:none;">Logout</button>
+            <button id="soundcloudLoginBtn" onclick="loginWithSoundCloud()">🔊 Login with SoundCloud</button>
+        </div>
+        <p id="authMessage"></p>
     </div>
-    <p id="authMessage"></p>
-</div>
 
-<!-- ✅ Dashboard Section -->
-<div class="container">
-    <h2>Your Dashboard</h2>
-    <div id="userDashboard">
-        <p>🔍 Loading user data...</p>
+    <!-- ✅ Dashboard Section -->
+    <div class="container">
+        <h2>Your Dashboard</h2>
+        <div id="userDashboard">
+            <p>🔍 Loading user data...</p>
+        </div>
     </div>
-</div>
 
-<!-- ✅ SoundCloud Track Submission -->
-<div class="container" id="soundcloudSection">
-    <h2>Submit Your SoundCloud Track</h2>
-    <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-    <button id="submitTrackBtn" onclick="submitTrack()">Submit</button>
-    <p id="currentTrackMessage">No active campaign</p>
-</div>
-
-<!-- ✅ Active Campaigns -->
-<div class="container">
-    <h2>🔥 Active Campaigns</h2>
-    <div id="activeCampaigns">
-        <p>Loading campaigns...</p>
+    <!-- ✅ SoundCloud Track Submission -->
+    <div class="container" id="soundcloudSection">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button id="submitTrackBtn" onclick="submitTrack()">Submit</button>
+        <p id="currentTrackMessage">No active campaign</p>
     </div>
-</div>
 
-<footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
-</footer>
+    <!-- ✅ Active Campaigns -->
+    <div class="container">
+        <h2>🔥 Active Campaigns</h2>
+        <div id="activeCampaigns">
+            <p>Loading campaigns...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
