@@ -57,7 +57,7 @@ auth.onAuthStateChanged(user => {
         console.log(`✅ User logged in: ${user.email}`);
         document.getElementById("logoutBtn").style.display = "block";
         updateDashboard(user);
-        loadActiveCampaigns();  // Make sure this is here
+        loadActiveCampaigns();
     } else {
         console.warn("🚨 No user detected.");
         document.getElementById("logoutBtn").style.display = "none";
@@ -91,7 +91,8 @@ window.signupUser = function () {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
                 credits: 10,
-                reposts: 0
+                reposts: 0,
+                followers: 0 // Add initial followers count (could be updated later)
             });
         })
         .then(() => {
@@ -136,7 +137,7 @@ window.submitTrack = function () {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
         alert("✅ Track successfully submitted!");
-        loadActiveCampaigns();  // Make sure to reload the campaigns after submission
+        loadActiveCampaigns();
     }).catch(error => {
         console.error("❌ Error submitting track:", error);
         alert("❌ Error submitting track: " + error.message);
@@ -179,78 +180,69 @@ window.loadActiveCampaigns = function () {
 window.repostTrack = function (campaignId, ownerId, cost) {
     const user = auth.currentUser;
     if (!user) {
-        alert("🚨 You must be logged in to repost.");
+        alert("You must be logged in to repost.");
         return;
     }
 
-    if (user.uid === ownerId) {
-        alert("🚨 You cannot repost your own track.");
-        return;
-    }
+    db.collection("users").doc(user.uid).get().then(userDoc => {
+        const userFollowers = userDoc.data().followers || 0;
+        let repostCost = Math.ceil(userFollowers / 100); // 1 credit per 100 followers
+        repostCost = Math.min(repostCost, cost); // Cap repost cost at available credits
 
-    // Check if user already reposted within the last 12 hours
-    db.collection("reposts")
-        .where("userId", "==", user.uid)
-        .where("campaignId", "==", campaignId)
-        .where("timestamp", ">", new Date(new Date().getTime() - 12 * 60 * 60 * 1000)) // 12-hour window
-        .get()
-        .then((querySnapshot) => {
-            if (!querySnapshot.empty) {
-                alert("🚨 You can only repost once every 12 hours.");
+        db.collection("reposts").doc(`${campaignId}_${user.uid}`).get().then(doc => {
+            if (doc.exists) {
+                alert("You can only repost once every 12 hours.");
                 return;
             }
 
-            // Calculate cost based on user's followers (assuming `followers` is in Firestore)
-            db.collection("users").doc(user.uid).get()
-                .then((userDoc) => {
-                    const userFollowers = userDoc.data().followers || 0;
-                    let repostCost = Math.ceil(userFollowers / 100); // 1 credit for every 100 followers
+            db.runTransaction(async (transaction) => {
+                const userRef = db.collection("users").doc(user.uid);
+                const ownerRef = db.collection("users").doc(ownerId);
+                const campaignRef = db.collection("campaigns").doc(campaignId);
 
-                    if (repostCost > cost) repostCost = cost; // Cap at the campaign's available credits
+                const userDoc = await transaction.get(userRef);
+                const ownerDoc = await transaction.get(ownerRef);
+                const campaignDoc = await transaction.get(campaignRef);
 
-                    // Run Firestore transaction to update credits
-                    db.runTransaction(async (transaction) => {
-                        const userRef = db.collection("users").doc(user.uid);
-                        const ownerRef = db.collection("users").doc(ownerId);
-                        const campaignRef = db.collection("campaigns").doc(campaignId);
+                if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
+                    throw new Error("Invalid data.");
+                }
 
-                        const userDoc = await transaction.get(userRef);
-                        const ownerDoc = await transaction.get(ownerRef);
-                        const campaignDoc = await transaction.get(campaignRef);
+                let userCredits = userDoc.data().credits;
+                let ownerCredits = ownerDoc.data().credits;
 
-                        if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
-                            throw new Error("Invalid data.");
-                        }
+                if (ownerCredits < repostCost) {
+                    throw new Error("Owner does not have enough credits.");
+                }
 
-                        let userCredits = userDoc.data().credits;
-                        let ownerCredits = ownerDoc.data().credits;
+                // Update credits
+                transaction.update(userRef, { credits: userCredits - repostCost });
+                transaction.update(ownerRef, { credits: ownerCredits + repostCost });
 
-                        if (ownerCredits < repostCost) {
-                            throw new Error("Owner does not have enough credits.");
-                        }
-
-                        // Update credits
-                        transaction.update(userRef, { credits: userCredits + repostCost });
-                        transaction.update(ownerRef, { credits: ownerCredits - repostCost });
-
-                        // Add repost record
-                        transaction.set(db.collection("reposts").doc(`${campaignId}_${user.uid}`), {
-                            userId: user.uid,
-                            campaignId: campaignId,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        });
-
-                        console.log("✅ Repost successful!");
-                    }).then(() => {
-                        alert(`✅ Reposted! You earned ${repostCost} credits.`);
-                        updateDashboard(user); // Update dashboard after repost
-                        loadActiveCampaigns();  // Reload campaigns
-                    }).catch((error) => {
-                        console.error("❌ Error reposting:", error);
-                        alert(`❌ Error reposting: ${error.message}`);
-                    });
+                // Add repost record
+                transaction.set(db.collection("reposts").doc(`${campaignId}_${user.uid}`), {
+                    userId: user.uid,
+                    campaignId: campaignId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 });
+
+                console.log("✅ Repost successful!");
+            }).then(() => {
+                alert(`✅ Reposted! You earned ${repostCost} credits.`);
+                updateDashboard(user); // Update dashboard after repost
+                loadActiveCampaigns();  // Reload campaigns
+            }).catch((error) => {
+                console.error("❌ Error reposting:", error);
+                alert(`❌ Error reposting: ${error.message}`);
+            });
         });
+    });
 };
+
+// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
+document.addEventListener("DOMContentLoaded", () => {
+    loadActiveCampaigns();
+});
+
 
 
