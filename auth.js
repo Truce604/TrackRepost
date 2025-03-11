@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -57,7 +58,7 @@ auth.onAuthStateChanged(user => {
         console.log(`✅ User logged in: ${user.email}`);
         document.getElementById("logoutBtn").style.display = "block";
         updateDashboard(user);
-        loadActiveCampaigns();
+        loadActiveCampaigns();  // Make sure this is here
     } else {
         console.warn("🚨 No user detected.");
         document.getElementById("logoutBtn").style.display = "none";
@@ -73,7 +74,7 @@ window.loginUser = function () {
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
             document.getElementById("authMessage").textContent = "✅ Login Successful!";
-            updateDashboard(userCredential.user);  // Update dashboard after login
+            updateDashboard(userCredential.user);
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
@@ -90,13 +91,13 @@ window.signupUser = function () {
         .then(userCredential => {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
-                credits: 10,  // Default starting credits
-                reposts: 0    // Default reposts
+                credits: 10,
+                reposts: 0
             });
         })
         .then(() => {
             document.getElementById("authMessage").textContent = "✅ Signup Successful!";
-            updateDashboard(auth.currentUser);  // Update dashboard after signup
+            updateDashboard(auth.currentUser);
         })
         .catch(error => {
             console.error("❌ Signup Error:", error);
@@ -136,7 +137,7 @@ window.submitTrack = function () {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
         alert("✅ Track successfully submitted!");
-        loadActiveCampaigns();
+        loadActiveCampaigns();  // Make sure to reload the campaigns after submission
     }).catch(error => {
         console.error("❌ Error submitting track:", error);
         alert("❌ Error submitting track: " + error.message);
@@ -161,6 +162,7 @@ window.loadActiveCampaigns = function () {
         } else {
             snapshot.forEach(doc => {
                 let data = doc.data();
+                console.log(data); // Add a log here to see the data being retrieved
                 campaignsDiv.innerHTML += `
                     <div id="campaign-${doc.id}" class="campaign">
                         <h3>🔥 Now Promoting:</h3>
@@ -174,9 +176,4 @@ window.loadActiveCampaigns = function () {
         }
     });
 };
-
-// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
-document.addEventListener("DOMContentLoaded", () => {
-    loadActiveCampaigns();
-});
 
