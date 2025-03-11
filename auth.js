@@ -1,4 +1,3 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -162,7 +161,6 @@ window.loadActiveCampaigns = function () {
         } else {
             snapshot.forEach(doc => {
                 let data = doc.data();
-                console.log(data); // Add a log here to see the data being retrieved
                 campaignsDiv.innerHTML += `
                     <div id="campaign-${doc.id}" class="campaign">
                         <h3>🔥 Now Promoting:</h3>
@@ -176,4 +174,83 @@ window.loadActiveCampaigns = function () {
         }
     });
 };
+
+// ✅ FUNCTION: REPOST TRACK
+window.repostTrack = function (campaignId, ownerId, cost) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("🚨 You must be logged in to repost.");
+        return;
+    }
+
+    if (user.uid === ownerId) {
+        alert("🚨 You cannot repost your own track.");
+        return;
+    }
+
+    // Check if user already reposted within the last 12 hours
+    db.collection("reposts")
+        .where("userId", "==", user.uid)
+        .where("campaignId", "==", campaignId)
+        .where("timestamp", ">", new Date(new Date().getTime() - 12 * 60 * 60 * 1000)) // 12-hour window
+        .get()
+        .then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+                alert("🚨 You can only repost once every 12 hours.");
+                return;
+            }
+
+            // Calculate cost based on user's followers (assuming `followers` is in Firestore)
+            db.collection("users").doc(user.uid).get()
+                .then((userDoc) => {
+                    const userFollowers = userDoc.data().followers || 0;
+                    let repostCost = Math.ceil(userFollowers / 100); // 1 credit for every 100 followers
+
+                    if (repostCost > cost) repostCost = cost; // Cap at the campaign's available credits
+
+                    // Run Firestore transaction to update credits
+                    db.runTransaction(async (transaction) => {
+                        const userRef = db.collection("users").doc(user.uid);
+                        const ownerRef = db.collection("users").doc(ownerId);
+                        const campaignRef = db.collection("campaigns").doc(campaignId);
+
+                        const userDoc = await transaction.get(userRef);
+                        const ownerDoc = await transaction.get(ownerRef);
+                        const campaignDoc = await transaction.get(campaignRef);
+
+                        if (!userDoc.exists || !ownerDoc.exists || !campaignDoc.exists) {
+                            throw new Error("Invalid data.");
+                        }
+
+                        let userCredits = userDoc.data().credits;
+                        let ownerCredits = ownerDoc.data().credits;
+
+                        if (ownerCredits < repostCost) {
+                            throw new Error("Owner does not have enough credits.");
+                        }
+
+                        // Update credits
+                        transaction.update(userRef, { credits: userCredits + repostCost });
+                        transaction.update(ownerRef, { credits: ownerCredits - repostCost });
+
+                        // Add repost record
+                        transaction.set(db.collection("reposts").doc(`${campaignId}_${user.uid}`), {
+                            userId: user.uid,
+                            campaignId: campaignId,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        });
+
+                        console.log("✅ Repost successful!");
+                    }).then(() => {
+                        alert(`✅ Reposted! You earned ${repostCost} credits.`);
+                        updateDashboard(user); // Update dashboard after repost
+                        loadActiveCampaigns();  // Reload campaigns
+                    }).catch((error) => {
+                        console.error("❌ Error reposting:", error);
+                        alert(`❌ Error reposting: ${error.message}`);
+                    });
+                });
+        });
+};
+
 
