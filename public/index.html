@@ -13,6 +13,19 @@
 
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
+
+    <!-- ✅ Load Firebase Config BEFORE auth.js -->
+    <script src="firebaseConfig.js"></script>
+
+    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
+    <script src="auth.js" defer></script>
+
+    <!-- ✅ Ensure Campaigns Load on Page Load -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadActiveCampaigns();
+        });
+    </script>
 </head>
 
 <body>
@@ -64,19 +77,7 @@
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <!-- ✅ Load Firebase Config -->
-    <script src="firebaseConfig.js"></script>
-
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-    <script src="auth.js"></script>
-
-    <!-- ✅ Ensure Campaigns Load on Page Load -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            loadActiveCampaigns();
-        });
-    </script>
-
 </body>
 </html>
+
 
