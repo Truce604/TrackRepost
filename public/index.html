@@ -14,18 +14,18 @@
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
 
-    <!-- ✅ Load Firebase Config BEFORE auth.js -->
-    <script src="firebaseConfig.js"></script>
+    <!-- ✅ Load Firebase Configuration -->
+    <script type="module">
+        import firebaseConfig from './firebaseConfig.js';
 
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-    <script src="auth.js" defer></script>
-
-    <!-- ✅ Ensure Campaigns Load on Page Load -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            loadActiveCampaigns();
-        });
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("✅ Firebase Initialized Successfully!");
+        }
     </script>
+
+    <!-- ✅ Load Authentication Script -->
+    <script src="auth.js" defer></script>
 </head>
 
 <body>
@@ -73,11 +73,24 @@
         </div>
     </div>
 
+    <!-- ✅ Credits Page Link -->
+    <div class="container">
+        <h2>💰 Buy Credits</h2>
+        <p>Boost your promotions with more credits.</p>
+        <a href="credits.html">Go to Credits Page</a>
+    </div>
+
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
+    <!-- ✅ Ensure Campaigns Load on Page Load -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadActiveCampaigns();
+        });
+    </script>
+
 </body>
 </html>
-
 
