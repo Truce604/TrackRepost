@@ -6,11 +6,9 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Import Firebase Config (Ensure it's correct)
-import firebaseConfig from './firebaseConfig.js';
-
+// ✅ Initialize Firebase (Only Declare Once)
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(window.firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 }
 
@@ -86,7 +84,8 @@ window.signupUser = function () {
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
                 credits: 10,
-                reposts: 0
+                reposts: 0,
+                followers: 1000 // Default value for testing
             });
         })
         .then(() => {
@@ -170,7 +169,7 @@ window.loadActiveCampaigns = function () {
     });
 };
 
-// ✅ FUNCTION: REPOST A TRACK
+// ✅ FUNCTION: REPOST A TRACK & EARN CREDITS
 window.repostTrack = async function (campaignId, ownerId, credits) {
     const user = auth.currentUser;
     if (!user) {
@@ -190,6 +189,16 @@ window.repostTrack = async function (campaignId, ownerId, credits) {
             return;
         }
 
+        // ✅ Get User Data for Followers Count
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+            alert("🚨 User data not found.");
+            return;
+        }
+        const userData = userDoc.data();
+        let followers = userData.followers || 1000; // Default if missing
+        let earnedCredits = Math.floor(followers / 1000) * 10; // 1000 followers = 10 credits
+
         // ✅ Update Firestore
         await db.runTransaction(async (transaction) => {
             transaction.set(repostRef, {
@@ -199,15 +208,15 @@ window.repostTrack = async function (campaignId, ownerId, credits) {
             });
 
             transaction.update(userRef, {
-                credits: firebase.firestore.FieldValue.increment(credits)
+                credits: firebase.firestore.FieldValue.increment(earnedCredits)
             });
 
             transaction.update(campaignRef, {
-                credits: firebase.firestore.FieldValue.increment(-credits)
+                credits: firebase.firestore.FieldValue.increment(-earnedCredits)
             });
         });
 
-        alert(`✅ Repost Successful! You earned ${credits} credits.`);
+        alert(`✅ Repost Successful! You earned ${earnedCredits} credits.`);
     } catch (error) {
         console.error("❌ Error reposting:", error);
         alert(`❌ Error: ${error.message}`);
