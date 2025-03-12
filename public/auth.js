@@ -13,124 +13,117 @@ if (!firebase.apps.length) {
     console.log("✅ Firebase Initialized Successfully!");
 }
 
+
 // ✅ Firebase Services
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
-window.loadActiveCampaigns = function () {
-    const campaignsDiv = document.getElementById("activeCampaigns");
+// ✅ Listen for Auth Changes
+auth.onAuthStateChanged(user => {
+    if (user) {
+        console.log(`✅ User logged in: ${user.email}`);
+        document.getElementById("logoutBtn").style.display = "block";
+        updateDashboard(user);
+        loadActiveCampaigns();
+    } else {
+        console.warn("🚨 No user detected.");
+        document.getElementById("logoutBtn").style.display = "none";
+        updateDashboard(null);
+    }
+});
 
-    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-        campaignsDiv.innerHTML = ""; // Clear before adding new
+// ✅ FUNCTION: LOGIN USER
+window.loginUser = function () {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-        if (snapshot.empty) {
-            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-        } else {
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const campaignId = doc.id;
-                const trackUrl = data.track;
-
-                campaignsDiv.innerHTML += `
-                    <div class="campaign">
-                        <h3>🔥 ${data.trackTitle || "Track Promotion"}</h3>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
-                        </iframe>
-                        <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
-                            Repost & Earn Credits
-                        </button>
-                    </div>
-                `;
-            });
-        }
-    }, error => {
-        console.error("❌ Error loading campaigns:", error);
-        campaignsDiv.innerHTML = "<p>⚠️ Failed to load campaigns. Try again later.</p>";
-    });
-};
-
-// ✅ FUNCTION: REPOST A TRACK
-window.repostTrack = async function (campaignId, ownerId, trackUrl) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to repost.");
+    if (!email || !password) {
+        alert("🚨 Please enter both email and password.");
         return;
     }
 
-    try {
-        const userRef = db.collection("users").doc(user.uid);
-        const campaignRef = db.collection("campaigns").doc(campaignId);
-        const repostRef = db.collection("reposts").doc(`${campaignId}_${user.uid}`);
-
-        // ✅ Check if user already reposted
-        const repostDoc = await repostRef.get();
-        if (repostDoc.exists) {
-            alert("🚨 You have already reposted this track.");
-            return;
-        }
-
-        // ✅ Get campaign data
-        const campaignDoc = await campaignRef.get();
-        if (!campaignDoc.exists) {
-            alert("🚨 Campaign not found.");
-            return;
-        }
-        const campaignData = campaignDoc.data();
-
-        // ✅ Get user data
-        const userDoc = await userRef.get();
-        if (!userDoc.exists) {
-            alert("🚨 User data not found.");
-            return;
-        }
-        const userData = userDoc.data();
-
-        // ✅ Calculate credits based on follower count
-        let followers = userData.followers || 100; // Default to 100 if missing
-        let creditsEarned = Math.min(Math.floor(followers / 100) * 10, 100); // Max 100 credits per repost
-
-        if (campaignData.credits < creditsEarned) {
-            alert("🚨 Not enough credits in the campaign.");
-            return;
-        }
-
-        // ✅ Transaction: Update Firestore (Credits & Repost Data)
-        await firebase.firestore().runTransaction(async (transaction) => {
-            const freshUserDoc = await transaction.get(userRef);
-            const freshCampaignDoc = await transaction.get(campaignRef);
-
-            if (freshCampaignDoc.data().credits < creditsEarned) {
-                throw new Error("Not enough credits in the campaign.");
-            }
-
-            transaction.update(userRef, {
-                credits: firebase.firestore.FieldValue.increment(creditsEarned)
-            });
-
-            transaction.update(campaignRef, {
-                credits: firebase.firestore.FieldValue.increment(-creditsEarned)
-            });
-
-            transaction.set(repostRef, {
-                userId: user.uid,
-                campaignId: campaignId,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            document.getElementById("authMessage").textContent = "✅ Login Successful!";
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Login Error: ${error.message}`;
         });
+};
 
-        // ✅ Open SoundCloud Repost Window
-        window.open(trackUrl, "_blank");
-        alert(`✅ Repost Successful! You earned ${creditsEarned} credits.`);
+// ✅ FUNCTION: SIGNUP USER
+window.signupUser = function () {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    } catch (error) {
-        console.error("❌ Error reposting:", error);
-        alert(`❌ Error: ${error.message}`);
+    if (!email || !password) {
+        alert("🚨 Please enter an email and password.");
+        return;
     }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            return db.collection("users").doc(userCredential.user.uid).set({
+                email: userCredential.user.email,
+                credits: 10, // Default credits for new users
+                followers: 100, // Default followers for testing
+                reposts: 0
+            });
+        })
+        .then(() => {
+            document.getElementById("authMessage").textContent = "✅ Signup Successful!";
+            updateDashboard(auth.currentUser);
+        })
+        .catch(error => {
+            console.error("❌ Signup Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Signup Error: ${error.message}`;
+        });
+};
+
+// ✅ FUNCTION: LOGOUT USER
+window.logoutUser = function () {
+    auth.signOut().then(() => {
+        document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
+        updateDashboard(null);
+    }).catch(error => {
+        console.error("❌ Logout Error:", error);
+        document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
+    });
+};
+
+// ✅ FUNCTION: UPDATE DASHBOARD
+window.updateDashboard = function (user) {
+    const dashboard = document.getElementById("userDashboard");
+
+    if (!dashboard) {
+        console.error("❌ Dashboard element not found.");
+        return;
+    }
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        return;
+    }
+
+    db.collection("users").doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            let data = doc.data();
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+            `;
+        } else {
+            console.warn("⚠️ No user data found in Firestore.");
+        }
+    });
 };
 
 // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
-document.addEventListener("DOMContentLoaded", loadActiveCampaigns);
+document.addEventListener("DOMContentLoaded", () => {
+    loadActiveCampaigns();
+});
 
 
