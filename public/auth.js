@@ -17,6 +17,40 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
+window.loadActiveCampaigns = function () {
+    const campaignsDiv = document.getElementById("activeCampaigns");
+
+    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+        campaignsDiv.innerHTML = ""; // Clear before adding new
+
+        if (snapshot.empty) {
+            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+        } else {
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const campaignId = doc.id;
+                const trackUrl = data.track;
+
+                campaignsDiv.innerHTML += `
+                    <div class="campaign">
+                        <h3>🔥 ${data.trackTitle || "Track Promotion"}</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
+                        </iframe>
+                        <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
+                            Repost & Earn Credits
+                        </button>
+                    </div>
+                `;
+            });
+        }
+    }, error => {
+        console.error("❌ Error loading campaigns:", error);
+        campaignsDiv.innerHTML = "<p>⚠️ Failed to load campaigns. Try again later.</p>";
+    });
+};
+
 // ✅ FUNCTION: REPOST A TRACK
 window.repostTrack = async function (campaignId, ownerId, trackUrl) {
     const user = auth.currentUser;
@@ -53,16 +87,16 @@ window.repostTrack = async function (campaignId, ownerId, trackUrl) {
         }
         const userData = userDoc.data();
 
-        // ✅ Get follower count to calculate credits
-        let followers = Math.max(100, Math.floor(userData.followers / 100) * 100); // Round to nearest 100
-        let creditsEarned = Math.min(followers / 100 * 10, 100); // Max 100 credits per repost
+        // ✅ Calculate credits based on follower count
+        let followers = userData.followers || 100; // Default to 100 if missing
+        let creditsEarned = Math.min(Math.floor(followers / 100) * 10, 100); // Max 100 credits per repost
 
         if (campaignData.credits < creditsEarned) {
             alert("🚨 Not enough credits in the campaign.");
             return;
         }
 
-        // ✅ Update Firestore (Transaction)
+        // ✅ Transaction: Update Firestore (Credits & Repost Data)
         await firebase.firestore().runTransaction(async (transaction) => {
             const freshUserDoc = await transaction.get(userRef);
             const freshCampaignDoc = await transaction.get(campaignRef);
@@ -97,7 +131,6 @@ window.repostTrack = async function (campaignId, ownerId, trackUrl) {
 };
 
 // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
-document.addEventListener("DOMContentLoaded", () => {
-    loadActiveCampaigns();
-});
+document.addEventListener("DOMContentLoaded", loadActiveCampaigns);
+
 
