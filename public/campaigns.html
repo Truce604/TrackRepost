@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +27,20 @@
         <p>Explore the campaigns and repost to earn credits!</p>
     </header>
 
+    <!-- ✅ Genre Filter -->
+    <div class="container">
+        <h2>🎵 Filter Campaigns by Genre</h2>
+        <select id="genreFilter">
+            <option value="all">All Genres</option>
+            <option value="hiphop">Hip-Hop</option>
+            <option value="edm">EDM</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="jazz">Jazz</option>
+        </select>
+        <button onclick="filterCampaigns()">Apply Filter</button>
+    </div>
+
     <!-- ✅ Campaigns Container -->
     <div id="campaignsContainer">
         <p>⏳ Loading campaigns...</p>
@@ -39,11 +52,14 @@
 
     <script>
         // ✅ FUNCTION: Load and Display Campaigns
-        window.loadCampaigns = function () {
+        let allCampaigns = [];
+
+        function loadCampaigns() {
             const campaignsDiv = document.getElementById("campaignsContainer");
 
             firebase.firestore().collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
                 campaignsDiv.innerHTML = "";  // Clear before adding new
+                allCampaigns = []; // Reset campaign list
 
                 if (snapshot.empty) {
                     campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
@@ -51,26 +67,59 @@
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         const campaignId = doc.id;
-                        const trackUrl = data.track;
-
-                        campaignsDiv.innerHTML += `
-                            <div class="campaign">
-                                <h3>🔥 Track Promotion</h3>
-                                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
-                                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
-                                </iframe>
-                                <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
-                                    Repost & Earn Credits
-                                </button>
-                            </div>
-                        `;
+                        allCampaigns.push({ id: campaignId, ...data });
                     });
+
+                    renderCampaigns(allCampaigns);
                 }
             });
-        };
+        }
 
-        // ✅ AUTOLOAD CAMPAIGNS
+        // ✅ FUNCTION: Render Campaigns based on Filter
+        function renderCampaigns(campaigns) {
+            const campaignsDiv = document.getElementById("campaignsContainer");
+            campaignsDiv.innerHTML = "";
+
+            if (campaigns.length === 0) {
+                campaignsDiv.innerHTML = "<p>No campaigns match your selection.</p>";
+                return;
+            }
+
+            campaigns.forEach(data => {
+                const campaignId = data.id;
+                const trackUrl = data.track;
+                const creditsRequired = data.credits || 0;
+                const genre = data.genre || "Unknown Genre";
+
+                campaignsDiv.innerHTML += `
+                    <div class="campaign">
+                        <h3>🔥 ${genre} Promotion</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
+                        </iframe>
+                        <p>💰 Required Credits: ${creditsRequired}</p>
+                        <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
+                            Repost & Earn Credits
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // ✅ FUNCTION: Filter Campaigns by Genre
+        function filterCampaigns() {
+            const selectedGenre = document.getElementById("genreFilter").value;
+            if (selectedGenre === "all") {
+                renderCampaigns(allCampaigns);
+            } else {
+                const filteredCampaigns = allCampaigns.filter(campaign => campaign.genre === selectedGenre);
+                renderCampaigns(filteredCampaigns);
+            }
+        }
+
+        // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
         document.addEventListener("DOMContentLoaded", loadCampaigns);
     </script>
 </body>
 </html>
+
