@@ -82,45 +82,20 @@
             }
 
             // Attach Event Listeners
-            document.getElementById("signupBtn").addEventListener("click", () => {
-                if (typeof signupUser === "function") {
-                    signupUser();
+            const attachEvent = (id, func) => {
+                const btn = document.getElementById(id);
+                if (btn && typeof window[func] === "function") {
+                    btn.addEventListener("click", window[func]);
                 } else {
-                    console.error("🚨 signupUser function is missing!");
+                    console.error(`🚨 ${func} function is missing or ${id} button not found!`);
                 }
-            });
+            };
 
-            document.getElementById("loginBtn").addEventListener("click", () => {
-                if (typeof loginUser === "function") {
-                    loginUser();
-                } else {
-                    console.error("🚨 loginUser function is missing!");
-                }
-            });
-
-            document.getElementById("logoutBtn").addEventListener("click", () => {
-                if (typeof logoutUser === "function") {
-                    logoutUser();
-                } else {
-                    console.error("🚨 logoutUser function is missing!");
-                }
-            });
-
-            document.getElementById("submitTrackBtn").addEventListener("click", () => {
-                if (typeof submitTrack === "function") {
-                    submitTrack();
-                } else {
-                    console.error("🚨 submitTrack function is missing!");
-                }
-            });
-
-            document.getElementById("soundcloudLoginBtn").addEventListener("click", () => {
-                if (typeof loginWithSoundCloud === "function") {
-                    loginWithSoundCloud();
-                } else {
-                    console.error("🚨 loginWithSoundCloud function is missing!");
-                }
-            });
+            attachEvent("signupBtn", "signupUser");
+            attachEvent("loginBtn", "loginUser");
+            attachEvent("logoutBtn", "logoutUser");
+            attachEvent("submitTrackBtn", "submitTrack");
+            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
 
             // ✅ Ensure Active Campaigns Load Once Firebase is Ready
             if (typeof loadActiveCampaigns === "function") {
