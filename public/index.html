@@ -81,29 +81,31 @@
                 return;
             }
 
-            // Attach Event Listeners
-            function attachEvent(id, funcName) {
-                const btn = document.getElementById(id);
-                if (btn && typeof window[funcName] === "function") {
-                    btn.addEventListener("click", window[funcName]);
-                } else {
-                    console.error(`🚨 Function '${funcName}' is missing or '${id}' button not found!`);
+            // ✅ Wait for the Page to Fully Load Before Attaching Events
+            setTimeout(() => {
+                function attachEvent(id, funcName) {
+                    const btn = document.getElementById(id);
+                    if (btn && typeof window[funcName] === "function") {
+                        btn.addEventListener("click", window[funcName]);
+                    } else {
+                        console.error(`🚨 Function '${funcName}' is missing or '${id}' button not found!`);
+                    }
                 }
-            }
 
-            // ✅ Ensure all buttons are linked to their functions
-            attachEvent("signupBtn", "signupUser");
-            attachEvent("loginBtn", "loginUser");
-            attachEvent("logoutBtn", "logoutUser");
-            attachEvent("submitTrackBtn", "submitTrack");
-            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
+                // ✅ Ensure all buttons are linked to their functions
+                attachEvent("signupBtn", "signupUser");
+                attachEvent("loginBtn", "loginUser");
+                attachEvent("logoutBtn", "logoutUser");
+                attachEvent("submitTrackBtn", "submitTrack");
+                attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
 
-            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
-            if (typeof loadActiveCampaigns === "function") {
-                loadActiveCampaigns();
-            } else {
-                console.error("🚨 loadActiveCampaigns function is missing!");
-            }
+                // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+                if (typeof loadActiveCampaigns === "function") {
+                    loadActiveCampaigns();
+                } else {
+                    console.error("🚨 loadActiveCampaigns function is missing!");
+                }
+            }, 1000); // Adding a delay to ensure elements are available
         });
     </script>
 
