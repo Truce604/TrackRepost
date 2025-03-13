@@ -1,5 +1,5 @@
 
-// ✅ Declare Firebase Config Globally
+// ✅ Firebase Configuration
 window.firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
@@ -10,7 +10,8 @@ window.firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-// ✅ Ensure Firebase is initialized only once
+// ✅ Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Config Loaded Successfully!");
+}
