@@ -10,7 +10,7 @@ window.firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-// ✅ Ensure Firebase Initializes
+// ✅ Ensure Firebase is initialized only once
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Config Loaded & Initialized!");
+    console.log("✅ Firebase Config Loaded Successfully!");
