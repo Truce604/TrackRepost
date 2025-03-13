@@ -1,14 +1,13 @@
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+    console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase (Only Declare Once)
+// ✅ Ensure Firebase is initialized
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Initialized Successfully!");
+    console.error("🚨 Firebase is NOT initialized! Check firebaseConfig.js.");
 }
 
 // ✅ Firebase Services
@@ -107,7 +106,7 @@ window.logoutUser = function () {
     });
 };
 
-// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS (Fixes Missing Function Issue)
+// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
 window.loadActiveCampaigns = function () {
     const campaignsDiv = document.getElementById("activeCampaigns");
     if (!campaignsDiv) {
@@ -139,7 +138,7 @@ window.loadActiveCampaigns = function () {
     });
 };
 
-// ✅ Ensure All Functions Exist Before Page Loads
+// ✅ Ensure Page Loads Correctly
 document.addEventListener("DOMContentLoaded", () => {
     if (typeof loadActiveCampaigns === "function") {
         loadActiveCampaigns();
