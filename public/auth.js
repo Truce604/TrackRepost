@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
@@ -5,7 +6,7 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase (Only Declare Once)
+// ✅ Firebase Config - Ensure firebaseConfig.js is properly included in index.html
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
@@ -215,4 +216,3 @@ window.repostTrack = async function (campaignId, ownerId, credits) {
 document.addEventListener("DOMContentLoaded", () => {
     loadActiveCampaigns();
 });
-
