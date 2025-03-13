@@ -9,10 +9,11 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-// ✅ Ensure Firebase is initialized before using it in other scripts
+// ✅ Ensure Firebase is initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
+} else {
+    console.log("⚠️ Firebase already initialized.");
 }
 
-// ✅ Make sure this file is included in index.html before auth.js
