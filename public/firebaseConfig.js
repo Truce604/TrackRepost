@@ -1,6 +1,5 @@
 
-// ✅ Firebase Configuration
-window.firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
     projectId: "trackrepost-921f8",
@@ -10,8 +9,10 @@ window.firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-// ✅ Initialize Firebase
+// ✅ Ensure Firebase is initialized before using it in other scripts
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Config Loaded Successfully!");
+    console.log("✅ Firebase Initialized Successfully!");
 }
+
+// ✅ Make sure this file is included in index.html before auth.js
