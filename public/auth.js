@@ -5,16 +5,17 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Load Firebase Config (Ensure this is loaded first)
-async function loadFirebaseConfig() {
-    try {
-        const config = await import('/firebaseConfig.js');
-        firebase.initializeApp(config.default);
-        console.log("✅ Firebase Initialized Successfully!");
-        initializeAuth();
-    } catch (error) {
-        console.error("🚨 Failed to load Firebase Config:", error);
-    }
+// ✅ Load Firebase Config (Ensure it loads before initialization)
+function loadFirebaseConfig() {
+    fetch("firebaseConfig.js")
+        .then(response => response.text())
+        .then(configText => {
+            const config = eval(`(${configText})`);
+            firebase.initializeApp(config);
+            console.log("✅ Firebase Initialized Successfully!");
+            initializeAuth();
+        })
+        .catch(error => console.error("🚨 Failed to load Firebase Config:", error));
 }
 
 // ✅ Initialize Firebase Auth AFTER Config Loads
@@ -56,7 +57,9 @@ function initializeAuth() {
             console.log(`✅ User logged in: ${user.email}`);
             document.getElementById("logoutBtn").style.display = "block";
             updateDashboard(user);
-            loadActiveCampaigns();
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            }
         } else {
             console.warn("🚨 No user detected.");
             document.getElementById("logoutBtn").style.display = "none";
@@ -135,7 +138,9 @@ function initializeAuth() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             alert("✅ Track successfully submitted!");
-            loadActiveCampaigns();
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            }
         }).catch(error => {
             console.error("❌ Error submitting track:", error);
             alert("❌ Error submitting track: " + error.message);
@@ -176,9 +181,12 @@ function initializeAuth() {
 
     // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
     document.addEventListener("DOMContentLoaded", () => {
-        loadActiveCampaigns();
+        if (typeof loadActiveCampaigns === "function") {
+            loadActiveCampaigns();
+        }
     });
 }
 
 // ✅ Load Firebase Config and Start Initialization
 loadFirebaseConfig();
+
