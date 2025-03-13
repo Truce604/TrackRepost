@@ -13,12 +13,6 @@
 
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
-
-    <!-- ✅ Load Firebase Config (IMPORTANT: Load Before auth.js) -->
-    <script src="/firebaseConfig.js"></script>
-
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-    <script src="auth.js" defer></script>
 </head>
 
 <body>
@@ -70,7 +64,14 @@
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
+    <!-- ✅ Load Firebase Config (IMPORTANT: Load Before auth.js) -->
+    <script src="/firebaseConfig.js"></script>
+
+    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
+    <script src="auth.js"></script>
+
 </body>
 </html>
+
 
 
