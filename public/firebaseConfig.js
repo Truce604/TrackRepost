@@ -10,4 +10,7 @@ window.firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-console.log("✅ Firebase Config Loaded Successfully!");
+// ✅ Ensure Firebase Initializes
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase Config Loaded & Initialized!");
