@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,9 +14,11 @@
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
 
-    <!-- ✅ Load Firebase Config (Fixes previous issues) -->
-    <script src="/firebaseConfig.js"></script>
+    <!-- ✅ Load Firebase Config (Ensure this file exists inside 'public/') -->
+    <script src="firebaseConfig.js"></script>
 
+    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
+    <script src="auth.js" defer></script>
 </head>
 
 <body>
@@ -69,17 +70,22 @@
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-    <script src="auth.js"></script>
-
-    <!-- ✅ Add Event Listeners to Buttons to Fix Undefined Function Errors -->
+    <!-- ✅ Ensure All Buttons Work Properly -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("signupBtn").addEventListener("click", signupUser);
-            document.getElementById("loginBtn").addEventListener("click", loginUser);
-            document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-            document.getElementById("submitTrackBtn").addEventListener("click", submitTrack);
-            document.getElementById("soundcloudLoginBtn").addEventListener("click", loginWithSoundCloud);
+            // Ensure buttons are linked to their functions
+            document.getElementById("signupBtn").addEventListener("click", () => signupUser());
+            document.getElementById("loginBtn").addEventListener("click", () => loginUser());
+            document.getElementById("logoutBtn").addEventListener("click", () => logoutUser());
+            document.getElementById("submitTrackBtn").addEventListener("click", () => submitTrack());
+            document.getElementById("soundcloudLoginBtn").addEventListener("click", () => loginWithSoundCloud());
+
+            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            } else {
+                console.error("🚨 loadActiveCampaigns function is missing!");
+            }
         });
     </script>
 
