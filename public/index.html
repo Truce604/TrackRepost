@@ -14,7 +14,7 @@
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
 
-    <!-- ✅ Load Firebase Config (Ensure this file exists inside 'public/') -->
+    <!-- ✅ Load Firebase Config (Ensure this file is inside 'public/') -->
     <script src="firebaseConfig.js"></script>
 
     <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
@@ -70,15 +70,57 @@
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <!-- ✅ Ensure All Buttons Work Properly -->
+    <!-- ✅ Ensure Buttons Work Correctly -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Ensure buttons are linked to their functions
-            document.getElementById("signupBtn").addEventListener("click", () => signupUser());
-            document.getElementById("loginBtn").addEventListener("click", () => loginUser());
-            document.getElementById("logoutBtn").addEventListener("click", () => logoutUser());
-            document.getElementById("submitTrackBtn").addEventListener("click", () => submitTrack());
-            document.getElementById("soundcloudLoginBtn").addEventListener("click", () => loginWithSoundCloud());
+            console.log("✅ Page Loaded Successfully!");
+
+            // Ensure Firebase is Loaded
+            if (typeof firebase === "undefined") {
+                console.error("🚨 Firebase failed to load! Check index.html script imports.");
+                return;
+            }
+
+            // Attach Event Listeners
+            document.getElementById("signupBtn").addEventListener("click", () => {
+                if (typeof signupUser === "function") {
+                    signupUser();
+                } else {
+                    console.error("🚨 signupUser function is missing!");
+                }
+            });
+
+            document.getElementById("loginBtn").addEventListener("click", () => {
+                if (typeof loginUser === "function") {
+                    loginUser();
+                } else {
+                    console.error("🚨 loginUser function is missing!");
+                }
+            });
+
+            document.getElementById("logoutBtn").addEventListener("click", () => {
+                if (typeof logoutUser === "function") {
+                    logoutUser();
+                } else {
+                    console.error("🚨 logoutUser function is missing!");
+                }
+            });
+
+            document.getElementById("submitTrackBtn").addEventListener("click", () => {
+                if (typeof submitTrack === "function") {
+                    submitTrack();
+                } else {
+                    console.error("🚨 submitTrack function is missing!");
+                }
+            });
+
+            document.getElementById("soundcloudLoginBtn").addEventListener("click", () => {
+                if (typeof loginWithSoundCloud === "function") {
+                    loginWithSoundCloud();
+                } else {
+                    console.error("🚨 loginWithSoundCloud function is missing!");
+                }
+            });
 
             // ✅ Ensure Active Campaigns Load Once Firebase is Ready
             if (typeof loadActiveCampaigns === "function") {
@@ -91,6 +133,7 @@
 
 </body>
 </html>
+
 
 
 
