@@ -82,15 +82,16 @@
             }
 
             // Attach Event Listeners
-            const attachEvent = (id, func) => {
+            function attachEvent(id, funcName) {
                 const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
+                if (btn && typeof window[funcName] === "function") {
+                    btn.addEventListener("click", window[funcName]);
                 } else {
-                    console.error(`🚨 ${func} function is missing or ${id} button not found!`);
+                    console.error(`🚨 Function '${funcName}' is missing or '${id}' button not found!`);
                 }
-            };
+            }
 
+            // ✅ Ensure all buttons are linked to their functions
             attachEvent("signupBtn", "signupUser");
             attachEvent("loginBtn", "loginUser");
             attachEvent("logoutBtn", "logoutUser");
@@ -108,6 +109,7 @@
 
 </body>
 </html>
+
 
 
 
