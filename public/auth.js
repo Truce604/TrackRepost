@@ -5,10 +5,12 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase (Ensure it's only initialized once)
+// ✅ Initialize Firebase (Only Once)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
+} else {
+    console.log("⚠️ Firebase already initialized.");
 }
 
 // ✅ Firebase Services
@@ -64,6 +66,7 @@ window.loginUser = function () {
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
+            console.log("✅ Login Successful!");
             document.getElementById("authMessage").textContent = "✅ Login Successful!";
             updateDashboard(userCredential.user);
         })
@@ -87,6 +90,7 @@ window.signupUser = function () {
             });
         })
         .then(() => {
+            console.log("✅ Signup Successful!");
             document.getElementById("authMessage").textContent = "✅ Signup Successful!";
             updateDashboard(auth.currentUser);
         })
@@ -99,6 +103,7 @@ window.signupUser = function () {
 // ✅ LOGOUT FUNCTION
 window.logoutUser = function () {
     auth.signOut().then(() => {
+        console.log("✅ Logged out successfully!");
         document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
         updateDashboard(null);
     }).catch(error => {
@@ -189,3 +194,4 @@ window.repostTrack = async function (campaignId, ownerId, credits) {
 document.addEventListener("DOMContentLoaded", () => {
     loadActiveCampaigns();
 });
+
