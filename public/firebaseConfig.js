@@ -7,6 +7,7 @@ const firebaseConfig = {
     messagingSenderId: "967836604288", 
     appId: 1:967836604288:web:3782d50de7384c9201d365"", 
     measurementId: "G-G65Q3HC3R8" 
+
 };
 
 // ✅ Ensure Firebase is initialized only once
@@ -17,5 +18,6 @@ if (!firebase.apps.length) {
     console.log("⚠️ Firebase already initialized.");
 }
 
+// ✅ Ensure Firebase Services Are Available
 const db = firebase.firestore();
 const auth = firebase.auth();
