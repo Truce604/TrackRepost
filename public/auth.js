@@ -9,6 +9,34 @@ if (typeof firebase === "undefined") {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ✅ FUNCTION: UPDATE DASHBOARD
+window.updateDashboard = function (user) {
+    const dashboard = document.getElementById("userDashboard");
+
+    if (!dashboard) {
+        console.error("❌ Dashboard element not found.");
+        return;
+    }
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        return;
+    }
+
+    db.collection("users").doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            let data = doc.data();
+            dashboard.innerHTML = `
+                <h2>Welcome, ${user.email}!</h2>
+                <p>Reposts: <span id="repostCount">${data.reposts || 0}</span></p>
+                <p>Credits: <span id="creditCount">${data.credits || 0}</span></p>
+            `;
+        } else {
+            console.warn("⚠️ No user data found.");
+        }
+    });
+};
+
 // ✅ Listen for Auth Changes
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -46,7 +74,6 @@ window.signupUser = function () {
 
     auth.createUserWithEmailAndPassword(email, password)
         .then(userCredential => {
-            console.log("✅ Signup Successful:", userCredential.user);
             return db.collection("users").doc(userCredential.user.uid).set({
                 email: userCredential.user.email,
                 credits: 10,
@@ -74,8 +101,12 @@ window.logoutUser = function () {
     });
 };
 
-// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
+// ✅ AUTOLOAD DASHBOARD ON PAGE LOAD
 document.addEventListener("DOMContentLoaded", () => {
-    loadActiveCampaigns();
+    if (typeof updateDashboard === "function") {
+        updateDashboard(auth.currentUser);
+    } else {
+        console.error("🚨 updateDashboard function is missing!");
+    }
 });
 
