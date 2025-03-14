@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +14,9 @@
 
     <!-- ✅ Load SoundCloud SDK -->
     <script src="https://connect.soundcloud.com/sdk.js"></script>
+
+    <!-- ✅ Load Authentication Script -->
+    <script src="auth.js" defer></script>
 </head>
 
 <body>
@@ -22,7 +26,6 @@
         <p>Promote Your Music, Get More Plays</p>
     </header>
 
-    <!-- ✅ Authentication Section -->
     <div class="container">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
@@ -31,28 +34,10 @@
             <button id="signupBtn">Sign Up</button>
             <button id="loginBtn">Login</button>
             <button id="logoutBtn" style="display:none;">Logout</button>
-            <button id="soundcloudLoginBtn">🔊 Login with SoundCloud</button>
         </div>
         <p id="authMessage"></p>
     </div>
 
-    <!-- ✅ Dashboard Section -->
-    <div class="container">
-        <h2>Your Dashboard</h2>
-        <div id="userDashboard">
-            <p>🔍 Loading user data...</p>
-        </div>
-    </div>
-
-    <!-- ✅ SoundCloud Track Submission -->
-    <div class="container" id="soundcloudSection">
-        <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-        <button id="submitTrackBtn">Submit</button>
-        <p id="currentTrackMessage">No active campaign</p>
-    </div>
-
-    <!-- ✅ Active Campaigns -->
     <div class="container">
         <h2>🔥 Active Campaigns</h2>
         <div id="activeCampaigns">
@@ -63,45 +48,6 @@
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
-
-    <!-- ✅ Load Firebase Config -->
-    <script src="firebaseConfig.js"></script>
-
-    <!-- ✅ Load Authentication Script -->
-    <script src="auth.js"></script>
-
-    <!-- ✅ Ensure Buttons Work -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ Page Loaded Successfully!");
-
-            if (typeof firebase === "undefined") {
-                console.error("🚨 Firebase failed to load! Check index.html script imports.");
-                return;
-            }
-
-            const attachEvent = (id, func) => {
-                const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
-                } else {
-                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
-                }
-            };
-
-            attachEvent("signupBtn", "signupUser");
-            attachEvent("loginBtn", "loginUser");
-            attachEvent("logoutBtn", "logoutUser");
-            attachEvent("submitTrackBtn", "submitTrack");
-            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
-
-            if (typeof loadActiveCampaigns === "function") {
-                loadActiveCampaigns();
-            } else {
-                console.error("🚨 loadActiveCampaigns function is missing!");
-            }
-        });
-    </script>
 
 </body>
 </html>
