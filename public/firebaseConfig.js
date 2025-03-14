@@ -1,5 +1,4 @@
 
-// ✅ Firebase Configuration 
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
     authDomain: "trackrepost-921f8.firebaseapp.com",
@@ -10,10 +9,11 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8"
 };
 
-// ✅ Initialize Firebase
+// ✅ Ensure Firebase is initialized only once
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
     console.log("⚠️ Firebase already initialized.");
 }
+
