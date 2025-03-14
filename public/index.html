@@ -31,9 +31,9 @@
         <input type="email" id="email" placeholder="Enter Email">
         <input type="password" id="password" placeholder="Enter Password">
         <div class="button-group">
-            <button id="signupBtn">Sign Up</button>
-            <button id="loginBtn">Login</button>
-            <button id="logoutBtn" style="display:none;">Logout</button>
+            <button id="signupBtn" onclick="signupUser()">Sign Up</button>
+            <button id="loginBtn" onclick="loginUser()">Login</button>
+            <button id="logoutBtn" onclick="logoutUser()" style="display:none;">Logout</button>
         </div>
         <p id="authMessage"></p>
     </div>
@@ -43,14 +43,6 @@
         <h2>Your Dashboard</h2>
         <div id="userDashboard">
             <p>🔍 Loading user data...</p>
-        </div>
-    </div>
-
-    <!-- ✅ Active Campaigns -->
-    <div class="container">
-        <h2>🔥 Active Campaigns</h2>
-        <div id="activeCampaigns">
-            <p>Loading campaigns...</p>
         </div>
     </div>
 
