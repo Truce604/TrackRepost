@@ -9,44 +9,68 @@ if (typeof firebase === "undefined") {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
-window.loadActiveCampaigns = function () {
-    console.log("🔄 Loading campaigns...");
-
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found in HTML.");
-        return;
+// ✅ Listen for Auth Changes
+auth.onAuthStateChanged(user => {
+    if (user) {
+        console.log(`✅ User logged in: ${user.email}`);
+        document.getElementById("logoutBtn").style.display = "block";
+        updateDashboard(user);
+    } else {
+        console.warn("🚨 No user detected.");
+        document.getElementById("logoutBtn").style.display = "none";
+        updateDashboard(null);
     }
+});
 
-    campaignsDiv.innerHTML = "<p>⏳ Loading campaigns...</p>";
+// ✅ LOGIN FUNCTION
+window.loginUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-        campaignsDiv.innerHTML = ""; // Clear before adding new ones
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log("✅ Login Successful:", userCredential.user);
+            document.getElementById("authMessage").textContent = "✅ Login Successful!";
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Login Error: ${error.message}`;
+        });
+};
 
-        if (snapshot.empty) {
-            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-        } else {
-            snapshot.forEach(doc => {
-                let data = doc.data();
-                console.log("📌 Campaign Loaded:", data);
+// ✅ SIGNUP FUNCTION
+window.signupUser = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-                campaignsDiv.innerHTML += `
-                    <div id="campaign-${doc.id}" class="campaign">
-                        <h3>🔥 Now Promoting:</h3>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                        <button onclick="repostTrack('${doc.id}', '${data.owner}', ${data.credits})">
-                            Repost & Earn ${data.credits} Credits
-                        </button>
-                    </div>
-                `;
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log("✅ Signup Successful:", userCredential.user);
+            return db.collection("users").doc(userCredential.user.uid).set({
+                email: userCredential.user.email,
+                credits: 10,
+                reposts: 0
             });
-        }
-    }, error => {
-        console.error("🚨 Error fetching campaigns:", error);
-        campaignsDiv.innerHTML = `<p>❌ Error loading campaigns: ${error.message}</p>`;
+        })
+        .then(() => {
+            document.getElementById("authMessage").textContent = "✅ Signup Successful!";
+            updateDashboard(auth.currentUser);
+        })
+        .catch(error => {
+            console.error("❌ Signup Error:", error);
+            document.getElementById("authMessage").textContent = `❌ Signup Error: ${error.message}`;
+        });
+};
+
+// ✅ LOGOUT FUNCTION
+window.logoutUser = function () {
+    auth.signOut().then(() => {
+        document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
+        updateDashboard(null);
+    }).catch(error => {
+        console.error("❌ Logout Error:", error);
+        document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
     });
 };
 
