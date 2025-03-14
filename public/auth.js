@@ -5,6 +5,13 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
+// ✅ Ensure FirebaseConfig is Loaded
+if (typeof firebaseConfig === "undefined") {
+    console.error("🚨 Firebase Config is missing! Check firebaseConfig.js.");
+} else {
+    console.log("✅ Firebase Config Loaded Successfully!");
+}
+
 // ✅ Initialize Firebase (Only Once)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -192,6 +199,11 @@ window.repostTrack = async function (campaignId, ownerId, credits) {
 
 // ✅ Ensure Campaigns Load on Page Load
 document.addEventListener("DOMContentLoaded", () => {
-    loadActiveCampaigns();
+    if (typeof db !== "undefined") {
+        loadActiveCampaigns();
+    } else {
+        console.error("🚨 Firebase Firestore (db) is not initialized.");
+    }
 });
+
 
