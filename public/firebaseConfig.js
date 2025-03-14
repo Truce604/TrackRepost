@@ -17,5 +17,5 @@ if (!firebase.apps.length) {
     console.log("⚠️ Firebase already initialized.");
 }
 
-// ✅ Export Firebase Config (Fixes Missing Reference Errors)
+// ✅ Export config for importing in other files
 export default firebaseConfig;
