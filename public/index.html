@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +25,7 @@
         <p>Promote Your Music, Get More Plays</p>
     </header>
 
+    <!-- ✅ Authentication Section -->
     <div class="container">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
@@ -38,6 +38,7 @@
         <p id="authMessage"></p>
     </div>
 
+    <!-- ✅ Active Campaigns -->
     <div class="container">
         <h2>🔥 Active Campaigns</h2>
         <div id="activeCampaigns">
@@ -48,6 +49,40 @@
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
+    <!-- ✅ Ensure Buttons Work Properly -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("✅ Page Loaded Successfully!");
+
+            // ✅ Ensure Firebase is Loaded
+            if (typeof firebase === "undefined") {
+                console.error("🚨 Firebase failed to load! Check index.html script imports.");
+                return;
+            }
+
+            // ✅ Attach Event Listeners
+            const attachEvent = (id, func) => {
+                const btn = document.getElementById(id);
+                if (btn && typeof window[func] === "function") {
+                    btn.addEventListener("click", window[func]);
+                } else {
+                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
+                }
+            };
+
+            attachEvent("signupBtn", "signupUser");
+            attachEvent("loginBtn", "loginUser");
+            attachEvent("logoutBtn", "logoutUser");
+
+            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            } else {
+                console.error("🚨 loadActiveCampaigns function is missing!");
+            }
+        });
+    </script>
 
 </body>
 </html>
