@@ -1,4 +1,4 @@
-
+import firebaseConfig from './firebaseConfig.js';
 
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
@@ -11,8 +11,6 @@ if (typeof firebase === "undefined") {
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
-} else {
-    console.log("⚠️ Firebase already initialized.");
 }
 
 // ✅ Firebase Services
@@ -162,4 +160,5 @@ window.loadActiveCampaigns = function () {
 document.addEventListener("DOMContentLoaded", () => {
     loadActiveCampaigns();
 });
+
 
