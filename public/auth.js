@@ -1,17 +1,16 @@
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+    console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Firebase Config - Ensure firebaseConfig.js is properly included in index.html
+// ✅ Firebase Config & Initialization
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 }
 
-// ✅ Firebase Services
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -57,59 +56,53 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ LOGIN FUNCTION
-window.loginUser = function () {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+// ✅ FUNCTION: REPOST A TRACK
+window.repostTrack = async function (campaignId, ownerId, credits) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("🚨 You must be logged in to repost.");
+        return;
+    }
 
-    auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            document.getElementById("authMessage").textContent = "✅ Login Successful!";
-            updateDashboard(userCredential.user);
-        })
-        .catch(error => {
-            console.error("❌ Login Error:", error);
-            document.getElementById("authMessage").textContent = `❌ Login Error: ${error.message}`;
-        });
-};
+    try {
+        const userRef = db.collection("users").doc(user.uid);
+        const campaignRef = db.collection("campaigns").doc(campaignId);
+        const repostRef = db.collection("reposts").doc(`${campaignId}_${user.uid}`);
 
-// ✅ SIGNUP FUNCTION
-window.signupUser = function () {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+        // ✅ Check if user already reposted
+        const repostDoc = await repostRef.get();
+        if (repostDoc.exists) {
+            alert("🚨 You have already reposted this track.");
+            return;
+        }
 
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            return db.collection("users").doc(userCredential.user.uid).set({
-                email: userCredential.user.email,
-                credits: 10,
-                reposts: 0
+        // ✅ Update Firestore
+        await db.runTransaction(async (transaction) => {
+            transaction.set(repostRef, {
+                userId: user.uid,
+                campaignId: campaignId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-        })
-        .then(() => {
-            document.getElementById("authMessage").textContent = "✅ Signup Successful!";
-            updateDashboard(auth.currentUser);
-        })
-        .catch(error => {
-            console.error("❌ Signup Error:", error);
-            document.getElementById("authMessage").textContent = `❌ Signup Error: ${error.message}`;
-        });
-};
 
-// ✅ LOGOUT FUNCTION
-window.logoutUser = function () {
-    auth.signOut().then(() => {
-        document.getElementById("authMessage").textContent = "✅ Logged out successfully!";
-        updateDashboard(null);
-    }).catch(error => {
-        console.error("❌ Logout Error:", error);
-        document.getElementById("authMessage").textContent = `❌ Logout Error: ${error.message}`;
-    });
+            transaction.update(userRef, {
+                credits: firebase.firestore.FieldValue.increment(credits)
+            });
+
+            transaction.update(campaignRef, {
+                credits: firebase.firestore.FieldValue.increment(-credits)
+            });
+        });
+
+        alert(`✅ Repost Successful! You earned ${credits} credits.`);
+        updateDashboard(user);
+    } catch (error) {
+        console.error("❌ Error reposting:", error);
+        alert(`❌ Error: ${error.message}`);
+    }
 };
 
 // ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
 window.loadActiveCampaigns = function () {
-    console.log("🔄 Loading campaigns...");
     const campaignsDiv = document.getElementById("activeCampaigns");
     if (!campaignsDiv) {
         console.error("❌ Campaigns section not found");
@@ -132,7 +125,7 @@ window.loadActiveCampaigns = function () {
                         <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                             src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                         </iframe>
-                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
+                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn ${data.credits} Credits</button>
                     </div>
                 `;
             });
@@ -144,5 +137,6 @@ window.loadActiveCampaigns = function () {
 document.addEventListener("DOMContentLoaded", () => {
     loadActiveCampaigns();
 });
+
 
 
