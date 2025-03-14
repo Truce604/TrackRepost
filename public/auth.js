@@ -5,17 +5,6 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Manually Load Firebase Config
-const firebaseConfig = {
-    apiKey: "your-api-key",
-    authDomain: "your-auth-domain",
-    projectId: "your-project-id",
-    storageBucket: "your-storage-bucket",
-    messagingSenderId: "your-messaging-sender-id",
-    appId: "your-app-id",
-    measurementId: "your-measurement-id"
-};
-
 // ✅ Ensure Firebase is initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -34,6 +23,7 @@ window.loginUser = function () {
         .then(userCredential => {
             console.log(`✅ User logged in: ${userCredential.user.email}`);
             document.getElementById("authMessage").textContent = "✅ Login Successful!";
+            loadActiveCampaigns();
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
