@@ -9,13 +9,10 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
+// ✅ Initialize Firebase (Only if not already initialized)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
     console.log("⚠️ Firebase already initialized.");
 }
-
-// ✅ Ensure Firebase Services are accessible globally
-const db = firebase.firestore();
-const auth = firebase.auth();
