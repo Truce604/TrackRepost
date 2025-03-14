@@ -43,6 +43,7 @@ auth.onAuthStateChanged(user => {
         console.log(`✅ User logged in: ${user.email}`);
         document.getElementById("logoutBtn").style.display = "block";
         updateDashboard(user);
+        loadActiveCampaigns();
     } else {
         console.warn("🚨 No user detected.");
         document.getElementById("logoutBtn").style.display = "none";
@@ -57,7 +58,6 @@ window.loginUser = function () {
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
-            console.log("✅ Login Successful:", userCredential.user);
             document.getElementById("authMessage").textContent = "✅ Login Successful!";
             updateDashboard(userCredential.user);
         })
@@ -101,12 +101,106 @@ window.logoutUser = function () {
     });
 };
 
-// ✅ AUTOLOAD DASHBOARD ON PAGE LOAD
+// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
+window.loadActiveCampaigns = function () {
+    console.log("🔄 Loading campaigns...");
+    const campaignsDiv = document.getElementById("activeCampaigns");
+
+    if (!campaignsDiv) {
+        console.error("❌ Campaigns section not found.");
+        return;
+    }
+
+    campaignsDiv.innerHTML = "<p>⏳ Loading campaigns...</p>";
+
+    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+        campaignsDiv.innerHTML = "";
+
+        if (snapshot.empty) {
+            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+        } else {
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                campaignsDiv.innerHTML += `
+                    <div class="campaign">
+                        <h3>🔥 Now Promoting:</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                        </iframe>
+                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.track}')">🔄 Repost & Earn Credits</button>
+                        <button onclick="likeTrack('${data.track}')">❤️ Like Track</button>
+                        <button onclick="followUser('${data.owner}')">🔔 Follow Artist</button>
+                    </div>
+                `;
+            });
+        }
+    });
+};
+
+// ✅ FUNCTION: LOGIN WITH SOUNDCLOUD
+window.loginWithSoundCloud = function () {
+    SC.initialize({
+        client_id: "YOUR_SOUNDCLOUD_CLIENT_ID",
+        redirect_uri: "YOUR_REDIRECT_URI"
+    });
+
+    SC.connect().then(function () {
+        return SC.get('/me');
+    }).then(function (me) {
+        alert(`✅ SoundCloud Connected: ${me.username}`);
+        console.log(`✅ Logged in as: ${me.username}`);
+    }).catch(function (error) {
+        console.error("❌ SoundCloud Login Error:", error);
+        alert("🚨 Failed to connect to SoundCloud.");
+    });
+};
+
+// ✅ FUNCTION: REPOST TRACK
+window.repostTrack = function (campaignId, ownerId, trackUrl) {
+    SC.connect().then(() => {
+        return SC.put(`/e1/me/track_reposts/${trackUrl}`);
+    }).then(() => {
+        alert("✅ Track Reposted Successfully!");
+        console.log("✅ Track reposted:", trackUrl);
+    }).catch(error => {
+        console.error("❌ Repost Error:", error);
+        alert("🚨 Failed to repost the track.");
+    });
+};
+
+// ✅ FUNCTION: LIKE TRACK
+window.likeTrack = function (trackUrl) {
+    SC.connect().then(() => {
+        return SC.put(`/e1/me/track_likes/${trackUrl}`);
+    }).then(() => {
+        alert("✅ Track Liked Successfully!");
+        console.log("✅ Track liked:", trackUrl);
+    }).catch(error => {
+        console.error("❌ Like Error:", error);
+        alert("🚨 Failed to like the track.");
+    });
+};
+
+// ✅ FUNCTION: FOLLOW ARTIST
+window.followUser = function (ownerId) {
+    SC.connect().then(() => {
+        return SC.put(`/e1/me/followings/${ownerId}`);
+    }).then(() => {
+        alert("✅ Artist Followed Successfully!");
+        console.log("✅ Followed artist:", ownerId);
+    }).catch(error => {
+        console.error("❌ Follow Error:", error);
+        alert("🚨 Failed to follow the artist.");
+    });
+};
+
+// ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
 document.addEventListener("DOMContentLoaded", () => {
-    if (typeof updateDashboard === "function") {
-        updateDashboard(auth.currentUser);
+    if (typeof loadActiveCampaigns === "function") {
+        loadActiveCampaigns();
     } else {
-        console.error("🚨 updateDashboard function is missing!");
+        console.error("🚨 loadActiveCampaigns function is missing!");
     }
 });
+
 
