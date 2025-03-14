@@ -1,14 +1,15 @@
-
 // ✅ Ensure Firebase is Loaded
 if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check if Firebase scripts are included in index.html.");
+    console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Ensure Firebase is initialized
+// ✅ Check Firebase Initialization
 if (!firebase.apps.length) {
     console.error("🚨 Firebase is NOT initialized! Check firebaseConfig.js.");
+} else {
+    console.log("✅ Firebase is initialized.");
 }
 
 // ✅ Firebase Services
@@ -109,72 +110,12 @@ window.logoutUser = function () {
     });
 };
 
-// ✅ FUNCTION: SUBMIT A NEW TRACK
-window.submitTrack = function () {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to submit a track.");
-        return;
-    }
-
-    let soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-    if (!soundcloudUrl.includes("soundcloud.com/")) {
-        alert("🚨 Invalid SoundCloud URL.");
-        return;
-    }
-
-    db.collection("campaigns").add({
-        owner: user.uid,
-        track: soundcloudUrl,
-        credits: 10,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        alert("✅ Track successfully submitted!");
-        if (typeof loadActiveCampaigns === "function") {
-            loadActiveCampaigns();
-        }
-    }).catch(error => {
-        console.error("❌ Error submitting track:", error);
-        alert("❌ Error submitting track: " + error.message);
-    });
-};
-
-// ✅ FUNCTION: LOAD ACTIVE CAMPAIGNS
-window.loadActiveCampaigns = function () {
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found");
-        return;
-    }
-
-    campaignsDiv.innerHTML = "<p>⏳ Loading campaigns...</p>";
-
-    db.collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-        campaignsDiv.innerHTML = "";
-
-        if (snapshot.empty) {
-            campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-        } else {
-            snapshot.forEach(doc => {
-                let data = doc.data();
-                campaignsDiv.innerHTML += `
-                    <div id="campaign-${doc.id}" class="campaign">
-                        <h3>🔥 Now Promoting:</h3>
-                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                        </iframe>
-                        <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">Repost & Earn Credits</button>
-                    </div>
-                `;
-            });
-        }
-    });
-};
-
 // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
 document.addEventListener("DOMContentLoaded", () => {
     if (typeof loadActiveCampaigns === "function") {
         loadActiveCampaigns();
+    } else {
+        console.error("🚨 loadActiveCampaigns function is missing!");
     }
 });
 
