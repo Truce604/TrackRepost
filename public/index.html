@@ -6,7 +6,7 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase -->
+    <!-- ✅ Load Firebase (Ensure these are correct versions) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -38,6 +38,25 @@
         <p id="authMessage"></p>
     </div>
 
+    <!-- ✅ User Dashboard -->
+    <div class="container" id="userDashboard">
+        <h2>Your Dashboard</h2>
+        <p>🔍 Loading user data...</p>
+    </div>
+
+    <!-- ✅ SoundCloud Authentication Section -->
+    <div class="container" id="soundcloudAuth">
+        <h2>🔊 Connect SoundCloud</h2>
+        <button id="soundcloudLoginBtn">Login with SoundCloud</button>
+    </div>
+
+    <!-- ✅ SoundCloud Track Submission -->
+    <div class="container" id="submitTrack">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button id="submitTrackBtn">Submit Track</button>
+    </div>
+
     <!-- ✅ Active Campaigns -->
     <div class="container">
         <h2>🔥 Active Campaigns</h2>
@@ -61,7 +80,7 @@
                 return;
             }
 
-            // ✅ Attach Event Listeners
+            // ✅ Attach Event Listeners for Buttons
             const attachEvent = (id, func) => {
                 const btn = document.getElementById(id);
                 if (btn && typeof window[func] === "function") {
@@ -74,6 +93,8 @@
             attachEvent("signupBtn", "signupUser");
             attachEvent("loginBtn", "loginUser");
             attachEvent("logoutBtn", "logoutUser");
+            attachEvent("submitTrackBtn", "submitTrack");
+            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
 
             // ✅ Ensure Active Campaigns Load Once Firebase is Ready
             if (typeof loadActiveCampaigns === "function") {
@@ -86,6 +107,7 @@
 
 </body>
 </html>
+
 
 
 
