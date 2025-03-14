@@ -1,4 +1,4 @@
-// ✅ Firebase Configuration
+
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
@@ -17,6 +17,5 @@ if (!firebase.apps.length) {
     console.log("⚠️ Firebase already initialized.");
 }
 
-// ✅ Export Firebase Config
-export default firebaseConfig;
+
 
