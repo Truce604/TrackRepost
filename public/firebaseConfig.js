@@ -17,5 +17,5 @@ if (!firebase.apps.length) {
     console.log("⚠️ Firebase already initialized.");
 }
 
-
-
+const db = firebase.firestore();
+const auth = firebase.auth();
