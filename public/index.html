@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,7 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase -->
+    <!-- ✅ Load Firebase (Ensure these are correct versions) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -15,7 +14,7 @@
     <!-- ✅ Load Firebase Config FIRST -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Authentication Script AFTER Firebase -->
+    <!-- ✅ Load Main Script AFTER Firebase is initialized -->
     <script src="index.js" defer></script>
 </head>
 
@@ -26,6 +25,7 @@
         <p>Promote Your Music, Get More Plays</p>
     </header>
 
+    <!-- ✅ Authentication Section -->
     <div class="container">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
@@ -38,11 +38,39 @@
         <p id="authMessage"></p>
     </div>
 
+    <!-- ✅ User Credits Section -->
+    <div class="container">
+        <h2>Your Credits</h2>
+        <p id="userCredits">💰 Loading credits...</p>
+    </div>
+
+    <!-- ✅ SoundCloud Authentication Section -->
+    <div class="container">
+        <h2>🔊 Connect SoundCloud</h2>
+        <button id="soundcloudLoginBtn">Login with SoundCloud</button>
+    </div>
+
+    <!-- ✅ SoundCloud Track Submission -->
+    <div class="container">
+        <h2>Submit Your SoundCloud Track</h2>
+        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
+        <button id="submitTrackBtn">Submit Track</button>
+    </div>
+
+    <!-- ✅ Active Campaigns -->
+    <div class="container">
+        <h2>🔥 Active Campaigns</h2>
+        <div id="activeCampaigns">
+            <p>Loading campaigns...</p>
+        </div>
+    </div>
+
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
 </body>
 </html>
+
 
 
