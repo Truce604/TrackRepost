@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,19 +8,16 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase (Ensure these are correct versions) -->
+    <!-- ✅ Load Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load SoundCloud Widget API -->
-    <script src="https://w.soundcloud.com/player/api.js"></script>
-
-    <!-- ✅ Load Firebase Config FIRST -->
+    <!-- ✅ Load Firebase Config -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
-    <script src="auth.js" defer></script>
+    <!-- ✅ Load Main Script -->
+    <script src="index.js" defer></script>
 </head>
 
 <body>
@@ -27,6 +25,12 @@
     <header>
         <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
         <p>Promote Your Music, Get More Plays</p>
+        <nav>
+            <ul>
+                <li><a href="credits.html">💰 Your Credits</a></li>
+                <li><a href="repost.html">🔁 Repost & Earn</a></li>
+            </ul>
+        </nav>
     </header>
 
     <!-- ✅ Authentication Section -->
@@ -45,20 +49,7 @@
     <!-- ✅ User Dashboard -->
     <div class="container" id="userDashboard">
         <h2>Your Dashboard</h2>
-        <p>🔍 Loading user data...</p>
-    </div>
-
-    <!-- ✅ SoundCloud Authentication Section -->
-    <div class="container" id="soundcloudAuth">
-        <h2>🔊 Connect SoundCloud</h2>
-        <button id="soundcloudLoginBtn">Login with SoundCloud</button>
-    </div>
-
-    <!-- ✅ SoundCloud Track Submission -->
-    <div class="container" id="submitTrack">
-        <h2>Submit Your SoundCloud Track</h2>
-        <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
-        <button id="submitTrackBtn">Submit Track</button>
+        <p id="userCredits">💰 Loading credits...</p>
     </div>
 
     <!-- ✅ Active Campaigns -->
@@ -69,53 +60,9 @@
         </div>
     </div>
 
-    <!-- ✅ SoundCloud Comment Section -->
-    <div class="container" id="commentSection">
-        <h2>💬 Leave a Comment on SoundCloud</h2>
-        <textarea id="commentText" placeholder="Write your comment here..."></textarea>
-        <button id="postCommentBtn">Post Comment & Earn 2 Credits</button>
-    </div>
-
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
-
-    <!-- ✅ Ensure Buttons Work Properly -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ Page Loaded Successfully!");
-
-            // ✅ Ensure Firebase is Loaded
-            if (typeof firebase === "undefined") {
-                console.error("🚨 Firebase failed to load! Check index.html script imports.");
-                return;
-            }
-
-            // ✅ Attach Event Listeners for Buttons
-            const attachEvent = (id, func) => {
-                const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
-                } else {
-                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
-                }
-            };
-
-            attachEvent("signupBtn", "signupUser");
-            attachEvent("loginBtn", "loginUser");
-            attachEvent("logoutBtn", "logoutUser");
-            attachEvent("submitTrackBtn", "submitTrack");
-            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
-            attachEvent("postCommentBtn", "postComment");
-
-            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
-            if (typeof loadActiveCampaigns === "function") {
-                loadActiveCampaigns();
-            } else {
-                console.error("🚨 loadActiveCampaigns function is missing!");
-            }
-        });
-    </script>
 
 </body>
 </html>
