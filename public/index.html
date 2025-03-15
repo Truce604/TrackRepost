@@ -61,7 +61,7 @@
     <div class="container">
         <h2>🔥 Active Campaigns</h2>
         <div id="activeCampaigns">
-            <p>Loading campaigns...</p>
+            <p>⏳ Loading campaigns...</p>
         </div>
     </div>
 
@@ -81,22 +81,29 @@
             }
 
             // ✅ Attach Event Listeners for Buttons
-            const attachEvent = (id, func) => {
+            function attachEvent(id, funcName) {
                 const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
+                if (btn) {
+                    btn.addEventListener("click", function () {
+                        if (typeof window[funcName] === "function") {
+                            window[funcName]();
+                        } else {
+                            console.error(`🚨 Function '${funcName}' is missing!`);
+                        }
+                    });
                 } else {
-                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
+                    console.error(`🚨 Button '${id}' not found!`);
                 }
-            };
+            }
 
+            // Attach button click events
             attachEvent("signupBtn", "signupUser");
             attachEvent("loginBtn", "loginUser");
             attachEvent("logoutBtn", "logoutUser");
             attachEvent("submitTrackBtn", "submitTrack");
             attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
 
-            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+            // ✅ Load campaigns after Firebase is initialized
             if (typeof loadActiveCampaigns === "function") {
                 loadActiveCampaigns();
             } else {
@@ -107,7 +114,6 @@
 
 </body>
 </html>
-
 
 
 
