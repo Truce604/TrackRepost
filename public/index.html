@@ -6,7 +6,7 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase (Ensure these are correct versions) -->
+    <!-- ✅ Load Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -41,7 +41,7 @@
     <!-- ✅ User Dashboard -->
     <div class="container" id="userDashboard">
         <h2>Your Dashboard</h2>
-        <p>🔍 Loading user data...</p>
+        <p id="userCredits">🔍 Loading user data...</p>
     </div>
 
     <!-- ✅ SoundCloud Authentication Section -->
@@ -61,7 +61,7 @@
     <div class="container">
         <h2>🔥 Active Campaigns</h2>
         <div id="activeCampaigns">
-            <p>⏳ Loading campaigns...</p>
+            <p>Loading campaigns...</p>
         </div>
     </div>
 
@@ -81,29 +81,22 @@
             }
 
             // ✅ Attach Event Listeners for Buttons
-            function attachEvent(id, funcName) {
+            function attachEvent(id, func) {
                 const btn = document.getElementById(id);
-                if (btn) {
-                    btn.addEventListener("click", function () {
-                        if (typeof window[funcName] === "function") {
-                            window[funcName]();
-                        } else {
-                            console.error(`🚨 Function '${funcName}' is missing!`);
-                        }
-                    });
+                if (btn && typeof window[func] === "function") {
+                    btn.addEventListener("click", window[func]);
                 } else {
-                    console.error(`🚨 Button '${id}' not found!`);
+                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
                 }
             }
 
-            // Attach button click events
             attachEvent("signupBtn", "signupUser");
             attachEvent("loginBtn", "loginUser");
             attachEvent("logoutBtn", "logoutUser");
             attachEvent("submitTrackBtn", "submitTrack");
             attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
 
-            // ✅ Load campaigns after Firebase is initialized
+            // ✅ Load Active Campaigns
             if (typeof loadActiveCampaigns === "function") {
                 loadActiveCampaigns();
             } else {
