@@ -32,49 +32,55 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// ✅ Load Active Campaigns from Firestore
-function loadActiveCampaigns() {
-    console.log("🔄 Loading campaigns...");
+// ✅ Sign Up a New User
+function signupUser() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found.");
-        return;
-    }
-
-    db.collection("campaigns").get()
-        .then(querySnapshot => {
-            campaignsDiv.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div class="campaign">
-                            <h3>🔥 Now Promoting:</h3>
-                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <a href="repost.html?campaignId=${doc.id}&trackUrl=${encodeURIComponent(data.track)}">
-                                <button>Repost & Earn ${data.credits} Credits</button>
-                            </a>
-                        </div>
-                    `;
-                });
-            }
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log(`✅ User signed up: ${userCredential.user.email}`);
+            window.location.reload();
         })
         .catch(error => {
-            console.error("❌ Error loading active campaigns:", error);
+            console.error("❌ Signup Error:", error);
+            alert(`Signup Error: ${error.message}`);
         });
 }
 
-// ✅ Attach Event Listeners
+// ✅ Log In an Existing User
+function loginUser() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log(`✅ User logged in: ${userCredential.user.email}`);
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            alert(`Login Error: ${error.message}`);
+        });
+}
+
+// ✅ Log Out the Current User
+function logoutUser() {
+    auth.signOut()
+        .then(() => {
+            console.log("✅ User logged out successfully.");
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error("❌ Logout Error:", error);
+        });
+}
+
+// ✅ Attach Event Listeners **AFTER** defining functions
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ Page Loaded Successfully!");
 
-    // ✅ Attach Authentication Listeners
+    // Ensure functions exist before attaching event listeners
     document.getElementById("signupBtn").addEventListener("click", signupUser);
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
