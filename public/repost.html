@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repost Track - TrackRepost</title>
+    <title>Repost & Earn Credits - TrackRepost</title>
     <link rel="stylesheet" href="styles.css">
 
     <!-- ✅ Load Firebase -->
@@ -13,37 +13,39 @@
 
     <!-- ✅ Load Firebase Config -->
     <script src="firebaseConfig.js" defer></script>
-    
+
     <!-- ✅ Load Repost Script -->
     <script src="repost.js" defer></script>
 </head>
 
 <body>
     <header>
-        <h1>🎵 Repost Track & Earn Credits</h1>
-        <p>Follow the steps below to complete your repost and earn credits.</p>
+        <h1>🔁 Repost, Like & Comment to Earn Credits</h1>
+        <p>Follow the steps below to earn credits for engaging with this track.</p>
     </header>
 
     <div class="container">
-        <h2>🔊 Track to Repost</h2>
+        <h2>🎵 Track to Engage With</h2>
         <div id="trackContainer">
             <p>Loading track...</p>
         </div>
     </div>
 
     <div class="container">
-        <h2>✅ How to Repost</h2>
+        <h2>✅ How to Earn Credits</h2>
         <ol>
-            <li>Click the "Open Track on SoundCloud" button below.</li>
+            <li>Click the **"Open Track on SoundCloud"** button below.</li>
             <li>Log in to your SoundCloud account (if not logged in).</li>
-            <li>Click the **Repost** button on the track page.</li>
-            <li>Return here and click "I Have Reposted" to confirm.</li>
+            <li>Repost the track **(Earn 1 credit per 100 followers)**.</li>
+            <li>Like the track **(Earn 1 credit)**.</li>
+            <li>Leave a comment **(Earn 2 credits)**.</li>
+            <li>Return here and click **"Confirm Actions"** to verify.</li>
         </ol>
     </div>
 
     <div class="container">
         <button id="openTrackBtn">🎧 Open Track on SoundCloud</button>
-        <button id="confirmRepostBtn">✅ I Have Reposted</button>
+        <button id="confirmActionsBtn">✅ Confirm Actions & Earn Credits</button>
     </div>
 
     <footer>
