@@ -1,11 +1,11 @@
-// ✅ Ensure Firebase is loaded before running scripts
+// ✅ Ensure Firebase is loaded before running scripts 
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase Authentication and Firestore
+// ✅ Firebase Authentication and Firestore
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -22,7 +22,7 @@ auth.onAuthStateChanged(user => {
 });
 
 // ✅ Update User Dashboard
-window.updateDashboard = function (user) {
+function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
 
     if (!dashboard) {
@@ -36,10 +36,10 @@ window.updateDashboard = function (user) {
     }
 
     dashboard.innerHTML = `<h2>Welcome, ${user.email}!</h2>`;
-};
+}
 
 // ✅ Sign Up a New User
-window.signupUser = function () {
+function signupUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
@@ -52,10 +52,10 @@ window.signupUser = function () {
             console.error("❌ Signup Error:", error);
             alert(`Signup Error: ${error.message}`);
         });
-};
+}
 
 // ✅ Log In an Existing User
-window.loginUser = function () {
+function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
@@ -68,10 +68,10 @@ window.loginUser = function () {
             console.error("❌ Login Error:", error);
             alert(`Login Error: ${error.message}`);
         });
-};
+}
 
 // ✅ Log Out the Current User
-window.logoutUser = function () {
+function logoutUser() {
     auth.signOut()
         .then(() => {
             console.log("✅ User logged out successfully.");
@@ -80,7 +80,7 @@ window.logoutUser = function () {
         .catch(error => {
             console.error("❌ Logout Error:", error);
         });
-};
+}
 
 // ✅ Load Active Campaigns from Firestore
 window.loadActiveCampaigns = function () {
@@ -101,14 +101,25 @@ window.loadActiveCampaigns = function () {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
+
+                    // Calculate credits based on followers
+                    let userCredits = 1; // Default (for 100 followers)
+                    if (data.followers >= 1000) {
+                        userCredits = 10;
+                    } else if (data.followers >= 500) {
+                        userCredits = 5;
+                    } else if (data.followers >= 100) {
+                        userCredits = 1;
+                    }
+
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
-                                Repost & Earn ${data.credits} Credits
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${userCredits}')">
+                                Repost & Earn ${userCredits} Credits
                             </button>
                         </div>
                     `;
@@ -120,44 +131,74 @@ window.loadActiveCampaigns = function () {
         });
 };
 
-// ✅ Submit a New Track
-window.submitTrack = function () {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to submit a track.");
+// ✅ Initialize SoundCloud Widget API for Reposting
+window.repostTrack = function (campaignId, ownerId, credits) {
+    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
+
+    // Find the iframe for this campaign
+    let iframe = document.querySelector(`iframe[src*="${campaignId}"]`);
+    if (!iframe) {
+        console.error("❌ SoundCloud widget not found.");
+        alert("❌ Error: SoundCloud widget not found.");
         return;
     }
 
-    const soundcloudUrl = document.getElementById("soundcloudUrl").value.trim();
-    if (!soundcloudUrl.includes("soundcloud.com/")) {
-        alert("🚨 Invalid SoundCloud URL.");
-        return;
-    }
+    // Get SoundCloud Widget API for this iframe
+    let widget = SC.Widget(iframe);
 
-    db.collection("campaigns").add({
-        owner: user.uid,
-        track: soundcloudUrl,
-        credits: 10,
-        timestamp: new Date()
-    }).then(() => {
-        alert("✅ Track successfully submitted!");
-        loadActiveCampaigns();
-    }).catch(error => {
-        console.error("❌ Error submitting track:", error);
-        alert(`Error submitting track: ${error.message}`);
+    // Play the track and wait for repost event
+    widget.play();
+
+    widget.bind(SC.Widget.Events.PLAY, function () {
+        console.log("✅ Track started playing.");
+    });
+
+    widget.bind(SC.Widget.Events.FINISH, function () {
+        console.log("✅ Track finished playing.");
+    });
+
+    widget.bind(SC.Widget.Events.CLICK_SHARE, function () {
+        console.log(`✅ User reposted the track! Awarding ${credits} credits.`);
+        alert(`✅ You reposted the track! You earned ${credits} credits.`);
+
+        // Add credits to user in Firestore
+        const user = auth.currentUser;
+        if (user) {
+            db.collection("users").doc(user.uid).update({
+                credits: firebase.firestore.FieldValue.increment(credits)
+            }).then(() => {
+                console.log(`✅ Updated credits for user: ${user.email}`);
+            }).catch(error => {
+                console.error("❌ Error updating credits:", error);
+            });
+        }
     });
 };
 
-// ✅ Repost a Track (Placeholder)
-window.repostTrack = function (campaignId, ownerId, credits) {
-    alert(`🚨 You must be signed into SoundCloud to repost this track.`);
-    console.log(`Attempting to repost campaign ${campaignId}`);
-};
+// ✅ Post a Comment & Earn Credits
+window.postComment = function () {
+    const commentText = document.getElementById("commentText").value.trim();
+    if (commentText === "") {
+        alert("❌ You must enter a comment.");
+        return;
+    }
 
-// ✅ SoundCloud Authentication (Placeholder)
-window.loginWithSoundCloud = function () {
-    alert("🔊 Redirecting to SoundCloud login...");
-    window.location.href = "https://soundcloud.com/connect"; // Replace with actual OAuth login when implemented
+    // Redirect user to SoundCloud (they must manually post the comment)
+    alert("🔄 Redirecting to SoundCloud. Please post your comment there to earn credits.");
+    window.open("https://soundcloud.com", "_blank");
+
+    // Add credits to user for commenting
+    const user = auth.currentUser;
+    if (user) {
+        db.collection("users").doc(user.uid).update({
+            credits: firebase.firestore.FieldValue.increment(2)
+        }).then(() => {
+            console.log(`✅ Comment posted! 2 credits added to ${user.email}`);
+            alert("✅ You earned 2 credits for commenting!");
+        }).catch(error => {
+            console.error("❌ Error updating credits:", error);
+        });
+    }
 };
 
 // ✅ Ensure Page Loads & Functions are Attached
@@ -169,4 +210,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("signupBtn").addEventListener("click", signupUser);
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
+    document.getElementById("postCommentBtn").addEventListener("click", postComment);
 });
