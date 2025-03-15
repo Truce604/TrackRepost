@@ -3,53 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repost & Earn Credits - TrackRepost</title>
+    <title>Repost a Track</title>
     <link rel="stylesheet" href="styles.css">
-
-    <!-- ✅ Load Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- ✅ Load Firebase Config -->
-    <script src="firebaseConfig.js" defer></script>
-
-    <!-- ✅ Load Repost Script -->
-    <script src="repost.js" defer></script>
 </head>
 
 <body>
+
     <header>
-        <h1>🔁 Repost, Like & Comment to Earn Credits</h1>
-        <p>Follow the steps below to earn credits for engaging with this track.</p>
+        <h1>🎵 Repost a Track</h1>
+        <p>Earn credits by reposting, liking, and commenting!</p>
     </header>
 
     <div class="container">
-        <h2>🎵 Track to Engage With</h2>
-        <div id="trackContainer">
-            <p>Loading track...</p>
+        <h2>🔥 Active Campaigns</h2>
+        <div id="activeCampaigns">
+            <p>Loading campaigns...</p>
         </div>
-    </div>
-
-    <div class="container">
-        <h2>✅ How to Earn Credits</h2>
-        <ol>
-            <li>Click the **"Open Track on SoundCloud"** button below.</li>
-            <li>Log in to your SoundCloud account (if not logged in).</li>
-            <li>Repost the track **(Earn 1 credit per 100 followers)**.</li>
-            <li>Like the track **(Earn 1 credit)**.</li>
-            <li>Leave a comment **(Earn 2 credits)**.</li>
-            <li>Return here and click **"Confirm Actions"** to verify.</li>
-        </ol>
-    </div>
-
-    <div class="container">
-        <button id="openTrackBtn">🎧 Open Track on SoundCloud</button>
-        <button id="confirmActionsBtn">✅ Confirm Actions & Earn Credits</button>
     </div>
 
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
+    <script src="index.js"></script>
 </body>
 </html>
