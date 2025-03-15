@@ -83,7 +83,7 @@ function logoutUser() {
 }
 
 // ✅ Load Active Campaigns from Firestore
-window.loadActiveCampaigns = function () {
+function loadActiveCampaigns() {
     console.log("🔄 Loading campaigns...");
 
     const campaignsDiv = document.getElementById("activeCampaigns");
@@ -102,15 +102,7 @@ window.loadActiveCampaigns = function () {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
 
-                    // Calculate credits based on followers
-                    let userCredits = 1; // Default (for 100 followers)
-                    if (data.followers >= 1000) {
-                        userCredits = 10;
-                    } else if (data.followers >= 500) {
-                        userCredits = 5;
-                    } else if (data.followers >= 100) {
-                        userCredits = 1;
-                    }
+                    let estimatedCredits = Math.max(1, Math.floor(100 / 100)) + 3; // Example, adjust dynamically
 
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
@@ -118,8 +110,8 @@ window.loadActiveCampaigns = function () {
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${userCredits}')">
-                                Repost & Earn ${userCredits} Credits
+                            <button onclick="redirectToRepostPage('${doc.id}', '${data.track}')">
+                                Repost & Earn ${estimatedCredits} Credits
                             </button>
                         </div>
                     `;
@@ -129,77 +121,83 @@ window.loadActiveCampaigns = function () {
         .catch(error => {
             console.error("❌ Error loading active campaigns:", error);
         });
-};
+}
 
-// ✅ Initialize SoundCloud Widget API for Reposting
-window.repostTrack = function (campaignId, ownerId, credits) {
-    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
+// ✅ Redirect to Repost Page
+function redirectToRepostPage(campaignId, trackUrl) {
+    window.location.href = `repost.html?campaignId=${campaignId}&trackUrl=${encodeURIComponent(trackUrl)}`;
+}
 
-    // Find the iframe for this campaign
-    let iframe = document.querySelector(`iframe[src*="${campaignId}"]`);
-    if (!iframe) {
-        console.error("❌ SoundCloud widget not found.");
-        alert("❌ Error: SoundCloud widget not found.");
+// ✅ Function to handle reposting
+async function repostTrack(campaignId) {
+    if (!auth.currentUser) {
+        alert("🚨 You must be logged in to repost.");
         return;
     }
 
-    // Get SoundCloud Widget API for this iframe
-    let widget = SC.Widget(iframe);
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    const campaignRef = db.collection("campaigns").doc(campaignId);
 
-    // Play the track and wait for repost event
-    widget.play();
-
-    widget.bind(SC.Widget.Events.PLAY, function () {
-        console.log("✅ Track started playing.");
-    });
-
-    widget.bind(SC.Widget.Events.FINISH, function () {
-        console.log("✅ Track finished playing.");
-    });
-
-    widget.bind(SC.Widget.Events.CLICK_SHARE, function () {
-        console.log(`✅ User reposted the track! Awarding ${credits} credits.`);
-        alert(`✅ You reposted the track! You earned ${credits} credits.`);
-
-        // Add credits to user in Firestore
-        const user = auth.currentUser;
-        if (user) {
-            db.collection("users").doc(user.uid).update({
-                credits: firebase.firestore.FieldValue.increment(credits)
-            }).then(() => {
-                console.log(`✅ Updated credits for user: ${user.email}`);
-            }).catch(error => {
-                console.error("❌ Error updating credits:", error);
-            });
+    try {
+        // Get user data (for follower count)
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+            alert("❌ User data not found.");
+            return;
         }
-    });
-};
+        const userData = userDoc.data();
+        const followerCount = userData.followers || 100; // Default to 100 followers if not set
 
-// ✅ Post a Comment & Earn Credits
-window.postComment = function () {
-    const commentText = document.getElementById("commentText").value.trim();
-    if (commentText === "") {
-        alert("❌ You must enter a comment.");
-        return;
-    }
+        // Calculate earned credits (1 credit per 100 followers)
+        let earnedCredits = Math.max(1, Math.floor(followerCount / 100)); // Minimum 1 credit
+        earnedCredits += 1; // +1 credit for liking
+        earnedCredits += 2; // +2 credits for commenting (optional check later)
 
-    // Redirect user to SoundCloud (they must manually post the comment)
-    alert("🔄 Redirecting to SoundCloud. Please post your comment there to earn credits.");
-    window.open("https://soundcloud.com", "_blank");
+        // Get campaign data
+        const campaignDoc = await campaignRef.get();
+        if (!campaignDoc.exists) {
+            alert("❌ Campaign not found.");
+            return;
+        }
+        const campaignData = campaignDoc.data();
+        if (campaignData.creditsRemaining < earnedCredits) {
+            alert("⚠️ Not enough credits left in this campaign.");
+            return;
+        }
 
-    // Add credits to user for commenting
-    const user = auth.currentUser;
-    if (user) {
-        db.collection("users").doc(user.uid).update({
-            credits: firebase.firestore.FieldValue.increment(2)
-        }).then(() => {
-            console.log(`✅ Comment posted! 2 credits added to ${user.email}`);
-            alert("✅ You earned 2 credits for commenting!");
-        }).catch(error => {
-            console.error("❌ Error updating credits:", error);
+        // Update Firestore (Transaction)
+        await db.runTransaction(async (transaction) => {
+            const updatedCampaign = await transaction.get(campaignRef);
+            const updatedUser = await transaction.get(userRef);
+
+            if (!updatedCampaign.exists || !updatedUser.exists) return;
+
+            let remainingCredits = updatedCampaign.data().creditsRemaining - earnedCredits;
+            let newRepostCount = (updatedCampaign.data().repostCount || 0) + 1;
+
+            let newUserCredits = (updatedUser.data().credits || 0) + earnedCredits;
+
+            transaction.update(campaignRef, {
+                creditsRemaining: remainingCredits,
+                repostCount: newRepostCount
+            });
+
+            transaction.update(userRef, {
+                credits: newUserCredits
+            });
         });
+
+        alert(`✅ Repost successful! You earned ${earnedCredits} credits.`);
+    } catch (error) {
+        console.error("❌ Error reposting:", error);
     }
-};
+}
+
+// ✅ SoundCloud Authentication (Placeholder)
+function loginWithSoundCloud() {
+    alert("🔊 Redirecting to SoundCloud login...");
+    window.location.href = "https://soundcloud.com/connect"; // Replace with actual OAuth login when implemented
+}
 
 // ✅ Ensure Page Loads & Functions are Attached
 document.addEventListener("DOMContentLoaded", () => {
@@ -210,5 +208,4 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("signupBtn").addEventListener("click", signupUser);
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-    document.getElementById("postCommentBtn").addEventListener("click", postComment);
 });
