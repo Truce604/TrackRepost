@@ -35,10 +35,10 @@ document.getElementById("openTrackBtn").addEventListener("click", function () {
     }
 });
 
-// ✅ Handle Repost Confirmation
-document.getElementById("confirmRepostBtn").addEventListener("click", async function () {
+// ✅ Handle Confirmation of Actions
+document.getElementById("confirmActionsBtn").addEventListener("click", async function () {
     if (!auth.currentUser) {
-        alert("🚨 You must be logged in to confirm your repost.");
+        alert("🚨 You must be logged in to confirm your actions.");
         return;
     }
 
@@ -46,27 +46,23 @@ document.getElementById("confirmRepostBtn").addEventListener("click", async func
     const campaignRef = db.collection("campaigns").doc(campaignId);
 
     try {
-        // Get user data (for followers count)
+        // Get user and campaign data
         const userDoc = await userRef.get();
-        if (!userDoc.exists) {
-            alert("❌ User data not found.");
-            return;
-        }
-        const userData = userDoc.data();
-        const followerCount = userData.followers || 100; // Default 100 if not set
-
-        // Calculate earned credits
-        let earnedCredits = Math.max(1, Math.floor(followerCount / 100)) + 1; // +1 for liking
-        earnedCredits += 2; // +2 for commenting
-
-        // Get campaign data
         const campaignDoc = await campaignRef.get();
-        if (!campaignDoc.exists) {
-            alert("❌ Campaign not found.");
+        if (!userDoc.exists || !campaignDoc.exists) {
+            alert("❌ Error fetching data.");
             return;
         }
+
+        const userData = userDoc.data();
         const campaignData = campaignDoc.data();
-        if (campaignData.creditsRemaining < earnedCredits) {
+
+        // Calculate credits based on actions
+        let creditsEarned = 3; // 1 credit for like, 2 for comment
+        let repostCredits = Math.floor(userData.followers / 100); // 1 credit per 100 followers
+        creditsEarned += repostCredits;
+
+        if (campaignData.creditsRemaining < creditsEarned) {
             alert("⚠️ Not enough credits left in this campaign.");
             return;
         }
@@ -78,24 +74,18 @@ document.getElementById("confirmRepostBtn").addEventListener("click", async func
 
             if (!updatedCampaign.exists || !updatedUser.exists) return;
 
-            let remainingCredits = updatedCampaign.data().creditsRemaining - earnedCredits;
-            let newRepostCount = (updatedCampaign.data().repostCount || 0) + 1;
-            let newUserCredits = (updatedUser.data().credits || 0) + earnedCredits;
+            let remainingCredits = updatedCampaign.data().creditsRemaining - creditsEarned;
+            let newUserCredits = (updatedUser.data().credits || 0) + creditsEarned;
 
-            transaction.update(campaignRef, {
-                creditsRemaining: remainingCredits,
-                repostCount: newRepostCount
-            });
-
-            transaction.update(userRef, {
-                credits: newUserCredits
-            });
+            transaction.update(campaignRef, { creditsRemaining: remainingCredits });
+            transaction.update(userRef, { credits: newUserCredits });
         });
 
-        alert(`✅ Repost successful! You earned ${earnedCredits} credits.`);
+        alert(`✅ Actions verified! You earned ${creditsEarned} credits.`);
         window.location.href = "index.html"; // Redirect back to main page
     } catch (error) {
-        console.error("❌ Error confirming repost:", error);
-        alert("⚠️ Error confirming repost. Try again.");
+        console.error("❌ Error confirming actions:", error);
+        alert("⚠️ Error confirming actions. Try again.");
     }
 });
+
