@@ -9,7 +9,7 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Initialize Firebase
+// ✅ Ensure Firebase is initialized only once
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
@@ -17,16 +17,23 @@ if (!firebase.apps.length) {
     console.log("⚠️ Firebase already initialized.");
 }
 
-// ✅ Firebase Authentication & Firestore
+// ✅ Define Global Firebase Instances
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Square Payment Configuration
+// ✅ Square App Integration (Replace with actual Square values)
 const squareConfig = {
     applicationId: "sandbox-sq0idb-Y5w5v1OaX1oTe0HeEWJ6xQ",
-    accessToken: "EAAAlzVsfiRCCF1YY0pZQH6IMrgAcbBSMUA9-YTM5sq_wBUr2UhaGP2l05E7DFgu",
-    locationId: "LEMSZD58E9CNX"
+    locationId: "LEMSZD58E9CNX",  // This is the ID you get from Square
+    accessToken: "EAAAlzVsfiRCCF1YY0pZQH6IMrgAcbBSMUA9-YTM5sq_wBUr2UhaGP2l05E7DFgu", // Only needed if making authenticated requests
 };
 
-// ✅ Export Firebase & Square Config
-export { firebaseConfig, auth, db, squareConfig };
+// ✅ Function to Initialize Square Payments (If needed)
+function initializeSquare() {
+    if (!squareConfig.applicationId || !squareConfig.locationId) {
+        console.error("🚨 Square configuration is missing. Check firebaseConfig.js.");
+        return;
+    }
+    console.log("✅ Square Initialized with Application ID:", squareConfig.applicationId);
+}
+
