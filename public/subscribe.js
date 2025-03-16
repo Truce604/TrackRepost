@@ -1,52 +1,54 @@
-import { squareConfig } from "./firebaseConfig.js";
+// ✅ Ensure Firebase is loaded before running scripts 
+if (typeof firebase === "undefined") {
+    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+} else {
+    console.log("✅ Firebase Loaded Successfully!");
+}
 
-// ✅ Firebase Setup
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-document.getElementById("subscribeBtn").addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to subscribe.");
-        return;
-    }
-
-    const selectedPlan = parseInt(document.getElementById("subscriptionPlan").value);
-    const planName = selectedPlan === 10 ? "Basic" : selectedPlan === 20 ? "Pro" : "Elite";
-    const credits = selectedPlan === 10 ? 500 : selectedPlan === 20 ? 1200 : "Unlimited";
-
-    try {
-        // ✅ Process Subscription Payment
-        const response = await fetch("https://connect.squareup.com/v2/payments", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${squareConfig.accessToken}`
-            },
-            body: JSON.stringify({
-                source_id: "CARD_ON_FILE", // Square manages recurring billing
-                amount_money: {
-                    amount: selectedPlan * 100,
-                    currency: "USD"
-                },
-                location_id: squareConfig.locationId
-            })
-        });
-
-        const result = await response.json();
-        if (!result.payment) throw new Error("Subscription failed");
-
-        // ✅ Store Subscription in Firestore
-        await db.collection("subscriptions").doc(user.uid).set({
-            userId: user.uid,
-            plan: planName,
-            credits: credits,
-            startDate: new Date()
-        });
-
-        alert(`✅ Subscription successful! You're now on the ${planName} plan.`);
-    } catch (error) {
-        console.error("❌ Subscription Error:", error);
-        alert("🚨 Subscription failed. Please try again.");
+// ✅ Check if the user is logged in
+auth.onAuthStateChanged(user => {
+    if (user) {
+        console.log(`✅ User logged in: ${user.email}`);
+        loadUserCredits(user.uid);
+    } else {
+        console.warn("🚨 No user is logged in. Redirecting...");
+        window.location.href = "index.html"; // Redirect to login page if not logged in
     }
 });
+
+// ✅ Function to load user's credits from Firestore
+function loadUserCredits(userId) {
+    const creditsDisplay = document.getElementById("userCredits");
+
+    db.collection("users").doc(userId).get()
+        .then(doc => {
+            if (doc.exists) {
+                const userData = doc.data();
+                const credits = userData.credits || 0;
+                creditsDisplay.innerHTML = `<strong>Your Credits:</strong> ${credits}`;
+                console.log(`✅ User credits loaded: ${credits}`);
+            } else {
+                console.warn("🚨 User document not found.");
+                creditsDisplay.innerHTML = `<strong>Your Credits:</strong> 0`;
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error loading user credits:", error);
+        });
+}
+
+// ✅ Attach event listeners to subscription buttons
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("buy10Credits").addEventListener("click", () => buyCredits(10));
+    document.getElementById("buy50Credits").addEventListener("click", () => buyCredits(50));
+    document.getElementById("buy100Credits").addEventListener("click", () => buyCredits(100));
+});
+
+// ✅ Function to handle buying credits (Placeholder for Square Integration)
+function buyCredits(amount) {
+    alert(`✅ Redirecting to Square for purchasing ${amount} credits...`);
+    // 🔹 TODO: Integrate Square payment and add credits to Firestore after payment is successful.
+}
