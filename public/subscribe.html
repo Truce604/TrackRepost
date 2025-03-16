@@ -3,31 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subscribe</title>
+    <title>Buy Credits - TrackRepost</title>
     <link rel="stylesheet" href="styles.css">
-</head>
+    
+    <!-- ✅ Load Square API -->
+    <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 
+    <!-- ✅ Load Firebase & Auth -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebaseConfig.js"></script>
+    <script src="subscribe.js" defer></script>
+</head>
 <body>
+
     <header>
-        <h1>📅 Monthly Subscription</h1>
-        <p>Unlock extra perks with a monthly plan!</p>
+        <h1>💳 Buy Credits</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="repost.html">🔄 Repost & Earn</a></li>
+                <li><button id="logoutBtn">🚪 Logout</button></li>
+            </ul>
+        </nav>
     </header>
 
-  <div class="container">
-    <h2>💳 Subscribe & Earn Credits</h2>
-    <p id="userCredits"><strong>Your Credits:</strong> Loading...</p>
+    <div class="container">
+        <h2>Buy More Credits</h2>
+        <p>Select a package and pay securely using Square.</p>
+        
+        <select id="creditPackage">
+            <option value="500">500 Credits - $5</option>
+            <option value="1000">1000 Credits - $10</option>
+            <option value="2500">2500 Credits - $20</option>
+        </select>
 
-    <h3>🔹 Buy More Credits</h3>
-    <button id="buy10Credits">Buy 10 Credits ($5)</button>
-    <button id="buy50Credits">Buy 50 Credits ($20)</button>
-    <button id="buy100Credits">Buy 100 Credits ($35)</button>
-</div>
+        <div id="card-container"></div>
+        <button id="payButton">💳 Pay Now</button>
 
+        <p id="paymentStatus"></p>
+    </div>
 
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <script src="subscribe.js"></script>
 </body>
 </html>
+
