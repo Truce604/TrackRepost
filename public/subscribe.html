@@ -35,10 +35,11 @@
         <p>Select a package and pay securely using Square.</p>
         
         <select id="creditPackage">
-            <option value="500">500 Credits - $5</option>
-            <option value="1000">1000 Credits - $10</option>
-            <option value="2500">2500 Credits - $20</option>
-        </select>
+        <button onclick="processPayment(5)">Buy 50 Credits - $5</button>
+        <button onclick="processPayment(10)">Buy 120 Credits - $10</button>
+        <button onclick="processPayment(20)">Buy 300 Credits - $20</button>
+        <button onclick="processPayment(50)">Buy 800 Credits - $50</button>
+       </select>
 
         <div id="card-container"></div>
         <button id="payButton">💳 Pay Now</button>
