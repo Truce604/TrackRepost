@@ -3,28 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repost a Track</title>
+    <title>Repost Track - TrackRepost</title>
     <link rel="stylesheet" href="styles.css">
+
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ✅ Load Firebase Config -->
+    <script src="firebaseConfig.js" defer></script>
+
+    <!-- ✅ Load Repost Logic -->
+    <script src="repost.js" defer></script>
 </head>
 
 <body>
 
     <header>
-        <h1>🎵 Repost a Track</h1>
-        <p>Earn credits by reposting, liking, and commenting!</p>
+        <h1>🔄 Confirm Repost</h1>
+        <p>Repost this track and earn credits!</p>
     </header>
 
     <div class="container">
-        <h2>🔥 Active Campaigns</h2>
-        <div id="activeCampaigns">
-            <p>Loading campaigns...</p>
+        <h2>🎵 Track Details</h2>
+        <div id="trackDetails">
+            <p>Loading track info...</p>
         </div>
+        <button id="confirmRepostBtn">✅ Confirm Repost</button>
+        <button onclick="window.location.href='index.html'">❌ Cancel</button>
     </div>
 
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <script src="index.js"></script>
 </body>
 </html>
+
