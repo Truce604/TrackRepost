@@ -6,7 +6,7 @@
     <title>TrackRepost - Boost Your Music Reach</title>
     <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase (Ensure these are correct versions) -->
+    <!-- ✅ Load Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -14,7 +14,7 @@
     <!-- ✅ Load Firebase Config FIRST -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Main Script AFTER Firebase is initialized -->
+    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
     <script src="index.js" defer></script>
 </head>
 
@@ -22,7 +22,7 @@
 
     <header>
         <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
-        <p>Promote Your Music, Get More Plays</p>
+        <p>Promote Your Music, Earn Credits, and Grow Your Audience</p>
     </header>
 
     <!-- ✅ Authentication Section -->
@@ -38,20 +38,21 @@
         <p id="authMessage"></p>
     </div>
 
-    <!-- ✅ User Credits Section -->
-    <div class="container">
-        <h2>Your Credits</h2>
-        <p id="userCredits">💰 Loading credits...</p>
+    <!-- ✅ User Dashboard -->
+    <div class="container" id="userDashboard">
+        <h2>Your Dashboard</h2>
+        <p>💰 Credits: <span id="userCredits">0</span></p>
+        <p>📢 Active Campaigns: <span id="activeCampaignCount">0</span></p>
     </div>
 
     <!-- ✅ SoundCloud Authentication Section -->
-    <div class="container">
+    <div class="container" id="soundcloudAuth">
         <h2>🔊 Connect SoundCloud</h2>
         <button id="soundcloudLoginBtn">Login with SoundCloud</button>
     </div>
 
     <!-- ✅ SoundCloud Track Submission -->
-    <div class="container">
+    <div class="container" id="submitTrack">
         <h2>Submit Your SoundCloud Track</h2>
         <input type="text" id="soundcloudUrl" placeholder="Enter SoundCloud URL">
         <button id="submitTrackBtn">Submit Track</button>
@@ -68,6 +69,42 @@
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
+    <!-- ✅ Ensure Buttons Work Properly -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("✅ Page Loaded Successfully!");
+
+            // ✅ Ensure Firebase is Loaded
+            if (typeof firebase === "undefined") {
+                console.error("🚨 Firebase failed to load! Check index.html script imports.");
+                return;
+            }
+
+            // ✅ Attach Event Listeners for Buttons
+            const attachEvent = (id, func) => {
+                const btn = document.getElementById(id);
+                if (btn && typeof window[func] === "function") {
+                    btn.addEventListener("click", window[func]);
+                } else {
+                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
+                }
+            };
+
+            attachEvent("signupBtn", "signupUser");
+            attachEvent("loginBtn", "loginUser");
+            attachEvent("logoutBtn", "logoutUser");
+            attachEvent("submitTrackBtn", "submitTrack");
+            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
+
+            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            } else {
+                console.error("🚨 loadActiveCampaigns function is missing!");
+            }
+        });
+    </script>
 
 </body>
 </html>
