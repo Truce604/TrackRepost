@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repost Track - TrackRepost</title>
+    <title>Repost & Earn Credits</title>
     <link rel="stylesheet" href="styles.css">
 
     <!-- ✅ Load Firebase -->
@@ -11,27 +11,26 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load Firebase Config -->
+    <!-- ✅ Load Firebase Config FIRST -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Repost Logic -->
+    <!-- ✅ Load Repost Script -->
     <script src="repost.js" defer></script>
 </head>
 
 <body>
 
     <header>
-        <h1>🔄 Confirm Repost</h1>
-        <p>Repost this track and earn credits!</p>
+        <h1>🎵 Repost & Earn Credits</h1>
     </header>
 
     <div class="container">
-        <h2>🎵 Track Details</h2>
-        <div id="trackDetails">
-            <p>Loading track info...</p>
-        </div>
-        <button id="confirmRepostBtn">✅ Confirm Repost</button>
-        <button onclick="window.location.href='index.html'">❌ Cancel</button>
+        <h2 id="campaignTitle">Loading Campaign...</h2>
+        <iframe id="soundcloudPlayer" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+        
+        <p><strong>💰 Earn: <span id="creditAmount">Loading...</span> Credits</strong></p>
+        
+        <button id="repostBtn">🔁 Repost & Earn Credits</button>
     </div>
 
     <footer>
@@ -40,4 +39,5 @@
 
 </body>
 </html>
+
 
