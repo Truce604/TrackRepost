@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,31 +12,84 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load Firebase Config FIRST -->
+    <!-- ✅ Load Firebase Config -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Repost Script -->
+    <!-- ✅ Load Repost Handling Script -->
     <script src="repost.js" defer></script>
 </head>
 
 <body>
 
     <header>
-        <h1>🎵 Repost & Earn Credits</h1>
+        <h1>🔥 Repost & Earn Credits</h1>
+        <p>Repost the track to earn credits & grow your SoundCloud engagement.</p>
     </header>
 
     <div class="container">
-        <h2 id="campaignTitle">Loading Campaign...</h2>
-        <iframe id="soundcloudPlayer" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"></iframe>
-        
-        <p><strong>💰 Earn: <span id="creditAmount">Loading...</span> Credits</strong></p>
-        
-        <button id="repostBtn">🔁 Repost & Earn Credits</button>
+        <h2>🎵 Track Preview</h2>
+        <div id="trackContainer">
+            <p>Loading track...</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>💰 Repost & Earn</h2>
+        <button id="repostButton">🔁 Repost & Earn</button>
+        <p id="repostStatus"></p>
+    </div>
+
+    <div class="container" id="interactionSection" style="display: none;">
+        <h2>🎯 Bonus Credits</h2>
+        <p>Earn extra credits by engaging further!</p>
+        <input type="checkbox" id="likeTrack" checked> 👍 Like the track (+1 Credit) <br>
+        <input type="checkbox" id="followArtist" checked> 🔥 Follow the artist (+2 Credits) <br>
+        <button onclick="confirmActions()">Confirm & Earn More</button>
+    </div>
+
+    <div class="container" id="commentSection" style="display: none;">
+        <h2>💬 Final Step: Leave a Comment</h2>
+        <p>Want **2 more credits**? Leave a comment on SoundCloud.</p>
+        <button id="commentButton">✍️ Leave a Comment</button>
     </div>
 
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const campaignId = urlParams.get("campaign");
+            const trackUrl = urlParams.get("track");
+            const credits = urlParams.get("credits");
+            const artistId = urlParams.get("artist");
+
+            if (!campaignId || !trackUrl || !credits || !artistId) {
+                alert("🚨 Invalid track data. Returning to home.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            // ✅ Load SoundCloud Player
+            document.getElementById("trackContainer").innerHTML = `
+                <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                    src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
+                </iframe>
+            `;
+
+            // ✅ Repost Button Click
+            document.getElementById("repostButton").addEventListener("click", function () {
+                repostTrack(campaignId, trackUrl, credits, artistId);
+            });
+
+            // ✅ Comment Button Click
+            document.getElementById("commentButton").addEventListener("click", function () {
+                window.open(trackUrl, "_blank");
+                alert("✅ Once you've commented, return to this page to receive your credits.");
+            });
+        });
+    </script>
 
 </body>
 </html>
