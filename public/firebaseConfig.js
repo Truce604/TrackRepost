@@ -9,10 +9,24 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Initialize Firebase (Only if not already initialized)
+// ✅ Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
     console.log("⚠️ Firebase already initialized.");
 }
+
+// ✅ Firebase Authentication & Firestore
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ✅ Square Payment Configuration
+const squareConfig = {
+    applicationId: "sandbox-sq0idb-Y5w5v1OaX1oTe0HeEWJ6xQ",
+    accessToken: "EAAAlzVsfiRCCF1YY0pZQH6IMrgAcbBSMUA9-YTM5sq_wBUr2UhaGP2l05E7DFgu",
+    locationId: "LEMSZD58E9CNX"
+};
+
+// ✅ Export Firebase & Square Config
+export { firebaseConfig, auth, db, squareConfig };
