@@ -1,10 +1,11 @@
-// ✅ Ensure Firebase is loaded before running scripts 
+// ✅ Ensure Firebase is loaded before running scripts
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
+// ✅ Initialize Firebase Services
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -31,7 +32,10 @@ function updateDashboard(user) {
     }
 
     if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        dashboard.innerHTML = `
+            <h2>You are not logged in.</h2>
+            <p>Please log in or sign up.</p>
+        `;
         return;
     }
 
@@ -65,7 +69,7 @@ function loadUserCredits(userId) {
 }
 
 // ✅ Sign Up User
-document.getElementById("signupBtn").addEventListener("click", () => {
+function signupUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
@@ -78,10 +82,10 @@ document.getElementById("signupBtn").addEventListener("click", () => {
             console.error("❌ Signup Error:", error);
             alert(`Signup Error: ${error.message}`);
         });
-});
+}
 
 // ✅ Log In User
-document.getElementById("loginBtn").addEventListener("click", () => {
+function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
@@ -94,10 +98,10 @@ document.getElementById("loginBtn").addEventListener("click", () => {
             console.error("❌ Login Error:", error);
             alert(`Login Error: ${error.message}`);
         });
-});
+}
 
 // ✅ Log Out User
-document.getElementById("logoutBtn").addEventListener("click", () => {
+function logoutUser() {
     auth.signOut()
         .then(() => {
             console.log("✅ User logged out successfully.");
@@ -106,7 +110,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
         .catch(error => {
             console.error("❌ Logout Error:", error);
         });
-});
+}
 
 // ✅ Load Active Campaigns from Firestore
 function loadActiveCampaigns() {
@@ -146,10 +150,14 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Ensure Page Loads & Functions are Attached
+// ✅ Attach Event Listeners to Buttons
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
+
+    document.getElementById("signupBtn").addEventListener("click", signupUser);
+    document.getElementById("loginBtn").addEventListener("click", loginUser);
+    document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
 
 
