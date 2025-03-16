@@ -5,10 +5,6 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase Services
-const auth = firebase.auth();
-const db = firebase.firestore();
-
 // ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -159,5 +155,4 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
-
 
