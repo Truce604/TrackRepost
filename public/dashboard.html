@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ✅ Load Firebase Config -->
+    <script src="firebaseConfig.js" defer></script>
+
+    <!-- ✅ Load Dashboard Script -->
+    <script src="dashboard.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>🎛️ User Dashboard</h1>
+        <p>Manage your credits and track submissions.</p>
+    </header>
+
+    <div class="container">
+        <h2>💰 Your Credit Balance</h2>
+        <p id="creditBalance">Loading credits...</p>
+    </div>
+
+    <div class="container">
+        <h2>📢 Your Running Campaigns</h2>
+        <div id="runningCampaigns">
+            <p>Loading campaigns...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
