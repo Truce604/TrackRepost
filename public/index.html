@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,10 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load Firebase Config FIRST -->
+    <!-- ✅ Load Firebase Config & Scripts -->
     <script src="firebaseConfig.js" defer></script>
-
-    <!-- ✅ Load Authentication Script AFTER Firebase is initialized -->
     <script src="index.js" defer></script>
 </head>
 
@@ -22,7 +21,7 @@
 
     <header>
         <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
-        <p>Promote Your Music, Earn Credits, and Grow Your Audience</p>
+        <p>Promote Your Music, Get More Plays</p>
     </header>
 
     <!-- ✅ Authentication Section -->
@@ -41,8 +40,9 @@
     <!-- ✅ User Dashboard -->
     <div class="container" id="userDashboard">
         <h2>Your Dashboard</h2>
+        <p>🔍 Loading user data...</p>
         <p>💰 Credits: <span id="userCredits">0</span></p>
-        <p>📢 Active Campaigns: <span id="activeCampaignCount">0</span></p>
+        <a href="buy-credits.html"><button>💳 Buy More Credits</button></a>
     </div>
 
     <!-- ✅ SoundCloud Authentication Section -->
@@ -70,44 +70,7 @@
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
 
-    <!-- ✅ Ensure Buttons Work Properly -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ Page Loaded Successfully!");
-
-            // ✅ Ensure Firebase is Loaded
-            if (typeof firebase === "undefined") {
-                console.error("🚨 Firebase failed to load! Check index.html script imports.");
-                return;
-            }
-
-            // ✅ Attach Event Listeners for Buttons
-            const attachEvent = (id, func) => {
-                const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
-                } else {
-                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
-                }
-            };
-
-            attachEvent("signupBtn", "signupUser");
-            attachEvent("loginBtn", "loginUser");
-            attachEvent("logoutBtn", "logoutUser");
-            attachEvent("submitTrackBtn", "submitTrack");
-            attachEvent("soundcloudLoginBtn", "loginWithSoundCloud");
-
-            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
-            if (typeof loadActiveCampaigns === "function") {
-                loadActiveCampaigns();
-            } else {
-                console.error("🚨 loadActiveCampaigns function is missing!");
-            }
-        });
-    </script>
-
 </body>
 </html>
-
 
 
