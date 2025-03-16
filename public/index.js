@@ -1,13 +1,13 @@
-// ✅ Ensure Firebase is loaded
+// ✅ Ensure Firebase is loaded before running scripts
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
-}
 
-// ✅ Firebase Authentication and Firestore
-const auth = firebase.auth();
-const db = firebase.firestore();
+    // ✅ Initialize Firebase Authentication and Firestore
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+}
 
 // ✅ Listen for Authentication State Changes
 auth.onAuthStateChanged(user => {
