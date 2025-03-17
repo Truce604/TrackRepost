@@ -18,13 +18,10 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
-    console.log("⚠️ Firebase Already Initialized.");
+    console.log(⚠️ Firebase Already Initialized.");
 }
 
-// ✅ Export auth, db, and Square details (Avoids redeclaration issues)
+// ✅ Define Firebase Auth & Firestore
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// ✅ Export Square credentials for use in other files
-export { auth, db, SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID };
 
