@@ -22,25 +22,58 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ Attach Event Listeners (Ensure Buttons are Clickable)
+// ✅ Fix: Ensure Elements Exist Before Adding Event Listeners
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
 
-    // ✅ Ensure elements exist before adding event listeners
-    if (document.getElementById("signupBtn")) {
-        document.getElementById("signupBtn").addEventListener("click", signupUser);
-    }
-    if (document.getElementById("loginBtn")) {
-        document.getElementById("loginBtn").addEventListener("click", loginUser);
-    }
-    if (document.getElementById("logoutBtn")) {
-        document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-    }
+    // Ensure elements exist before adding event listeners
+    if (document.getElementById("signupBtn")) document.getElementById("signupBtn").addEventListener("click", signupUser);
+    if (document.getElementById("loginBtn")) document.getElementById("loginBtn").addEventListener("click", loginUser);
+    if (document.getElementById("logoutBtn")) document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 
-    loadActiveCampaigns(); // ✅ Load campaigns on page load
+    loadActiveCampaigns();
 });
 
-// ✅ Fix Functions
+// ✅ Update User Dashboard
+function updateDashboard(user) {
+    const dashboard = document.getElementById("userDashboard");
+    if (!dashboard) return console.error("❌ Dashboard element not found.");
+
+    if (!user) {
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        return;
+    }
+
+    dashboard.innerHTML = `
+        <h2>Welcome, ${user.email}!</h2>
+        <p><strong>Your Credits:</strong> Loading...</p>
+        <a href="subscribe.html">
+            <button>💳 Buy Credits</button>
+        </a>
+    `;
+
+    // ✅ Load user's credits
+    loadUserCredits(user.uid);
+}
+
+// ✅ Function to load user's credits from Firestore
+function loadUserCredits(userId) {
+    db.collection("users").doc(userId).get()
+        .then(doc => {
+            if (doc.exists) {
+                const credits = doc.data().credits || 0;
+                document.querySelector("#userDashboard p").innerHTML = `<strong>Your Credits:</strong> ${credits}`;
+                console.log(`✅ User credits loaded: ${credits}`);
+            } else {
+                console.warn("🚨 User document not found.");
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error loading user credits:", error);
+        });
+}
+
+// ✅ Sign Up User
 function signupUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -56,6 +89,7 @@ function signupUser() {
         });
 }
 
+// ✅ Log In User
 function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -71,6 +105,7 @@ function loginUser() {
         });
 }
 
+// ✅ Log Out User
 function logoutUser() {
     auth.signOut()
         .then(() => {
@@ -79,5 +114,47 @@ function logoutUser() {
         })
         .catch(error => {
             console.error("❌ Logout Error:", error);
+        });
+}
+
+// ✅ Load Active Campaigns from Firestore
+function loadActiveCampaigns() {
+    console.log("🔄 Loading campaigns...");
+
+    const campaignsDiv = document.getElementById("activeCampaigns");
+    if (!campaignsDiv) {
+        console.error("❌ Campaigns section not found.");
+        return;
+    }
+
+    db.collection("campaigns").get()
+        .then(querySnapshot => {
+            campaignsDiv.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+            } else {
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+
+                    // ✅ Ensure proper URL for repost.html
+                    const repostUrl = `repost.html?id=${doc.id}&track=${encodeURIComponent(data.track)}&owner=${data.owner}&credits=${data.credits}`;
+
+                    campaignsDiv.innerHTML += `
+                        <div class="campaign">
+                            <h3>🔥 Now Promoting:</h3>
+                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                            </iframe>
+                            <a href="${repostUrl}">
+                                <button>Repost & Earn ${data.credits} Credits</button>
+                            </a>
+                        </div>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error loading active campaigns:", error);
         });
 }
