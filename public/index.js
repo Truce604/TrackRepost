@@ -1,16 +1,11 @@
-// ✅ Prevent multiple Firebase initializations
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Initialized Successfully!");
-} else {
-    console.log("⚠️ Firebase Already Initialized.");
-}
+import { auth, db, SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID } from './firebaseConfig.js';
 
-// ✅ Firebase Authentication and Firestore
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ✅ Ensure Firebase is initialized
+console.log("✅ Firebase Loaded Successfully!");
+console.log(`🟢 Square Application ID: ${SQUARE_APPLICATION_ID}`);
+console.log(`🟢 Square Location ID: ${SQUARE_LOCATION_ID}`);
 
-// ✅ Firebase Auth State Listener (Checks if user is logged in)
+// ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
@@ -87,7 +82,7 @@ function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    auth.signInWithEmailAndPassword(email, password)
+    auth.signInWithEmailAndPassword(auth, email, password)
         .then(userCredential => {
             console.log(`✅ User logged in: ${userCredential.user.email}`);
             updateDashboard(userCredential.user);
@@ -129,8 +124,6 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-
-                    // ✅ Ensure proper URL for repost.html
                     const repostUrl = `repost.html?id=${doc.id}&track=${encodeURIComponent(data.track)}&owner=${data.owner}&credits=${data.credits}`;
 
                     campaignsDiv.innerHTML += `
@@ -161,4 +154,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn")?.addEventListener("click", loginUser);
     document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
 });
+
 
