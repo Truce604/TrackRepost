@@ -1,14 +1,13 @@
-
 // ✅ Ensure Firebase is loaded before running scripts
-if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+if (!window.auth || !window.db) {
+    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Use Firebase References from `firebaseConfig.js`
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ✅ Use Global Firebase References from `firebaseConfig.js`
+const auth = window.auth;
+const db = window.db;
 
 // ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
@@ -33,7 +32,10 @@ function updateDashboard(user) {
     }
 
     if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        dashboard.innerHTML = `
+            <h2>You are not logged in.</h2>
+            <p>Please log in or sign up.</p>
+        `;
         return;
     }
 
@@ -75,6 +77,7 @@ function signupUser() {
         .then(userCredential => {
             console.log(`✅ User signed up: ${userCredential.user.email}`);
             updateDashboard(userCredential.user);
+            location.reload(); // ✅ Refresh page to apply changes
         })
         .catch(error => {
             console.error("❌ Signup Error:", error);
@@ -91,6 +94,7 @@ function loginUser() {
         .then(userCredential => {
             console.log(`✅ User logged in: ${userCredential.user.email}`);
             updateDashboard(userCredential.user);
+            location.reload(); // ✅ Refresh page to apply changes
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
@@ -104,6 +108,7 @@ function logoutUser() {
         .then(() => {
             console.log("✅ User logged out successfully.");
             updateDashboard(null);
+            location.reload(); // ✅ Refresh page to ensure user is fully logged out
         })
         .catch(error => {
             console.error("❌ Logout Error:", error);
@@ -129,16 +134,13 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-                    console.log("✅ Campaign Loaded:", data);
-
-                    // ✅ Display each campaign
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', ${data.credits})">
                                 Repost & Earn ${data.credits} Credits
                             </button>
                         </div>
@@ -148,8 +150,54 @@ function loadActiveCampaigns() {
         })
         .catch(error => {
             console.error("❌ Error loading active campaigns:", error);
-            alert(`Error loading campaigns: ${error.message}`);
         });
+}
+
+// ✅ Function to Handle Reposting a Track
+function repostTrack(campaignId, ownerId, credits) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("🚨 You must be logged in to repost.");
+        return;
+    }
+
+    console.log(`🔄 Reposting campaign: ${campaignId} | Owner: ${ownerId} | Credits: ${credits}`);
+
+    // ✅ Deduct credits from user
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.get()
+        .then(doc => {
+            if (!doc.exists) {
+                console.error("❌ User document not found.");
+                return;
+            }
+
+            let userCredits = doc.data().credits || 0;
+
+            if (userCredits < credits) {
+                alert("🚨 Not enough credits to repost!");
+                return;
+            }
+
+            // ✅ Deduct credits and update Firestore
+            userCredits -= credits;
+            userRef.update({ credits: userCredits })
+                .then(() => {
+                    console.log(`✅ Credits updated. New balance: ${userCredits}`);
+                    document.getElementById("userCredits").textContent = userCredits;
+
+                    // ✅ Add repost record
+                    db.collection("reposts").add({
+                        userId: user.uid,
+                        campaignId: campaignId,
+                        timestamp: new Date()
+                    }).then(() => {
+                        alert("✅ Track successfully reposted!");
+                    }).catch(error => console.error("❌ Error saving repost record:", error));
+                })
+                .catch(error => console.error("❌ Error updating credits:", error));
+        })
+        .catch(error => console.error("❌ Error fetching user data:", error));
 }
 
 // ✅ Attach Event Listeners to Buttons
