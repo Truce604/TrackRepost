@@ -5,6 +5,10 @@ if (typeof firebase === "undefined") {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
+// ✅ Initialize Firebase Authentication and Firestore
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 // ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -21,7 +25,6 @@ auth.onAuthStateChanged(user => {
 // ✅ Update User Dashboard
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
-
     if (!dashboard) {
         console.error("❌ Dashboard element not found.");
         return;
@@ -127,15 +130,19 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
+
+                    // ✅ Correctly pass campaign data to repost.html
+                    const repostUrl = `repost.html?id=${doc.id}&track=${encodeURIComponent(data.track)}&owner=${data.owner}&credits=${data.credits}`;
+
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
-                                Repost & Earn ${data.credits} Credits
-                            </button>
+                            <a href="${repostUrl}">
+                                <button>Repost & Earn ${data.credits} Credits</button>
+                            </a>
                         </div>
                     `;
                 });
@@ -146,7 +153,7 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Attach Event Listeners to Buttons
+// ✅ Ensure Page Loads & Functions are Attached
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
@@ -155,4 +162,3 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
-
