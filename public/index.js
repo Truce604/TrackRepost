@@ -1,15 +1,16 @@
-// ✅ Ensure Firebase is loaded before running scripts
-if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+// ✅ Prevent multiple Firebase initializations
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase Initialized Successfully!");
 } else {
-    console.log("✅ Firebase Loaded Successfully!");
+    console.log("⚠️ Firebase Already Initialized.");
 }
 
-// ✅ Initialize Firebase Authentication and Firestore
+// ✅ Firebase Authentication and Firestore
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Firebase Auth State Listener
+// ✅ Firebase Auth State Listener (Checks if user is logged in)
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
@@ -22,22 +23,14 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ✅ Fix: Ensure Elements Exist Before Adding Event Listeners
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Page Loaded Successfully!");
-
-    // Ensure elements exist before adding event listeners
-    if (document.getElementById("signupBtn")) document.getElementById("signupBtn").addEventListener("click", signupUser);
-    if (document.getElementById("loginBtn")) document.getElementById("loginBtn").addEventListener("click", loginUser);
-    if (document.getElementById("logoutBtn")) document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-
-    loadActiveCampaigns();
-});
-
 // ✅ Update User Dashboard
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
-    if (!dashboard) return console.error("❌ Dashboard element not found.");
+
+    if (!dashboard) {
+        console.error("❌ Dashboard element not found.");
+        return;
+    }
 
     if (!user) {
         dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
@@ -158,3 +151,14 @@ function loadActiveCampaigns() {
             console.error("❌ Error loading active campaigns:", error);
         });
 }
+
+// ✅ Attach Event Listeners to Buttons
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("✅ Page Loaded Successfully!");
+    loadActiveCampaigns();
+
+    document.getElementById("signupBtn")?.addEventListener("click", signupUser);
+    document.getElementById("loginBtn")?.addEventListener("click", loginUser);
+    document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
+});
+
