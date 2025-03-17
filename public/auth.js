@@ -13,6 +13,7 @@ const db = firebase.firestore();
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
+        syncDisplayName(user); // Ensure display name is saved in Firestore
         updateDashboard(user);
         loadActiveCampaigns(); // Reload campaigns after login
     } else {
@@ -20,6 +21,24 @@ auth.onAuthStateChanged(user => {
         updateDashboard(null);
     }
 });
+
+// ✅ Ensure Display Name is Synced to Firestore
+function syncDisplayName(user) {
+    if (!user) return;
+
+    const userRef = db.collection("users").doc(user.uid);
+    userRef.get().then(docSnapshot => {
+        if (!docSnapshot.exists || !docSnapshot.data().displayName) {
+            userRef.set({
+                email: user.email,
+                credits: 0,
+                reposts: 0,
+                displayName: user.displayName || "User"
+            }, { merge: true });
+            console.log(`✅ Synced display name: ${user.displayName}`);
+        }
+    }).catch(error => console.error("❌ Error syncing display name:", error));
+}
 
 // ✅ Update User Dashboard
 function updateDashboard(user) {
@@ -35,18 +54,34 @@ function updateDashboard(user) {
         return;
     }
 
-    dashboard.innerHTML = `<h2>Welcome, ${user.email}!</h2>`;
+    dashboard.innerHTML = `<h2>Welcome, ${user.displayName || user.email}!</h2>`;
 }
 
-// ✅ Sign Up a New User
+// ✅ Sign Up a New User (With Display Name)
 function signupUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
+    const displayName = document.getElementById("displayName").value; // New input for display name
 
     auth.createUserWithEmailAndPassword(email, password)
         .then(userCredential => {
-            console.log(`✅ User signed up: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
+            const user = userCredential.user;
+
+            // ✅ Update Firebase Authentication Profile with Display Name
+            return user.updateProfile({
+                displayName: displayName
+            }).then(() => {
+                // ✅ Store User in Firestore
+                return db.collection("users").doc(user.uid).set({
+                    email: user.email,
+                    credits: 0,
+                    reposts: 0,
+                    displayName: displayName
+                }, { merge: true });
+            }).then(() => {
+                console.log(`✅ User signed up: ${user.email} (Display Name: ${displayName})`);
+                updateDashboard(user);
+            });
         })
         .catch(error => {
             console.error("❌ Signup Error:", error);
@@ -54,15 +89,17 @@ function signupUser() {
         });
 }
 
-// ✅ Log In an Existing User
+// ✅ Log In an Existing User (Ensures Display Name is Synced)
 function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
-            console.log(`✅ User logged in: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
+            const user = userCredential.user;
+            syncDisplayName(user); // Ensure display name is stored in Firestore
+            console.log(`✅ User logged in: ${user.email}`);
+            updateDashboard(user);
         })
         .catch(error => {
             console.error("❌ Login Error:", error);
@@ -139,7 +176,6 @@ async function repostTrack(campaignId) {
     const campaignRef = db.collection("campaigns").doc(campaignId);
 
     try {
-        // Get user data (for follower count)
         const userDoc = await userRef.get();
         if (!userDoc.exists) {
             alert("❌ User data not found.");
@@ -148,42 +184,29 @@ async function repostTrack(campaignId) {
         const userData = userDoc.data();
         const followerCount = userData.followers || 100; // Default to 100 followers if not set
 
-        // Calculate earned credits (1 credit per 100 followers)
-        let earnedCredits = Math.max(1, Math.floor(followerCount / 100)); // Minimum 1 credit
+        let earnedCredits = Math.max(1, Math.floor(followerCount / 100));
         earnedCredits += 1; // +1 credit for liking
-        earnedCredits += 2; // +2 credits for commenting (optional check later)
+        earnedCredits += 2; // +2 credits for commenting
 
-        // Get campaign data
         const campaignDoc = await campaignRef.get();
-        if (!campaignDoc.exists) {
-            alert("❌ Campaign not found.");
-            return;
-        }
-        const campaignData = campaignDoc.data();
-        if (campaignData.creditsRemaining < earnedCredits) {
+        if (!campaignDoc.exists || campaignDoc.data().creditsRemaining < earnedCredits) {
             alert("⚠️ Not enough credits left in this campaign.");
             return;
         }
 
-        // Update Firestore (Transaction)
         await db.runTransaction(async (transaction) => {
             const updatedCampaign = await transaction.get(campaignRef);
             const updatedUser = await transaction.get(userRef);
 
             if (!updatedCampaign.exists || !updatedUser.exists) return;
 
-            let remainingCredits = updatedCampaign.data().creditsRemaining - earnedCredits;
-            let newRepostCount = (updatedCampaign.data().repostCount || 0) + 1;
-
-            let newUserCredits = (updatedUser.data().credits || 0) + earnedCredits;
-
             transaction.update(campaignRef, {
-                creditsRemaining: remainingCredits,
-                repostCount: newRepostCount
+                creditsRemaining: updatedCampaign.data().creditsRemaining - earnedCredits,
+                repostCount: (updatedCampaign.data().repostCount || 0) + 1
             });
 
             transaction.update(userRef, {
-                credits: newUserCredits
+                credits: (updatedUser.data().credits || 0) + earnedCredits
             });
         });
 
@@ -193,19 +216,13 @@ async function repostTrack(campaignId) {
     }
 }
 
-// ✅ SoundCloud Authentication (Placeholder)
-function loginWithSoundCloud() {
-    alert("🔊 Redirecting to SoundCloud login...");
-    window.location.href = "https://soundcloud.com/connect"; // Replace with actual OAuth login when implemented
-}
-
 // ✅ Ensure Page Loads & Functions are Attached
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
 
-    // ✅ Attach Event Listeners to Buttons
     document.getElementById("signupBtn").addEventListener("click", signupUser);
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
+
