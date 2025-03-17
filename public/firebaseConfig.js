@@ -21,9 +21,9 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Square Configuration (Production)
-const SQUARE_APPLICATION_ID = EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE"";
-const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA"; // Ensure you replace this with your real Square Location ID
+// ✅ Square Configuration
+const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";  /
+const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
 
 console.log("✅ Square App ID:", SQUARE_APPLICATION_ID);
 console.log("✅ Square Location ID:", SQUARE_LOCATION_ID);
