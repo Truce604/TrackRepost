@@ -1,16 +1,15 @@
-
-// ✅ Ensure Firebase is Loaded
+// ✅ Ensure Firebase is loaded before running scripts
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Initialize Firebase Services
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ✅ Use global `auth` and `db` from `firebaseConfig.js`
+const auth = window.auth;
+const db = window.db;
 
-// ✅ Firebase Auth State Listener (Checks if user is logged in)
+// ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
@@ -26,13 +25,17 @@ auth.onAuthStateChanged(user => {
 // ✅ Update User Dashboard
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
+
     if (!dashboard) {
         console.error("❌ Dashboard element not found.");
         return;
     }
 
     if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        dashboard.innerHTML = `
+            <h2>You are not logged in.</h2>
+            <p>Please log in or sign up.</p>
+        `;
         return;
     }
 
@@ -48,7 +51,7 @@ function updateDashboard(user) {
     loadUserCredits(user.uid);
 }
 
-// ✅ Function to Load User's Credits from Firestore
+// ✅ Function to load user's credits from Firestore
 function loadUserCredits(userId) {
     db.collection("users").doc(userId).get()
         .then(doc => {
@@ -67,13 +70,8 @@ function loadUserCredits(userId) {
 
 // ✅ Sign Up User
 function signupUser() {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!email || !password) {
-        alert("🚨 Please enter an email and password.");
-        return;
-    }
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
     auth.createUserWithEmailAndPassword(email, password)
         .then(userCredential => {
@@ -88,13 +86,8 @@ function signupUser() {
 
 // ✅ Log In User
 function loginUser() {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!email || !password) {
-        alert("🚨 Please enter an email and password.");
-        return;
-    }
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
@@ -119,7 +112,45 @@ function logoutUser() {
         });
 }
 
-// ✅ Ensure Page Loads & Attach Event Listeners
+// ✅ Load Active Campaigns from Firestore
+function loadActiveCampaigns() {
+    console.log("🔄 Loading campaigns...");
+
+    const campaignsDiv = document.getElementById("activeCampaigns");
+    if (!campaignsDiv) {
+        console.error("❌ Campaigns section not found.");
+        return;
+    }
+
+    db.collection("campaigns").get()
+        .then(querySnapshot => {
+            campaignsDiv.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+            } else {
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    campaignsDiv.innerHTML += `
+                        <div class="campaign">
+                            <h3>🔥 Now Promoting:</h3>
+                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+                            </iframe>
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
+                                Repost & Earn ${data.credits} Credits
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error loading active campaigns:", error);
+        });
+}
+
+// ✅ Attach Event Listeners to Buttons
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
