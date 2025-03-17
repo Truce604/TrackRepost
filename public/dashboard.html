@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard</title>
+    <title>Dashboard | TrackRepost</title>
     <link rel="stylesheet" href="styles.css">
 
     <!-- ✅ Load Firebase -->
@@ -14,27 +14,46 @@
     <!-- ✅ Load Firebase Config -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Dashboard Script -->
+    <!-- ✅ Load Dashboard JavaScript -->
     <script src="dashboard.js" defer></script>
 </head>
 
 <body>
 
     <header>
-        <h1>🎛️ User Dashboard</h1>
-        <p>Manage your credits and track submissions.</p>
+        <h1>📊 User Dashboard</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="subscribe.html">💳 Buy Credits</a></li>
+                <li><a href="repost.html">🔄 Repost & Earn</a></li>
+                <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
+            </ul>
+        </nav>
     </header>
 
+    <!-- ✅ User Info Section -->
     <div class="container">
-        <h2>💰 Your Credit Balance</h2>
-        <p id="creditBalance">Loading credits...</p>
+        <h2>👤 Welcome, <span id="userEmail">Guest</span></h2>
+        <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
     </div>
 
+    <!-- ✅ Transaction History Section -->
     <div class="container">
-        <h2>📢 Your Running Campaigns</h2>
-        <div id="runningCampaigns">
-            <p>Loading campaigns...</p>
-        </div>
+        <h2>📜 Transaction History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Track</th>
+                    <th>Credits</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="transactionHistory">
+                <tr><td colspan="4">Loading history...</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <footer>
@@ -43,3 +62,4 @@
 
 </body>
 </html>
+
