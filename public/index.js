@@ -1,10 +1,15 @@
+// ✅ Ensure Firebase is loaded before running scripts
+if (typeof firebase === "undefined") {
+    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+} else {
+    console.log("✅ Firebase Loaded Successfully!");
+}
 
-// ✅ Firebase is already initialized in firebaseConfig.js
-console.log("✅ Firebase Loaded Successfully!");
-console.log(`🟢 Square Application ID: ${SQUARE_APPLICATION_ID}`);
-console.log(`🟢 Square Location ID: ${SQUARE_LOCATION_ID}`);
+// ✅ Initialize Firebase Services
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-// ✅ Firebase Auth State Listener
+// ✅ Firebase Auth State Listener (Checks if user is logged in)
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
@@ -20,36 +25,28 @@ auth.onAuthStateChanged(user => {
 // ✅ Update User Dashboard
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
-
     if (!dashboard) {
         console.error("❌ Dashboard element not found.");
         return;
     }
 
     if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+        document.getElementById("userEmail").innerText = "Guest";
+        document.getElementById("userCredits").innerText = "0";
         return;
     }
 
-    dashboard.innerHTML = `
-        <h2>Welcome, ${user.email}!</h2>
-        <p><strong>Your Credits:</strong> Loading...</p>
-        <a href="subscribe.html">
-            <button>💳 Buy Credits</button>
-        </a>
-    `;
-
-    // ✅ Load user's credits
+    document.getElementById("userEmail").innerText = user.email;
     loadUserCredits(user.uid);
 }
 
-// ✅ Function to load user's credits from Firestore
+// ✅ Load User Credits from Firestore
 function loadUserCredits(userId) {
     db.collection("users").doc(userId).get()
         .then(doc => {
             if (doc.exists) {
                 const credits = doc.data().credits || 0;
-                document.querySelector("#userDashboard p").innerHTML = `<strong>Your Credits:</strong> ${credits}`;
+                document.getElementById("userCredits").innerText = credits;
                 console.log(`✅ User credits loaded: ${credits}`);
             } else {
                 console.warn("🚨 User document not found.");
@@ -62,8 +59,13 @@ function loadUserCredits(userId) {
 
 // ✅ Sign Up User
 function signupUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!email || !password) {
+        alert("🚨 Please enter an email and password.");
+        return;
+    }
 
     auth.createUserWithEmailAndPassword(email, password)
         .then(userCredential => {
@@ -78,8 +80,13 @@ function signupUser() {
 
 // ✅ Log In User
 function loginUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!email || !password) {
+        alert("🚨 Please enter an email and password.");
+        return;
+    }
 
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
@@ -123,17 +130,15 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-                    const repostUrl = `repost.html?id=${doc.id}&track=${encodeURIComponent(data.track)}&owner=${data.owner}&credits=${data.credits}`;
-
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <a href="${repostUrl}">
-                                <button>Repost & Earn ${data.credits} Credits</button>
-                            </a>
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
+                                Repost & Earn ${data.credits} Credits
+                            </button>
                         </div>
                     `;
                 });
@@ -144,14 +149,14 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Attach Event Listeners to Buttons
+// ✅ Ensure Page Loads & Attach Event Listeners
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
 
-    document.getElementById("signupBtn")?.addEventListener("click", signupUser);
-    document.getElementById("loginBtn")?.addEventListener("click", loginUser);
-    document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
+    document.getElementById("signupBtn").addEventListener("click", signupUser);
+    document.getElementById("loginBtn").addEventListener("click", loginUser);
+    document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
 
 
