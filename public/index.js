@@ -1,3 +1,4 @@
+
 // ✅ Ensure Firebase is loaded before running scripts
 if (typeof firebase === "undefined") {
     console.error("🚨 Firebase failed to load! Check index.html script imports.");
@@ -41,7 +42,7 @@ function updateDashboard(user) {
 
     dashboard.innerHTML = `
         <h2>Welcome, ${user.email}!</h2>
-        <p><strong>Your Credits:</strong> Loading...</p>
+        <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
         <a href="subscribe.html">
             <button>💳 Buy Credits</button>
         </a>
@@ -57,7 +58,7 @@ function loadUserCredits(userId) {
         .then(doc => {
             if (doc.exists) {
                 const credits = doc.data().credits || 0;
-                document.querySelector("#userDashboard p").innerHTML = `<strong>Your Credits:</strong> ${credits}`;
+                document.querySelector("#userCredits").textContent = credits;
                 console.log(`✅ User credits loaded: ${credits}`);
             } else {
                 console.warn("🚨 User document not found.");
