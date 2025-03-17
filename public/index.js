@@ -1,6 +1,5 @@
-import { auth, db, SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID } from './firebaseConfig.js';
 
-// ✅ Ensure Firebase is initialized
+// ✅ Firebase is already initialized in firebaseConfig.js
 console.log("✅ Firebase Loaded Successfully!");
 console.log(`🟢 Square Application ID: ${SQUARE_APPLICATION_ID}`);
 console.log(`🟢 Square Location ID: ${SQUARE_LOCATION_ID}`);
@@ -82,7 +81,7 @@ function loginUser() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    auth.signInWithEmailAndPassword(auth, email, password)
+    auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
             console.log(`✅ User logged in: ${userCredential.user.email}`);
             updateDashboard(userCredential.user);
