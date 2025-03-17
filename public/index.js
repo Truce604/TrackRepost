@@ -1,13 +1,14 @@
+
 // ✅ Ensure Firebase is loaded before running scripts
-if (!window.auth || !window.db) {
-    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
+if (typeof firebase === "undefined") {
+    console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Use Global Firebase References from `firebaseConfig.js`
-const auth = window.auth;
-const db = window.db;
+// ✅ Use Firebase References from `firebaseConfig.js`
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // ✅ Firebase Auth State Listener
 auth.onAuthStateChanged(user => {
@@ -128,6 +129,9 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
+                    console.log("✅ Campaign Loaded:", data);
+
+                    // ✅ Display each campaign
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
@@ -144,6 +148,7 @@ function loadActiveCampaigns() {
         })
         .catch(error => {
             console.error("❌ Error loading active campaigns:", error);
+            alert(`Error loading campaigns: ${error.message}`);
         });
 }
 
@@ -156,5 +161,3 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
-
-
