@@ -22,9 +22,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ✅ Square Configuration
-const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";  /
+const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";  
 const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
 
-console.log("✅ Square App ID:", SQUARE_APPLICATION_ID);
-console.log("✅ Square Location ID:", SQUARE_LOCATION_ID);
+console.log("✅ Square App ID:", window.SQUARE_APPLICATION_ID);
+console.log("✅ Square Location ID:", window.SQUARE_LOCATION_ID);
 
