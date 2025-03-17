@@ -35,7 +35,7 @@
     </header>
 
     <!-- ✅ Authentication Section -->
-    <div class="container">
+    <div class="container" id="authSection">
         <h2>Login or Sign Up</h2>
         <input type="email" id="email" placeholder="Enter Email">
         <input type="password" id="password" placeholder="Enter Password">
@@ -98,10 +98,26 @@
             } else {
                 console.error("🚨 loadActiveCampaigns function is missing!");
             }
+
+            // ✅ Firebase Auth Listener to Show/Hide Sections
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    document.getElementById("authSection").style.display = "none";
+                    document.getElementById("userDashboard").style.display = "block";
+                    document.getElementById("logoutBtn").style.display = "inline-block";
+                    document.getElementById("userEmail").textContent = user.email;
+                    loadUserCredits(user.uid);
+                } else {
+                    document.getElementById("authSection").style.display = "block";
+                    document.getElementById("userDashboard").style.display = "none";
+                    document.getElementById("logoutBtn").style.display = "none";
+                }
+            });
         });
     </script>
 
 </body>
 </html>
+
 
 
