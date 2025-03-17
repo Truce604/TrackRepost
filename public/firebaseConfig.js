@@ -9,19 +9,22 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Initialize Firebase (Only Once)
+// ✅ Square Production Credentials (KEEP THESE!)
+const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
+const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA"; // 🟢 This is the **production** Location ID from Square.
+
+// ✅ Prevent multiple Firebase initializations
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
-    console.log("⚠️ Firebase already initialized.");
+    console.log("⚠️ Firebase Already Initialized.");
 }
 
-// ✅ Firestore & Auth Exports
+// ✅ Export auth, db, and Square details (Avoids redeclaration issues)
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Square Production Credentials
-const SQUARE_ACCESS_TOKEN = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE"; // Get this from Square Dashboard
-const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA"; // Get this from Square Dashboard
+// ✅ Export Square credentials for use in other files
+export { auth, db, SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID };
 
