@@ -25,7 +25,6 @@ auth.onAuthStateChanged(user => {
 // ✅ Update User Dashboard
 function updateDashboard(user) {
     const dashboard = document.getElementById("userDashboard");
-
     if (!dashboard) {
         console.error("❌ Dashboard element not found.");
         return;
@@ -65,7 +64,51 @@ function loadUserCredits(userId) {
         });
 }
 
-// ✅ Load Active Campaigns from Firestore (Fixing Repost Credits)
+// ✅ Sign Up User
+function signupUser() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log(`✅ User signed up: ${userCredential.user.email}`);
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Signup Error:", error);
+            alert(`Signup Error: ${error.message}`);
+        });
+}
+
+// ✅ Log In User
+function loginUser() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log(`✅ User logged in: ${userCredential.user.email}`);
+            updateDashboard(userCredential.user);
+        })
+        .catch(error => {
+            console.error("❌ Login Error:", error);
+            alert(`Login Error: ${error.message}`);
+        });
+}
+
+// ✅ Log Out User
+function logoutUser() {
+    auth.signOut()
+        .then(() => {
+            console.log("✅ User logged out successfully.");
+            updateDashboard(null);
+        })
+        .catch(error => {
+            console.error("❌ Logout Error:", error);
+        });
+}
+
+// ✅ Load Active Campaigns from Firestore
 function loadActiveCampaigns() {
     console.log("🔄 Loading campaigns...");
 
@@ -84,16 +127,14 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-                    let calculatedCredits = Math.max(1, Math.floor((data.followerCount || 0) / 100)); // Ensures at least 1 credit
-
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', ${calculatedCredits})">
-                                Repost & Earn ${calculatedCredits} Credits
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
+                                Repost & Earn ${data.credits} Credits
                             </button>
                         </div>
                     `;
@@ -105,42 +146,13 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Function to Repost a Track
-function repostTrack(campaignId, ownerId, credits) {
-    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
-
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to repost.");
-        return;
-    }
-
-    // ✅ Update user's credits
-    const userRef = db.collection("users").doc(user.uid);
-    db.runTransaction(transaction => {
-        return transaction.get(userRef).then(doc => {
-            if (!doc.exists) throw "🚨 User does not exist!";
-
-            let currentCredits = doc.data().credits || 0;
-            let newCredits = currentCredits + credits;
-
-            transaction.update(userRef, { credits: newCredits });
-        });
-    }).then(() => {
-        console.log(`✅ Credits updated! User earned ${credits} credits.`);
-        loadUserCredits(user.uid); // ✅ Refresh displayed credits
-        alert(`✅ Repost successful! You earned ${credits} credits.`);
-    }).catch(error => {
-        console.error("❌ Error updating credits:", error);
-    });
-}
-
 // ✅ Attach Event Listeners to Buttons
 document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ Page Loaded Successfully!");
     loadActiveCampaigns();
 
-    document.getElementById("signupBtn").addEventListener("click", signupUser);
-    document.getElementById("loginBtn").addEventListener("click", loginUser);
-    document.getElementById("logoutBtn").addEventListener("click", logoutUser);
+    document.getElementById("signupBtn")?.addEventListener("click", signupUser);
+    document.getElementById("loginBtn")?.addEventListener("click", loginUser);
+    document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
 });
+
