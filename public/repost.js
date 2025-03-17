@@ -1,109 +1,120 @@
 // ✅ Ensure Firebase is loaded before running scripts
-if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check script imports.");
+if (!window.auth || !window.db) {
+    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth = window.auth;
+const db = window.db;
 
-// ✅ Get track details from URL query parameters
-const urlParams = new URLSearchParams(window.location.search);
-const campaignId = urlParams.get("id");
-const trackUrl = decodeURIComponent(urlParams.get("track"));
-const artistId = urlParams.get("owner");
-const creditsPerRepost = parseInt(urlParams.get("credits"), 10) || 10;
+// ✅ Load Repost Campaign
+function loadRepostCampaign() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const campaignId = urlParams.get("id");
 
-// ✅ Update UI with track details
-document.getElementById("trackEmbed").innerHTML = `
-    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${trackUrl}">
-    </iframe>
-`;
-
-// ✅ Auto-Follow on Page Load (If checkbox is checked)
-document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("followOptOut").checked) {
-        followArtist();
+    if (!campaignId) {
+        console.error("🚨 No campaign ID provided!");
+        document.getElementById("campaignDetails").innerHTML = "<p>Campaign not found.</p>";
+        return;
     }
-});
 
-// ✅ Repost Button Action
-document.getElementById("repostBtn").addEventListener("click", async () => {
+    console.log(`🔄 Loading campaign: ${campaignId}`);
+
+    db.collection("campaigns").doc(campaignId).get()
+        .then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                const trackUrl = encodeURIComponent(data.track);
+                const campaignOwner = data.owner;
+                const baseCredits = data.credits || 1;
+
+                document.getElementById("campaignDetails").innerHTML = `
+                    <h3>🔥 Now Promoting:</h3>
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                        src="https://w.soundcloud.com/player/?url=${trackUrl}">
+                    </iframe>
+                    <button onclick="attemptRepost('${campaignId}', '${campaignOwner}', ${baseCredits})">
+                        Repost & Earn ${baseCredits} Credits
+                    </button>
+                `;
+
+            } else {
+                console.warn("🚨 Campaign not found.");
+                document.getElementById("campaignDetails").innerHTML = "<p>Campaign not found.</p>";
+            }
+        })
+        .catch(error => {
+            console.error("❌ Error loading campaign:", error);
+        });
+}
+
+// ✅ Attempt to Repost a Track
+function attemptRepost(campaignId, campaignOwner, baseCredits) {
     const user = auth.currentUser;
     if (!user) {
         alert("🚨 You must be logged in to repost.");
         return;
     }
 
-    // ✅ Call Repost Function
-    const success = await repostTrack(campaignId, user.uid, creditsPerRepost);
-    if (success) {
-        document.getElementById("actionStatus").innerHTML = "✅ Repost Successful!";
-        updateUserCredits(user.uid, creditsPerRepost);
-    }
-});
+    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
 
-// ✅ Comment Button Action
-document.getElementById("commentBtn").addEventListener("click", async () => {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to comment.");
-        return;
-    }
+    // ✅ Check if user has already reposted this campaign
+    db.collection("reposts").where("userId", "==", user.uid).where("campaignId", "==", campaignId)
+        .get()
+        .then(snapshot => {
+            if (!snapshot.empty) {
+                alert("🚨 You have already reposted this track.");
+                return;
+            }
 
-    const commentText = document.getElementById("commentText").value.trim();
-    if (commentText.length < 3) {
-        alert("⚠️ Comment must be at least 3 characters long.");
-        return;
-    }
+            // ✅ Fetch user followers count to calculate correct credits
+            db.collection("users").doc(user.uid).get()
+                .then(doc => {
+                    if (!doc.exists) {
+                        alert("🚨 User data not found.");
+                        return;
+                    }
 
-    const success = await postComment(trackUrl, commentText);
-    if (success) {
-        document.getElementById("actionStatus").innerHTML += "<br>✅ Comment Posted!";
-        updateUserCredits(user.uid, 2);
-    }
-});
+                    const followers = doc.data().followers || 100; // Default to 100 followers if unknown
+                    const earnedCredits = Math.floor(followers / 100) || 1;
 
-// ✅ Function to Repost Track
-async function repostTrack(campaignId, userId, credits) {
-    try {
-        await db.collection("reposts").add({
-            campaignId: campaignId,
-            userId: userId,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    console.log(`✅ Calculated Credits: ${earnedCredits}`);
+
+                    // ✅ Save repost to Firestore
+                    db.collection("reposts").add({
+                        userId: user.uid,
+                        campaignId: campaignId,
+                        earnedCredits: earnedCredits,
+                        timestamp: new Date()
+                    }).then(() => {
+                        console.log("✅ Repost saved successfully!");
+
+                        // ✅ Update user's credits
+                        db.collection("users").doc(user.uid).update({
+                            credits: firebase.firestore.FieldValue.increment(earnedCredits)
+                        }).then(() => {
+                            alert(`🎉 Success! You earned ${earnedCredits} credits.`);
+                            window.location.href = `comment.html?id=${campaignId}`;
+                        });
+
+                    }).catch(error => {
+                        console.error("❌ Error saving repost:", error);
+                    });
+
+                }).catch(error => {
+                    console.error("❌ Error fetching user data:", error);
+                });
+
+        })
+        .catch(error => {
+            console.error("❌ Error checking repost history:", error);
         });
-        console.log("✅ Track reposted successfully.");
-        return true;
-    } catch (error) {
-        console.error("❌ Error reposting track:", error);
-        return false;
-    }
 }
 
-// ✅ Function to Follow Artist
-async function followArtist() {
-    console.log(`👤 Following artist: ${artistId}`);
-    document.getElementById("actionStatus").innerHTML += "<br>✅ Followed the artist!";
-    return true;
-}
-
-// ✅ Function to Post a Comment (This redirects user to SoundCloud)
-async function postComment(trackUrl, commentText) {
-    alert("🔊 You will be redirected to SoundCloud to post your comment.");
-    window.open(trackUrl, "_blank");
-    return true;
-}
-
-// ✅ Function to Update User Credits
-async function updateUserCredits(userId, amount) {
-    try {
-        const userRef = db.collection("users").doc(userId);
-        await userRef.update({ credits: firebase.firestore.FieldValue.increment(amount) });
-        console.log(`✅ Credits updated: +${amount}`);
-    } catch (error) {
-        console.error("❌ Error updating credits:", error);
-    }
-}
+// ✅ Ensure Page Loads & Functions are Attached
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("✅ Repost Page Loaded Successfully!");
+    loadRepostCampaign();
+});
 
