@@ -32,10 +32,7 @@ function updateDashboard(user) {
     }
 
     if (!user) {
-        dashboard.innerHTML = `
-            <h2>You are not logged in.</h2>
-            <p>Please log in or sign up.</p>
-        `;
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
         return;
     }
 
@@ -68,54 +65,7 @@ function loadUserCredits(userId) {
         });
 }
 
-// ✅ Sign Up User
-function signupUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            console.log(`✅ User signed up: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
-            location.reload(); // ✅ Refresh page to apply changes
-        })
-        .catch(error => {
-            console.error("❌ Signup Error:", error);
-            alert(`Signup Error: ${error.message}`);
-        });
-}
-
-// ✅ Log In User
-function loginUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            console.log(`✅ User logged in: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
-            location.reload(); // ✅ Refresh page to apply changes
-        })
-        .catch(error => {
-            console.error("❌ Login Error:", error);
-            alert(`Login Error: ${error.message}`);
-        });
-}
-
-// ✅ Log Out User
-function logoutUser() {
-    auth.signOut()
-        .then(() => {
-            console.log("✅ User logged out successfully.");
-            updateDashboard(null);
-            location.reload(); // ✅ Refresh page to ensure user is fully logged out
-        })
-        .catch(error => {
-            console.error("❌ Logout Error:", error);
-        });
-}
-
-// ✅ Load Active Campaigns from Firestore
+// ✅ Load Active Campaigns from Firestore (Fixing Repost Credits)
 function loadActiveCampaigns() {
     console.log("🔄 Loading campaigns...");
 
@@ -134,14 +84,16 @@ function loadActiveCampaigns() {
             } else {
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
+                    let calculatedCredits = Math.max(1, Math.floor((data.followerCount || 0) / 100)); // Ensures at least 1 credit
+
                     campaignsDiv.innerHTML += `
                         <div class="campaign">
                             <h3>🔥 Now Promoting:</h3>
                             <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
                                 src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
                             </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', ${data.credits})">
-                                Repost & Earn ${data.credits} Credits
+                            <button onclick="repostTrack('${doc.id}', '${data.owner}', ${calculatedCredits})">
+                                Repost & Earn ${calculatedCredits} Credits
                             </button>
                         </div>
                     `;
@@ -153,51 +105,34 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Function to Handle Reposting a Track (Fixes `repostTrack is not defined`)
+// ✅ Function to Repost a Track
 function repostTrack(campaignId, ownerId, credits) {
+    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
+
     const user = auth.currentUser;
     if (!user) {
         alert("🚨 You must be logged in to repost.");
         return;
     }
 
-    console.log(`🔄 Reposting campaign: ${campaignId} | Owner: ${ownerId} | Credits: ${credits}`);
-
-    // ✅ Deduct credits from user
+    // ✅ Update user's credits
     const userRef = db.collection("users").doc(user.uid);
-    userRef.get()
-        .then(doc => {
-            if (!doc.exists) {
-                console.error("❌ User document not found.");
-                return;
-            }
+    db.runTransaction(transaction => {
+        return transaction.get(userRef).then(doc => {
+            if (!doc.exists) throw "🚨 User does not exist!";
 
-            let userCredits = doc.data().credits || 0;
+            let currentCredits = doc.data().credits || 0;
+            let newCredits = currentCredits + credits;
 
-            if (userCredits < credits) {
-                alert("🚨 Not enough credits to repost!");
-                return;
-            }
-
-            // ✅ Deduct credits and update Firestore
-            userCredits -= credits;
-            userRef.update({ credits: userCredits })
-                .then(() => {
-                    console.log(`✅ Credits updated. New balance: ${userCredits}`);
-                    document.getElementById("userCredits").textContent = userCredits;
-
-                    // ✅ Add repost record
-                    db.collection("reposts").add({
-                        userId: user.uid,
-                        campaignId: campaignId,
-                        timestamp: new Date()
-                    }).then(() => {
-                        alert("✅ Track successfully reposted!");
-                    }).catch(error => console.error("❌ Error saving repost record:", error));
-                })
-                .catch(error => console.error("❌ Error updating credits:", error));
-        })
-        .catch(error => console.error("❌ Error fetching user data:", error));
+            transaction.update(userRef, { credits: newCredits });
+        });
+    }).then(() => {
+        console.log(`✅ Credits updated! User earned ${credits} credits.`);
+        loadUserCredits(user.uid); // ✅ Refresh displayed credits
+        alert(`✅ Repost successful! You earned ${credits} credits.`);
+    }).catch(error => {
+        console.error("❌ Error updating credits:", error);
+    });
 }
 
 // ✅ Attach Event Listeners to Buttons
