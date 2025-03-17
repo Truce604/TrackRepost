@@ -153,7 +153,7 @@ function loadActiveCampaigns() {
         });
 }
 
-// ✅ Function to Handle Reposting a Track
+// ✅ Function to Handle Reposting a Track (Fixes `repostTrack is not defined`)
 function repostTrack(campaignId, ownerId, credits) {
     const user = auth.currentUser;
     if (!user) {
