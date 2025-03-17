@@ -1,4 +1,4 @@
-
+// ✅ Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
@@ -9,19 +9,22 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Square Production Credentials (KEEP THESE!)
-const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
-const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA"; // 🟢 This is the **production** Location ID from Square.
-
-// ✅ Prevent multiple Firebase initializations
+// ✅ Initialize Firebase only once
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
-    console.log(⚠️ Firebase Already Initialized.");
+    console.log("⚠️ Firebase already initialized.");
 }
 
-// ✅ Define Firebase Auth & Firestore
+// ✅ Firebase Authentication & Firestore
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// ✅ Square Configuration (Production)
+const SQUARE_APPLICATION_ID = EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE"";
+const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA"; // Ensure you replace this with your real Square Location ID
+
+console.log("✅ Square App ID:", SQUARE_APPLICATION_ID);
+console.log("✅ Square Location ID:", SQUARE_LOCATION_ID);
 
