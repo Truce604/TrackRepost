@@ -47,7 +47,7 @@
     </div>
 
     <!-- ✅ User Dashboard -->
-    <div class="container" id="userDashboard">
+    <div class="container" id="userDashboard" style="display: none;">
         <h2>Welcome, <span id="userEmail">Guest</span></h2>
         <p><strong>Your Credits:</strong> <span id="userCredits">0</span></p>
         <a href="subscribe.html">
@@ -66,6 +66,40 @@
     <footer>
         <p>© 2025 TrackRepost. All Rights Reserved.</p>
     </footer>
+
+    <!-- ✅ Ensure Buttons Work Properly -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("✅ Page Loaded Successfully!");
+
+            // ✅ Ensure Firebase is Loaded
+            if (typeof firebase === "undefined") {
+                console.error("🚨 Firebase failed to load! Check index.html script imports.");
+                return;
+            }
+
+            // ✅ Attach Event Listeners for Buttons
+            const attachEvent = (id, func) => {
+                const btn = document.getElementById(id);
+                if (btn && typeof window[func] === "function") {
+                    btn.addEventListener("click", window[func]);
+                } else {
+                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
+                }
+            };
+
+            attachEvent("signupBtn", "signupUser");
+            attachEvent("loginBtn", "loginUser");
+            attachEvent("logoutBtn", "logoutUser");
+
+            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
+            if (typeof loadActiveCampaigns === "function") {
+                loadActiveCampaigns();
+            } else {
+                console.error("🚨 loadActiveCampaigns function is missing!");
+            }
+        });
+    </script>
 
 </body>
 </html>
