@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comment & Earn Credits</title>
+    <title>Leave a Comment & Earn Credits | TrackRepost</title>
     <link rel="stylesheet" href="styles.css">
 
     <!-- ✅ Load Firebase -->
@@ -15,26 +14,44 @@
     <!-- ✅ Load Firebase Config FIRST -->
     <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Comment Script -->
+    <!-- ✅ Load Main JavaScript AFTER Firebase -->
     <script src="comment.js" defer></script>
 </head>
 
 <body>
 
     <header>
-        <h1>💬 Comment & Earn Credits</h1>
+        <h1>🎵 Leave a Comment & Earn Credits</h1>
+        <p>Boost engagement & earn extra credits!</p>
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="repost.html">🔄 Repost & Earn</a></li>
+                <li><a href="subscribe.html">💳 Buy Credits</a></li>
+                <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
+            </ul>
+        </nav>
     </header>
 
     <div class="container">
-        <h2 id="campaignTitle">Loading Campaign...</h2>
-        <iframe id="soundcloudPlayer" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"></iframe>
-        
-        <p><strong>💰 Earn: <span id="creditAmount">Loading...</span> Credits</strong></p>
-        
-        <button id="openSoundCloudBtn">📢 Open SoundCloud to Comment</button>
-        
-        <p>✅ After leaving a comment, return here and click the button below:</p>
-        <button id="confirmCommentBtn">✔️ I Have Commented</button>
+        <h2>🎶 Track Details</h2>
+        <div id="trackContainer">
+            <p>Loading track...</p>
+        </div>
+    </div>
+
+    <!-- ✅ Comment Section -->
+    <div class="container">
+        <h2>💬 Leave a Comment</h2>
+        <textarea id="commentText" placeholder="Type your comment here..."></textarea>
+        <button id="submitComment">Submit Comment & Earn 2 Credits</button>
+    </div>
+
+    <!-- ✅ Like & Follow Section -->
+    <div class="container">
+        <h2>👍 Like & Follow</h2>
+        <button id="likeTrack">❤️ Like Track (Earn 1 Credit)</button>
+        <button id="followUser">➕ Follow Artist (Earn 2 Credits)</button>
     </div>
 
     <footer>
