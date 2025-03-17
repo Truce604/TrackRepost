@@ -1,12 +1,11 @@
-
 // ✅ Ensure Firebase is loaded before running scripts
-if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+if (!window.auth || !window.db) {
+    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
 } else {
     console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Use global `auth` and `db` from `firebaseConfig.js`
+// ✅ Use Global Firebase References from `firebaseConfig.js`
 const auth = window.auth;
 const db = window.db;
 
@@ -33,10 +32,7 @@ function updateDashboard(user) {
     }
 
     if (!user) {
-        dashboard.innerHTML = `
-            <h2>You are not logged in.</h2>
-            <p>Please log in or sign up.</p>
-        `;
+        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
         return;
     }
 
@@ -160,4 +156,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn").addEventListener("click", loginUser);
     document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 });
+
 
