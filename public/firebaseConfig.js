@@ -9,22 +9,34 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Initialize Firebase only if not already initialized
+// ✅ Square Credentials
+window.SQUARE_APP_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
+window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
+
+// ✅ Ensure Firebase is Initialized Only Once
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
 } else {
-    console.log("⚠️ Firebase already initialized.");
+    console.log("⚠️ Firebase Already Initialized.");
 }
 
-// ✅ Firebase Authentication & Firestore
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ✅ Declare Global `auth` and `db` (Avoid Redeclaration Issues)
+window.auth = firebase.auth();
+window.db = firebase.firestore();
 
-// ✅ Square Configuration
-const SQUARE_APPLICATION_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";  
-const SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
-
-console.log("✅ Square App ID:", window.SQUARE_APPLICATION_ID);
+// ✅ Debugging Square Details
+console.log("✅ Square App ID:", window.SQUARE_APP_ID);
 console.log("✅ Square Location ID:", window.SQUARE_LOCATION_ID);
+
+
+
+
+
+
+
+
+
+
+
 
