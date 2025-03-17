@@ -9,7 +9,7 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Initialize Firebase only once
+// ✅ Initialize Firebase only if not already initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase Initialized Successfully!");
