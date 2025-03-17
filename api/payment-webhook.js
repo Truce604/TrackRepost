@@ -1,23 +1,32 @@
-import express from "express";
 import admin from "firebase-admin";
-import bodyParser from "body-parser";
+import { buffer } from "micro";
 
-const app = express();
-app.use(bodyParser.json());
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 
-// ✅ Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-    admin.initializeApp();
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    });
 }
 
 const db = admin.firestore();
 
-// ✅ Handle Square Payment Webhook
-app.post("/api/payment-webhook", async (req, res) => {
-    try {
-        const { event_type, data } = req.body;
+export const config = {
+    api: {
+        bodyParser: false, // Required for raw request body
+    },
+};
 
-        if (event_type !== "payment.updated") {
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).send("Method Not Allowed");
+    }
+
+    try {
+        const rawBody = await buffer(req);
+        const { event_type, data } = JSON.parse(rawBody.toString());
+
+        if (event_type !== "payment.created" && event_type !== "payment.updated") {
             return res.status(400).send("Ignoring non-payment event.");
         }
 
@@ -45,6 +54,5 @@ app.post("/api/payment-webhook", async (req, res) => {
         console.error("❌ Webhook Error:", error);
         res.status(500).send("Internal Server Error");
     }
-});
+}
 
-export default app;
