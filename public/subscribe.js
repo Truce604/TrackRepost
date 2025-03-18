@@ -40,7 +40,7 @@ async function processPayment(amount) {
         }
 
         console.log("✅ Redirecting to Square Checkout:", data.checkoutUrl);
-        window.location.replace(data.checkoutUrl); // ✅ FORCE REDIRECT
+        window.location.href = data.checkoutUrl; // ✅ Forces Redirect
 
     } catch (error) {
         console.error("❌ Payment Error:", error);
