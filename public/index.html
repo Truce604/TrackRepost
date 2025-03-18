@@ -16,7 +16,6 @@
 
     <!-- ✅ Load Main JavaScript AFTER Firebase -->
     <script src="index.js" defer></script>
-    <script src="subscribe.js" defer></script> <!-- ✅ Ensure buy credits work -->
 </head>
 
 <body>
@@ -54,19 +53,6 @@
         <a href="subscribe.html">
             <button>💳 Buy Credits</button>
         </a>
-    </div>
-
-    <!-- ✅ Buy Credits Section (Fixed Prices) -->
-    <div class="container">
-        <h2>💳 Buy Credits</h2>
-        <p>Purchase credits to boost your track promotions!</p>
-        <div class="credit-packages">
-            <button class="buy-credit" data-amount="24.99">Buy 500 Credits for $24.99</button>
-            <button class="buy-credit" data-amount="34.99">Buy 1000 Credits for $34.99</button>
-            <button class="buy-credit" data-amount="79.99">Buy 2500 Credits for $79.99</button>
-            <button class="buy-credit" data-amount="139.99">Buy 5000 Credits for $139.99</button>
-            <button class="buy-credit" data-amount="549.99">Buy 25000 Credits for $549.99</button>
-        </div>
     </div>
 
     <!-- ✅ Active Campaigns -->
@@ -126,14 +112,6 @@
                     document.getElementById("userDashboard").style.display = "none";
                     document.getElementById("logoutBtn").style.display = "none";
                 }
-            });
-
-            // ✅ Attach Buy Credits Function
-            document.querySelectorAll(".buy-credit").forEach(button => {
-                button.addEventListener("click", (event) => {
-                    const amount = parseFloat(event.target.getAttribute("data-amount"));
-                    processPayment(amount);
-                });
             });
         });
     </script>
