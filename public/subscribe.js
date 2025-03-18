@@ -31,18 +31,16 @@ async function processPayment(amount) {
             })
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server Error: ${response.status} - ${errorText}`);
-        }
-
         const data = await response.json();
+
+        console.log("🔹 API Response Data:", data);
+
         if (!data || !data.checkoutUrl) {
             throw new Error("Invalid response from server.");
         }
 
         console.log("✅ Redirecting to Square Checkout:", data.checkoutUrl);
-        window.location.href = data.checkoutUrl;
+        window.location.replace(data.checkoutUrl); // ✅ FORCE REDIRECT
 
     } catch (error) {
         console.error("❌ Payment Error:", error);
