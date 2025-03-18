@@ -1,4 +1,4 @@
-import { Client, Environment } from "square";
+import { Client, Environment } from "@square/square";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -42,3 +42,4 @@ export default async function handler(req, res) {
         res.status(500).json({ error: "Failed to create checkout link.", details: error.message });
     }
 }
+
