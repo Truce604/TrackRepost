@@ -17,7 +17,7 @@ export const config = {
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
+        return res.status(405).json({ error: "Method Not Allowed" });
     }
 
     try {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         const { amount, credits, userId } = JSON.parse(rawBody.toString());
 
         if (!amount || !credits || !userId) {
-            return res.status(400).send("Missing required fields.");
+            return res.status(400).json({ error: "Missing required fields." });
         }
 
         // ✅ Convert amount to cents (Square API uses cents)
@@ -57,6 +57,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
-        res.status(500).send("Internal Server Error");
+        res.status(500).json({ error: "Internal Server Error" });
     }
 }
