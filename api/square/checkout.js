@@ -68,4 +68,5 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error("❌ Square API Error:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
-   
+    }
+}
