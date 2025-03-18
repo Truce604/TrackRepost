@@ -2,10 +2,11 @@
   "name": "trackrepost",
   "version": "1.0.0",
   "description": "TrackRepost project with Square and Firebase",
+  "type": "module",
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^11.10.0",
-    "square": "^17.1.0"
+    "@square/square": "^17.1.0"
   },
   "scripts": {
     "start": "node index.js"
