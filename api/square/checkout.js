@@ -52,6 +52,10 @@ export default async function handler(req, res) {
             }
         });
 
+        if (!result.paymentLink || !result.paymentLink.url) {
+            throw new Error("Square did not return a valid payment link.");
+        }
+
         console.log("✅ Square Checkout URL:", result.paymentLink.url);
         res.status(200).json({ checkoutUrl: result.paymentLink.url });
 
