@@ -18,6 +18,18 @@ async function processPayment(amount) {
 
     console.log(`🔄 Processing payment for ${amount} credits...`);
 
+    // ✅ Determine the number of credits based on price
+    let credits = 0;
+    if (amount === 24.99) credits = 500;
+    else if (amount === 34.99) credits = 1000;
+    else if (amount === 79.99) credits = 2500;
+    else if (amount === 139.99) credits = 5000;
+    else if (amount === 549.99) credits = 25000;
+    else {
+        alert("❌ Invalid credit package selected.");
+        return;
+    }
+
     try {
         // ✅ Create Payment Intent (Call Server)
         const response = await fetch('/api/square/checkout', {
@@ -27,9 +39,16 @@ async function processPayment(amount) {
             },
             body: JSON.stringify({
                 amount: amount,
+                credits: credits,
                 userId: user.uid
             })
         });
+
+        // ✅ Check if the response is valid JSON
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server Error: ${response.status} - ${errorText}`);
+        }
 
         const data = await response.json();
         if (!data || !data.checkoutUrl) {
@@ -37,6 +56,7 @@ async function processPayment(amount) {
         }
 
         // ✅ Redirect to Square Checkout Page
+        console.log("✅ Redirecting to Square Checkout:", data.checkoutUrl);
         window.location.href = data.checkoutUrl;
 
     } catch (error) {
@@ -51,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll(".buy-credit").forEach(button => {
         button.addEventListener("click", (event) => {
-            const amount = parseInt(event.target.getAttribute("data-amount"));
+            const amount = parseFloat(event.target.getAttribute("data-amount")); // Ensure float for price
             processPayment(amount);
         });
     });
