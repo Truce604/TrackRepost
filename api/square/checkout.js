@@ -1,4 +1,4 @@
-import Square from "square";
+import { Client, Environment } from "square";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -6,14 +6,23 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { amount, credits } = req.body;
+        if (!process.env.SQUARE_ACCESS_TOKEN) {
+            console.error("❌ Missing Square API Key!");
+            return res.status(500).json({ error: "Square API Key not configured." });
+        }
 
-        const squareClient = new Square.Client({
+        const squareClient = new Client({
             accessToken: process.env.SQUARE_ACCESS_TOKEN,
-            environment: "sandbox", // Change to "production" when live
+            environment: Environment.SANDBOX, // Change to Environment.PRODUCTION when live
         });
 
-        const checkout = await squareClient.checkoutApi.createPaymentLink({
+        const { amount, credits } = req.body;
+
+        if (!amount || !credits) {
+            return res.status(400).json({ error: "Missing amount or credits." });
+        }
+
+        const response = await squareClient.checkoutApi.createPaymentLink({
             order: {
                 lineItems: [
                     {
@@ -25,9 +34,11 @@ export default async function handler(req, res) {
             },
         });
 
-        res.status(200).json({ checkoutUrl: checkout.result.paymentLink.url });
+        console.log("✅ Checkout Link Created:", response.result.paymentLink.url);
+        res.status(200).json({ checkoutUrl: response.result.paymentLink.url });
+
     } catch (error) {
         console.error("❌ Square API Error:", error);
-        res.status(500).json({ error: "Failed to create checkout link." });
+        res.status(500).json({ error: "Failed to create checkout link.", details: error.message });
     }
 }
