@@ -25,11 +25,14 @@ export default async function handler(req, res) {
         const { amount, credits, userId } = JSON.parse(rawBody.toString());
 
         if (!amount || !credits || !userId) {
+            console.error("❌ Missing required fields:", { amount, credits, userId });
             return res.status(400).json({ error: "Missing required fields." });
         }
 
         // ✅ Convert amount to cents (Square API uses cents)
         const amountInCents = Math.round(amount * 100);
+
+        console.log(`🔹 Creating Square payment link for ${credits} credits, amount: $${amount}`);
 
         // ✅ Create checkout request
         const { result } = await checkoutApi.createPaymentLink({
@@ -52,8 +55,11 @@ export default async function handler(req, res) {
             }
         });
 
-        if (!result.paymentLink || !result.paymentLink.url) {
-            throw new Error("Square did not return a valid payment link.");
+        console.log("🔹 Full Square API Response:", result);
+
+        if (!result || !result.paymentLink || !result.paymentLink.url) {
+            console.error("❌ Square did not return a valid payment link:", result);
+            return res.status(500).json({ error: "Square did not return a valid payment link." });
         }
 
         console.log("✅ Square Checkout URL:", result.paymentLink.url);
@@ -61,6 +67,5 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-}
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
+   
