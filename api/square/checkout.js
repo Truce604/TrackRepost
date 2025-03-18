@@ -22,8 +22,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Missing amount or credits." });
         }
 
-        const response = await squareClient.checkoutApi.createPaymentLink({
+        const { result } = await squareClient.checkoutApi.createPaymentLink({
             order: {
+                locationId: process.env.SQUARE_LOCATION_ID, // Ensure this is set in Vercel
                 lineItems: [
                     {
                         name: `${credits} Credits`,
@@ -34,8 +35,8 @@ export default async function handler(req, res) {
             },
         });
 
-        console.log("✅ Checkout Link Created:", response.result.paymentLink.url);
-        res.status(200).json({ checkoutUrl: response.result.paymentLink.url });
+        console.log("✅ Checkout Link Created:", result.paymentLink.url);
+        res.status(200).json({ checkoutUrl: result.paymentLink.url });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
