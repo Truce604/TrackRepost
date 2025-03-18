@@ -1,14 +1,3 @@
-// ✅ Ensure Firebase is loaded before running scripts
-if (!window.auth || !window.db) {
-    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
-} else {
-    console.log("✅ Firebase Loaded Successfully!");
-}
-
-const auth = window.auth;
-const db = window.db;
-
-// ✅ Square Payment Handler
 async function processPayment(amount) {
     const user = auth.currentUser;
     if (!user) {
@@ -16,9 +5,8 @@ async function processPayment(amount) {
         return;
     }
 
-    console.log(`🔄 Processing payment for ${amount} credits...`);
+    console.log(`🔄 Processing payment for $${amount}...`);
 
-    // ✅ Determine the number of credits based on price
     let credits = 0;
     if (amount === 24.99) credits = 500;
     else if (amount === 34.99) credits = 1000;
@@ -31,20 +19,18 @@ async function processPayment(amount) {
     }
 
     try {
-        // ✅ Create Payment Intent (Call Server)
         const response = await fetch('/api/square/checkout', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                amount: amount,
+                amount: parseFloat(amount),
                 credits: credits,
                 userId: user.uid
             })
         });
 
-        // ✅ Check if the response is valid JSON
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Server Error: ${response.status} - ${errorText}`);
@@ -55,7 +41,6 @@ async function processPayment(amount) {
             throw new Error("Invalid response from server.");
         }
 
-        // ✅ Redirect to Square Checkout Page
         console.log("✅ Redirecting to Square Checkout:", data.checkoutUrl);
         window.location.href = data.checkoutUrl;
 
@@ -64,17 +49,5 @@ async function processPayment(amount) {
         alert(`Payment failed: ${error.message}`);
     }
 }
-
-// ✅ Attach Event Listeners to Buttons
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Subscribe Page Loaded Successfully!");
-
-    document.querySelectorAll(".buy-credit").forEach(button => {
-        button.addEventListener("click", (event) => {
-            const amount = parseFloat(event.target.getAttribute("data-amount")); // Ensure float for price
-            processPayment(amount);
-        });
-    });
-});
 
 
