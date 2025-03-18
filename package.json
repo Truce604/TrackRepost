@@ -9,7 +9,8 @@
     "square": "^17.2.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo 'Skipping build step...'"
   },
   "author": "Your Name",
   "license": "MIT"
