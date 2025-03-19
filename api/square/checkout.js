@@ -1,5 +1,5 @@
-import { Client, Environment } from "square";
-import { buffer } from "micro";
+const { Client, Environment } = require("square");
+const { buffer } = require("micro");
 
 // ✅ Load Square API credentials from environment variables
 const squareClient = new Client({
@@ -15,7 +15,7 @@ export const config = {
     },
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // ✅ Allow CORS (Fixing "Blocked by CORS Policy" Error)
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -79,5 +79,6 @@ export default async function handler(req, res) {
         console.error("❌ Square API Error:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-}
+};
+
 
