@@ -10,10 +10,11 @@ export const config = {
 export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
-    // ✅ Allow CORS
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // ✅ Fix CORS Policy (Allow API Requests)
+    res.setHeader("Access-Control-Allow-Origin", "https://www.trackrepost.com"); // Allow only your site
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
 
     // ✅ Handle Preflight Requests
     if (req.method === "OPTIONS") {
@@ -32,17 +33,21 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Missing Square API Credentials" });
     }
 
-    // ✅ Initialize Square Client
-    const squareClient = new Client({
-        environment: Environment.Production,
-        accessToken: process.env.SQUARE_ACCESS_TOKEN
-    });
-
-    const checkoutApi = squareClient.checkoutApi;
-
     try {
+        // ✅ Initialize Square Client
+        console.log("🔹 Initializing Square Client...");
+        const squareClient = new Client({
+            environment: Environment.Production,
+            accessToken: process.env.SQUARE_ACCESS_TOKEN
+        });
+
+        const checkoutApi = squareClient.checkoutApi;
+
+        // ✅ Read request body
         const rawBody = await buffer(req);
         const { amount, credits, userId } = JSON.parse(rawBody.toString());
+
+        console.log(`🔹 Received request: ${credits} credits, Amount: $${amount}, User ID: ${userId}`);
 
         if (!amount || !credits || !userId) {
             console.error("❌ Missing required fields:", { amount, credits, userId });
@@ -54,6 +59,7 @@ export default async function handler(req, res) {
         console.log(`🔹 Creating Square payment link: ${credits} credits, Amount: $${amount}`);
 
         // ✅ Create checkout request
+        console.log("🔹 Sending request to Square API...");
         const { result } = await checkoutApi.createPaymentLink({
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
             order: {
@@ -88,5 +94,5 @@ export default async function handler(req, res) {
         console.error("❌ Square API Error:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-}
+};
 
