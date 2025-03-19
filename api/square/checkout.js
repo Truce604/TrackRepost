@@ -74,7 +74,7 @@ export default async function handler(req, res) {
             console.error("❌ Square did not return a valid payment link:", result);
             return res.status(500).json({ error: "Square did not return a valid payment link." });
         }
-
+ 
         console.log("✅ Square Checkout URL:", result.paymentLink.url);
         res.status(200).json({ checkoutUrl: result.paymentLink.url });
 
