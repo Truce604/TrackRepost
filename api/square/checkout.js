@@ -10,11 +10,10 @@ export const config = {
 export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
-    // ✅ Allow CORS
-    res.setHeader("Access-Control-Allow-Origin", "https://www.trackrepost.com");
+    // ✅ Fix CORS Policy
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins (for debugging)
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
 
     // ✅ Handle Preflight Requests
     if (req.method === "OPTIONS") {
@@ -41,7 +40,7 @@ export default async function handler(req, res) {
             accessToken: process.env.SQUARE_ACCESS_TOKEN
         });
 
-        const paymentsApi = squareClient.paymentsApi;
+        const checkoutApi = squareClient.checkoutApi;
 
         // ✅ Read request body
         const rawBody = await buffer(req);
@@ -58,30 +57,38 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
         console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount}`);
 
-        // ✅ Create checkout request
-        const { result } = await paymentsApi.createPayment({
+        // ✅ Create Checkout Link
+        console.log("🔹 Sending request to Square API...");
+        const { result } = await checkoutApi.createPaymentLink({
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
-            sourceId: "CASH_APP_PAY",
-            amountMoney: {
-                amount: amountInCents,
-                currency: "USD"
-            },
-            locationId: process.env.SQUARE_LOCATION_ID
+            order: {
+                locationId: process.env.SQUARE_LOCATION_ID,
+                lineItems: [
+                    {
+                        name: `${credits} Credits`,
+                        quantity: "1",
+                        basePriceMoney: {
+                            amount: amountInCents,
+                            currency: "USD"
+                        }
+                    }
+                ]
+            }
         });
 
         console.log("🔹 Square API Response:", result);
 
-        if (!result || !result.payment) {
-            console.error("❌ Square API did not return a valid payment.");
-            return res.status(500).json({ error: "Square API did not return a valid payment." });
+        if (!result || !result.paymentLink || !result.paymentLink.url) {
+            console.error("❌ Square API did not return a valid link");
+            return res.status(500).json({ error: "Square API did not return a valid link." });
         }
 
-        console.log("✅ Square Checkout URL:", result.payment.paymentUrl);
-        res.status(200).json({ checkoutUrl: result.payment.paymentUrl });
+        console.log("✅ Square Checkout URL:", result.paymentLink.url);
+        res.status(200).json({ checkoutUrl: result.paymentLink.url });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-}
+};
 
