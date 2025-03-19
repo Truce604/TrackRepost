@@ -10,8 +10,8 @@ export const config = {
 export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
-    // ✅ Fix CORS Policy
-    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins (for debugging)
+    // ✅ Fix CORS Policy (Allowing API Requests)
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Temporarily allow all origins for debugging
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -36,10 +36,11 @@ export default async function handler(req, res) {
         // ✅ Initialize Square Client
         console.log("🔹 Initializing Square Client...");
         const squareClient = new Client({
-            environment: Environment.Production,
+            environment: Environment.Production, // Change to Sandbox for testing
             accessToken: process.env.SQUARE_ACCESS_TOKEN
         });
 
+        const ordersApi = squareClient.ordersApi;
         const checkoutApi = squareClient.checkoutApi;
 
         // ✅ Read request body
@@ -57,10 +58,8 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
         console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount}`);
 
-        // ✅ Create Checkout Link
-        console.log("🔹 Sending request to Square API...");
-        const { result } = await checkoutApi.createPaymentLink({
-            idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
+        // ✅ Create Order
+        const { result: orderResult } = await ordersApi.createOrder({
             order: {
                 locationId: process.env.SQUARE_LOCATION_ID,
                 lineItems: [
@@ -73,18 +72,30 @@ export default async function handler(req, res) {
                         }
                     }
                 ]
-            }
+            },
+            idempotencyKey: `trackrepost-${userId}-${Date.now()}`
         });
 
-        console.log("🔹 Square API Response:", result);
-
-        if (!result || !result.paymentLink || !result.paymentLink.url) {
-            console.error("❌ Square API did not return a valid link");
-            return res.status(500).json({ error: "Square API did not return a valid link." });
+        if (!orderResult || !orderResult.order) {
+            console.error("❌ Failed to create Square Order");
+            return res.status(500).json({ error: "Failed to create Square Order." });
         }
 
-        console.log("✅ Square Checkout URL:", result.paymentLink.url);
-        res.status(200).json({ checkoutUrl: result.paymentLink.url });
+        console.log("✅ Order Created:", orderResult.order.id);
+
+        // ✅ Create Checkout URL
+        const { result: checkoutResult } = await checkoutApi.createPaymentLink({
+            orderId: orderResult.order.id,
+            idempotencyKey: `checkout-${userId}-${Date.now()}`
+        });
+
+        if (!checkoutResult || !checkoutResult.paymentLink || !checkoutResult.paymentLink.url) {
+            console.error("❌ Square API did not return a valid payment link");
+            return res.status(500).json({ error: "Square API did not return a valid payment link." });
+        }
+
+        console.log("✅ Square Checkout URL:", checkoutResult.paymentLink.url);
+        res.status(200).json({ checkoutUrl: checkoutResult.paymentLink.url });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
