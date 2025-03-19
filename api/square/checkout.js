@@ -1,9 +1,15 @@
 import { Client, Environment } from "square";
 import { buffer } from "micro";
 
-// ✅ Load Square API credentials from environment variables
+// ✅ Ensure environment variables are set
+if (!process.env.SQUARE_ACCESS_TOKEN || !process.env.SQUARE_LOCATION_ID) {
+    console.error("❌ Missing Square API credentials.");
+    throw new Error("Missing Square API credentials. Please set SQUARE_ACCESS_TOKEN and SQUARE_LOCATION_ID.");
+}
+
+// ✅ Initialize Square Client
 const squareClient = new Client({
-    environment: Environment.Production, // Change to Environment.Sandbox for testing
+    environment: Environment.Production, // ✅ Make sure we are in PRODUCTION mode
     accessToken: process.env.SQUARE_ACCESS_TOKEN
 });
 
@@ -11,7 +17,7 @@ const checkoutApi = squareClient.checkoutApi;
 
 export const config = {
     api: {
-        bodyParser: false, // Required for raw request body
+        bodyParser: false, // ✅ Required for raw request body
     },
 };
 
@@ -33,6 +39,12 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
 
         console.log(`🔹 Creating Square payment link for ${credits} credits, amount: $${amount}`);
+
+        // ✅ Ensure `checkoutApi` is defined
+        if (!checkoutApi) {
+            console.error("❌ Square Checkout API is not initialized.");
+            return res.status(500).json({ error: "Square Checkout API is not initialized." });
+        }
 
         // ✅ Create checkout request
         const { result } = await checkoutApi.createPaymentLink({
@@ -57,6 +69,7 @@ export default async function handler(req, res) {
 
         console.log("🔹 Full Square API Response:", result);
 
+        // ✅ Ensure Square API returned a valid link
         if (!result || !result.paymentLink || !result.paymentLink.url) {
             console.error("❌ Square did not return a valid payment link:", result);
             return res.status(500).json({ error: "Square did not return a valid payment link." });
