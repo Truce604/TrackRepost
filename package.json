@@ -6,7 +6,8 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^11.10.0",
-    "square": "^17.2.0"
+    "square": "^17.2.0",
+    "micro": "^9.3.6"
   },
   "scripts": {
     "start": "node index.js",
