@@ -1,52 +1,52 @@
-
-async function processPayment(amount) {
+async function processPayment(amount, credits) {
     const user = auth.currentUser;
     if (!user) {
         alert("🚨 You must be logged in to buy credits.");
         return;
     }
 
-    console.log(`🔄 Processing payment for $${amount}...`);
-
-    let credits = 0;
-    if (amount === 24.99) credits = 500;
-    else if (amount === 34.99) credits = 1000;
-    else if (amount === 79.99) credits = 2500;
-    else if (amount === 139.99) credits = 5000;
-    else if (amount === 549.99) credits = 25000;
-    else {
-        alert("❌ Invalid credit package selected.");
-        return;
-    }
+    console.log(`🔄 Processing payment for ${credits} credits...`);
 
     try {
-        const response = await fetch('/api/square/checkout', {
+        const response = await fetch("https://trackrepost.com/api/square/checkout", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                amount: parseFloat(amount),
+                amount: amount,
                 credits: credits,
                 userId: user.uid
             })
         });
 
         const data = await response.json();
-
-        console.log("🔹 API Response Data:", data);
-
         if (!data || !data.checkoutUrl) {
             throw new Error("Invalid response from server.");
         }
 
-        console.log("✅ Redirecting to Square Checkout:", data.checkoutUrl);
-        window.location.href = data.checkoutUrl; // ✅ Forces Redirect
+        console.log("✅ Redirecting to Square:", data.checkoutUrl);
+
+        // ✅ Redirect to Square Checkout Page
+        window.location.href = data.checkoutUrl;
 
     } catch (error) {
         console.error("❌ Payment Error:", error);
         alert(`Payment failed: ${error.message}`);
     }
 }
+
+// ✅ Attach Event Listeners to Buttons
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("✅ Subscribe Page Loaded Successfully!");
+
+    document.querySelectorAll(".buy-credit").forEach(button => {
+        button.addEventListener("click", (event) => {
+            const amount = parseFloat(event.target.getAttribute("data-amount"));
+            const credits = parseInt(event.target.getAttribute("data-credits"));
+            processPayment(amount, credits);
+        });
+    });
+});
 
 
