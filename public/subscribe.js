@@ -1,3 +1,4 @@
+
 async function processPayment(amount) {
     const user = auth.currentUser;
     if (!user) {
@@ -47,6 +48,5 @@ async function processPayment(amount) {
         alert(`Payment failed: ${error.message}`);
     }
 }
-
 
 
