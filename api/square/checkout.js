@@ -10,8 +10,8 @@ export const config = {
 export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
-    // ✅ Fix CORS Policy (Allow API Requests)
-    res.setHeader("Access-Control-Allow-Origin", "https://www.trackrepost.com"); // Allow only your site
+    // ✅ Allow CORS
+    res.setHeader("Access-Control-Allow-Origin", "https://www.trackrepost.com");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
             accessToken: process.env.SQUARE_ACCESS_TOKEN
         });
 
-        const checkoutApi = squareClient.checkoutApi;
+        const paymentsApi = squareClient.paymentsApi;
 
         // ✅ Read request body
         const rawBody = await buffer(req);
@@ -56,43 +56,32 @@ export default async function handler(req, res) {
 
         // ✅ Convert amount to cents (Square API uses cents)
         const amountInCents = Math.round(amount * 100);
-        console.log(`🔹 Creating Square payment link: ${credits} credits, Amount: $${amount}`);
+        console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount}`);
 
         // ✅ Create checkout request
-        console.log("🔹 Sending request to Square API...");
-        const { result } = await checkoutApi.createPaymentLink({
+        const { result } = await paymentsApi.createPayment({
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
-            order: {
-                locationId: process.env.SQUARE_LOCATION_ID,
-                lineItems: [
-                    {
-                        name: `${credits} Credits`,
-                        quantity: "1",
-                        basePriceMoney: {
-                            amount: amountInCents,
-                            currency: "USD"
-                        }
-                    }
-                ]
+            sourceId: "CASH_APP_PAY",
+            amountMoney: {
+                amount: amountInCents,
+                currency: "USD"
             },
-            prePopulatedData: {
-                buyerEmail: `${userId}@trackrepost.com`
-            }
+            locationId: process.env.SQUARE_LOCATION_ID
         });
 
         console.log("🔹 Square API Response:", result);
 
-        if (!result || !result.paymentLink || !result.paymentLink.url) {
-            console.error("❌ Square API did not return a valid link");
-            return res.status(500).json({ error: "Square API did not return a valid link." });
+        if (!result || !result.payment) {
+            console.error("❌ Square API did not return a valid payment.");
+            return res.status(500).json({ error: "Square API did not return a valid payment." });
         }
 
-        console.log("✅ Square Checkout URL:", result.paymentLink.url);
-        res.status(200).json({ checkoutUrl: result.paymentLink.url });
+        console.log("✅ Square Checkout URL:", result.payment.paymentUrl);
+        res.status(200).json({ checkoutUrl: result.payment.paymentUrl });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
-};
+}
 
