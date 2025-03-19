@@ -7,20 +7,6 @@ export const config = {
     },
 };
 
-// ✅ Ensure Environment Variables Exist
-if (!process.env.SQUARE_ACCESS_TOKEN || !process.env.SQUARE_LOCATION_ID) {
-    console.error("❌ Missing Square API Credentials");
-    throw new Error("Missing Square API Credentials");
-}
-
-// ✅ Initialize Square Client
-const squareClient = new Client({
-    environment: Environment.Production,
-    accessToken: process.env.SQUARE_ACCESS_TOKEN
-});
-
-const checkoutApi = squareClient.checkoutApi;
-
 export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
@@ -39,6 +25,20 @@ export default async function handler(req, res) {
         console.log("❌ Invalid Method:", req.method);
         return res.status(405).json({ error: "Method Not Allowed" });
     }
+
+    // ✅ Ensure Environment Variables Exist
+    if (!process.env.SQUARE_ACCESS_TOKEN || !process.env.SQUARE_LOCATION_ID) {
+        console.error("❌ Missing Square API Credentials");
+        return res.status(500).json({ error: "Missing Square API Credentials" });
+    }
+
+    // ✅ Initialize Square Client
+    const squareClient = new Client({
+        environment: Environment.Production,
+        accessToken: process.env.SQUARE_ACCESS_TOKEN
+    });
+
+    const checkoutApi = squareClient.checkoutApi;
 
     try {
         const rawBody = await buffer(req);
@@ -89,5 +89,4 @@ export default async function handler(req, res) {
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 }
-
 
