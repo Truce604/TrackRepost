@@ -11,7 +11,7 @@ pnpm-debug.log*
 .env.production
 .env.test
 .env.*
-
+.env.txt
 # Ignore build output
 .next/
 out/
