@@ -1,3 +1,4 @@
+
 import { Client, Environment } from "square";
 import { buffer } from "micro";
 
@@ -57,23 +58,26 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
         console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount} CAD`);
 
-        // ✅ Create Checkout Request with Correct Format
+        // ✅ Create Order Object
+        const order = {
+            locationId: process.env.SQUARE_LOCATION_ID,
+            lineItems: [
+                {
+                    name: `${credits} Credits`,
+                    quantity: "1",
+                    basePriceMoney: {
+                        amount: amountInCents,
+                        currency: "CAD"  // ✅ Ensure CAD currency
+                    }
+                }
+            ]
+        };
+
+        // ✅ Create Checkout Request with Correct Order
         console.log("🔹 Sending request to Square API...");
         const { result } = await checkoutApi.createCheckout(process.env.SQUARE_LOCATION_ID, {
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
-            order: {
-                locationId: process.env.SQUARE_LOCATION_ID,
-                lineItems: [
-                    {
-                        name: `${credits} Credits`,
-                        quantity: "1",
-                        basePriceMoney: {
-                            amount: amountInCents,
-                            currency: "CAD"  // ✅ Ensure CAD currency
-                        }
-                    }
-                ]
-            },
+            order, // ✅ Order is now included
             redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`
         });
 
@@ -92,4 +96,3 @@ export default async function handler(req, res) {
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 };
-
