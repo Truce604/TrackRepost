@@ -1,4 +1,3 @@
-
 import { Client, Environment } from "square";
 import { buffer } from "micro";
 
@@ -12,7 +11,7 @@ export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
     // ✅ Fix CORS Policy
-    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins (for debugging)
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
