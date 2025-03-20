@@ -104,7 +104,7 @@ export default async function handler(req, res) {
         if (error.response) {
             try {
                 const errorData = await error.response.json();
-                console.error("🔹 Square API Response Error:", errorData);
+                console.error("🔹 Square API Response Error:", JSON.stringify(errorData, null, 2));
                 return res.status(500).json({ error: "Square API Error", details: errorData });
             } catch (jsonError) {
                 const errorText = await error.response.text();
@@ -116,4 +116,5 @@ export default async function handler(req, res) {
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 };
+
 
