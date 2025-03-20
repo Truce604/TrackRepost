@@ -1,3 +1,14 @@
+// ✅ Ensure Firebase is loaded before running scripts
+if (!window.auth || !window.db) {
+    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
+} else {
+    console.log("✅ Firebase Loaded Successfully!");
+}
+
+const auth = window.auth;
+const db = window.db;
+
+// ✅ Square Payment Handler
 async function processPayment(amount, credits) {
     const user = auth.currentUser;
     if (!user) {
@@ -49,6 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", (event) => {
             const amount = parseFloat(event.target.getAttribute("data-amount"));
             const credits = parseInt(event.target.getAttribute("data-credits"));
+
+            if (isNaN(amount) || isNaN(credits) || amount <= 0 || credits <= 0) {
+                console.error("❌ Invalid amount or credits:", { amount, credits });
+                alert("Error: Invalid payment amount.");
+                return;
+            }
 
             processPayment(amount, credits);
         });
