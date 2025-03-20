@@ -57,10 +57,9 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
         console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount} CAD`);
 
-        // ✅ Create Checkout Request
+        // ✅ Create Checkout Request with Correct Format
         console.log("🔹 Sending request to Square API...");
-        const { result } = await checkoutApi.createCheckout({
-            locationId: process.env.SQUARE_LOCATION_ID,
+        const { result } = await checkoutApi.createCheckout(process.env.SQUARE_LOCATION_ID, {
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
             order: {
                 locationId: process.env.SQUARE_LOCATION_ID,
