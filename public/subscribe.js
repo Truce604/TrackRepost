@@ -5,10 +5,17 @@ async function processPayment(amount, credits) {
         return;
     }
 
-    console.log(`🔄 Processing payment for ${credits} credits...`);
+    // ✅ Ensure amount & credits are valid
+    if (isNaN(amount) || isNaN(credits) || amount <= 0 || credits <= 0) {
+        console.error("❌ Invalid amount or credits:", { amount, credits });
+        alert("Error: Invalid payment amount.");
+        return;
+    }
+
+    console.log(`🔄 Processing payment for ${credits} credits ($${amount})...`);
 
     try {
-        const response = await fetch("https://trackrepost.com/api/square/checkout", {
+        const response = await fetch("/api/square/checkout", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -26,8 +33,6 @@ async function processPayment(amount, credits) {
         }
 
         console.log("✅ Redirecting to Square:", data.checkoutUrl);
-
-        // ✅ Redirect to Square Checkout Page
         window.location.href = data.checkoutUrl;
 
     } catch (error) {
@@ -44,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", (event) => {
             const amount = parseFloat(event.target.getAttribute("data-amount"));
             const credits = parseInt(event.target.getAttribute("data-credits"));
+
             processPayment(amount, credits);
         });
     });
