@@ -57,9 +57,10 @@ export default async function handler(req, res) {
         const amountInCents = Math.round(amount * 100);
         console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount} CAD`);
 
-        // ✅ Create Checkout Link with CAD currency
+        // ✅ Create Checkout Request
         console.log("🔹 Sending request to Square API...");
-        const { result } = await checkoutApi.createPaymentLink({
+        const { result } = await checkoutApi.createCheckout({
+            locationId: process.env.SQUARE_LOCATION_ID,
             idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
             order: {
                 locationId: process.env.SQUARE_LOCATION_ID,
@@ -69,22 +70,23 @@ export default async function handler(req, res) {
                         quantity: "1",
                         basePriceMoney: {
                             amount: amountInCents,
-                            currency: "CAD"  // ✅ Changed from "USD" to "CAD"
+                            currency: "CAD"  // ✅ Ensure CAD currency
                         }
                     }
                 ]
-            }
+            },
+            redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`
         });
 
         console.log("🔹 Square API Response:", result);
 
-        if (!result || !result.paymentLink || !result.paymentLink.url) {
+        if (!result || !result.checkout || !result.checkout.checkoutPageUrl) {
             console.error("❌ Square API did not return a valid link");
-            return res.status(500).json({ error: "Square API did not return a valid link." });
+            return res.status(500).json({ error: "Square API did not return a valid checkout link." });
         }
 
-        console.log("✅ Square Checkout URL:", result.paymentLink.url);
-        res.status(200).json({ checkoutUrl: result.paymentLink.url });
+        console.log("✅ Square Checkout URL:", result.checkout.checkoutPageUrl);
+        res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
