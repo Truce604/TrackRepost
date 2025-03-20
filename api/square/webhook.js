@@ -1,33 +1,30 @@
 
 import { buffer } from "micro";
+import crypto from "crypto";
 
 export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
-    console.log("🔹 Square Webhook Hit");
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (req.method === "OPTIONS") {
-        return res.status(200).end();
-    }
-
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    try {
-        const rawBody = await buffer(req);
-        const event = JSON.parse(rawBody.toString());
+    const signature = req.headers["x-square-hmacsha256-signature"];
+    const rawBody = await buffer(req);
 
-        console.log("🔹 Webhook Event Received:", event);
-
-        res.status(200).json({ success: true });
-
-    } catch (error) {
-        console.error("❌ Webhook Processing Error:", error);
-        res.status(500).json({ error: "Internal Server Error", details: error.message });
+    if (!signature || !process.env.SQUARE_WEBHOOK_SECRET) {
+        return res.status(400).json({ error: "Missing Webhook Secret or Signature" });
     }
+
+    // Verify Webhook Signature
+    const hmac = crypto.createHmac("sha256", process.env.SQUARE_WEBHOOK_SECRET);
+    hmac.update(rawBody);
+    const expectedSignature = hmac.digest("base64");
+
+    if (signature !== expectedSignature) {
+        return res.status(401).json({ error: "Invalid Signature" });
+    }
+
+    console.log("✅ Webhook Verified:", req.body);
+    res.status(200).json({ success: true });
 }
