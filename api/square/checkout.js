@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
     // ✅ Fix CORS Policy
-    res.setHeader("Access-Control-Allow-Origin", "*"); // Temporarily allow all origins
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins (for debugging)
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -36,18 +36,17 @@ export default async function handler(req, res) {
         // ✅ Initialize Square Client
         console.log("🔹 Initializing Square Client...");
         const squareClient = new Client({
-            environment: Environment.Production, // Change to Environment.Sandbox for testing
+            environment: Environment.Production,
             accessToken: process.env.SQUARE_ACCESS_TOKEN
         });
 
-        const ordersApi = squareClient.ordersApi;
         const checkoutApi = squareClient.checkoutApi;
 
         // ✅ Read request body
         const rawBody = await buffer(req);
         const { amount, credits, userId } = JSON.parse(rawBody.toString());
 
-        console.log(`🔹 Received request: ${credits} credits, Amount: $${amount}, User ID: ${userId}`);
+        console.log(`🔹 Received request: ${credits} credits, Amount: $${amount} CAD, User ID: ${userId}`);
 
         if (!amount || !credits || !userId) {
             console.error("❌ Missing required fields:", { amount, credits, userId });
@@ -56,10 +55,12 @@ export default async function handler(req, res) {
 
         // ✅ Convert amount to cents (Square API uses cents)
         const amountInCents = Math.round(amount * 100);
-        console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount}`);
+        console.log(`🔹 Creating Square checkout for ${credits} credits, Amount: $${amount} CAD`);
 
-        // ✅ Create Order
-        const { result: orderResult } = await ordersApi.createOrder({
+        // ✅ Create Checkout Link with CAD currency
+        console.log("🔹 Sending request to Square API...");
+        const { result } = await checkoutApi.createPaymentLink({
+            idempotencyKey: `trackrepost-${userId}-${Date.now()}`,
             order: {
                 locationId: process.env.SQUARE_LOCATION_ID,
                 lineItems: [
@@ -68,53 +69,26 @@ export default async function handler(req, res) {
                         quantity: "1",
                         basePriceMoney: {
                             amount: amountInCents,
-                            currency: "USD"
+                            currency: "CAD"  // ✅ Changed from "USD" to "CAD"
                         }
                     }
                 ]
-            },
-            idempotencyKey: `trackrepost-${userId}-${Date.now()}`
+            }
         });
 
-        if (!orderResult || !orderResult.order) {
-            console.error("❌ Failed to create Square Order");
-            return res.status(500).json({ error: "Failed to create Square Order." });
+        console.log("🔹 Square API Response:", result);
+
+        if (!result || !result.paymentLink || !result.paymentLink.url) {
+            console.error("❌ Square API did not return a valid link");
+            return res.status(500).json({ error: "Square API did not return a valid link." });
         }
 
-        console.log("✅ Order Created:", orderResult.order.id);
-
-        // ✅ Create Checkout URL
-        const { result: checkoutResult } = await checkoutApi.createPaymentLink({
-            orderId: orderResult.order.id,
-            idempotencyKey: `checkout-${userId}-${Date.now()}`
-        });
-
-        if (!checkoutResult || !checkoutResult.paymentLink || !checkoutResult.paymentLink.url) {
-            console.error("❌ Square API did not return a valid payment link");
-            return res.status(500).json({ error: "Square API did not return a valid payment link." });
-        }
-
-        console.log("✅ Square Checkout URL:", checkoutResult.paymentLink.url);
-        res.status(200).json({ checkoutUrl: checkoutResult.paymentLink.url });
+        console.log("✅ Square Checkout URL:", result.paymentLink.url);
+        res.status(200).json({ checkoutUrl: result.paymentLink.url });
 
     } catch (error) {
         console.error("❌ Square API Error:", error);
-
-        // ✅ Log Full Square API Response Error
-        if (error.response) {
-            try {
-                const errorData = await error.response.json();
-                console.error("🔹 Square API Response Error:", JSON.stringify(errorData, null, 2));
-                return res.status(500).json({ error: "Square API Error", details: errorData });
-            } catch (jsonError) {
-                const errorText = await error.response.text();
-                console.error("🔹 Square API Raw Error:", errorText);
-                return res.status(500).json({ error: "Square API Error", details: errorText });
-            }
-        }
-
         res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 };
-
 
