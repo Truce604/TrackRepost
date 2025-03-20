@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     console.log("🔹 Square Checkout API Hit");
 
     // ✅ Fix CORS Policy
-    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins temporarily
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Temporarily allow all origins
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
         // ✅ Initialize Square Client
         console.log("🔹 Initializing Square Client...");
         const squareClient = new Client({
-            environment: Environment.Production, // Change to Sandbox for testing
+            environment: Environment.Production, // Change to Environment.Sandbox for testing
             accessToken: process.env.SQUARE_ACCESS_TOKEN
         });
 
@@ -100,10 +100,17 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error("❌ Square API Error:", error);
 
+        // ✅ Log Full Square API Response Error
         if (error.response) {
-            const errorData = await error.response.text();
-            console.error("🔹 Square API Response Error:", errorData);
-            return res.status(500).json({ error: "Square API Error", details: errorData });
+            try {
+                const errorData = await error.response.json();
+                console.error("🔹 Square API Response Error:", errorData);
+                return res.status(500).json({ error: "Square API Error", details: errorData });
+            } catch (jsonError) {
+                const errorText = await error.response.text();
+                console.error("🔹 Square API Raw Error:", errorText);
+                return res.status(500).json({ error: "Square API Error", details: errorText });
+            }
         }
 
         res.status(500).json({ error: "Internal Server Error", details: error.message });
