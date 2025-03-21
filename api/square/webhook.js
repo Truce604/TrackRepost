@@ -1,62 +1,45 @@
+
 import crypto from "crypto";
 
-// Disable body parsing to get raw body for signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export default async function handler(req, res) {
-  console.log("📩 Square Webhook Hit");
-
-  // Square Signature Key (replace this with process.env if set there)
-  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-  if (!signatureKey) {
-    console.error("❌ Missing Webhook Secret or Signature Key");
-    return res.status(400).send("Missing webhook secret.");
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
-  }
-
-  try {
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed" });
     }
-    const rawBody = Buffer.concat(chunks);
-    const signatureHeader = req.headers["x-square-signature"];
 
-    // Verify signature
+    const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
+    if (!signatureKey) {
+        console.error("❌ Missing Webhook Secret");
+        return res.status(400).json({ error: "Missing Webhook Secret" });
+    }
+
+    const body = JSON.stringify(req.body);
+    const signature = req.headers["x-square-signature"];
+
     const hmac = crypto.createHmac("sha1", signatureKey);
-    hmac.update(rawBody);
+    hmac.update(body);
     const expectedSignature = hmac.digest("base64");
 
-    if (signatureHeader !== expectedSignature) {
-      console.error("❌ Invalid signature");
-      return res.status(401).send("Invalid signature");
+    if (signature !== expectedSignature) {
+        console.error("❌ Invalid Webhook Signature");
+        return res.status(401).json({ error: "Invalid Signature" });
     }
 
-    const event = JSON.parse(rawBody.toString());
+    const event = req.body;
 
     console.log("✅ Verified Webhook Event:", event.type);
-    console.log("📦 Event Data:", event.data);
 
-    // 🛠️ Later: Handle credit updates here based on event type
-    if (event.type === "payment.updated" || event.type === "payment.created") {
-      const payment = event.data.object.payment;
-      console.log("💵 Payment Info:", payment);
-      // TODO: Look up user ID and update credits
+    // Handle successful payment event
+    if (event.type === "payment.updated" && event.data?.object?.payment?.status === "COMPLETED") {
+        const payment = event.data.object.payment;
+
+        console.log("💰 Payment Successful:", payment.id);
+        console.log("👤 Buyer Email:", payment?.buyerEmailAddress || "N/A");
+
+        // You can extract the amount or metadata here
+        // Then apply credits to the user in Firebase if needed
     }
 
-    return res.status(200).send("Webhook received.");
-  } catch (error) {
-    console.error("❌ Webhook Error:", error);
-    return res.status(500).send("Server Error");
-  }
+    res.status(200).json({ success: true });
 }
-
 
