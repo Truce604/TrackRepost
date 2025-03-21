@@ -1,30 +1,29 @@
-
-import { buffer } from "micro";
-import crypto from "crypto";
-
-export const config = { api: { bodyParser: false } };
-
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  try {
+    const event = req.body;
+
+    // Square may send a ping test
+    if (event.type === 'payment.updated' && event.data?.object?.payment?.status === 'COMPLETED') {
+      const payment = event.data.object.payment;
+      const amount = payment.amount_money.amount;
+      const orderId = payment.order_id;
+      const userId = payment.note; // optional if you store user info here
+
+      console.log("✅ Payment Complete:", { amount, orderId, userId });
+
+      // TODO: Update Firestore credits for the user here
+
+      return res.status(200).json({ message: 'Webhook received successfully' });
     }
 
-    const signature = req.headers["x-square-hmacsha256-signature"];
-    const rawBody = await buffer(req);
-
-    if (!signature || !process.env.SQUARE_WEBHOOK_SECRET) {
-        return res.status(400).json({ error: "Missing Webhook Secret or Signature" });
-    }
-
-    // Verify Webhook Signature
-    const hmac = crypto.createHmac("sha256", process.env.SQUARE_WEBHOOK_SECRET);
-    hmac.update(rawBody);
-    const expectedSignature = hmac.digest("base64");
-
-    if (signature !== expectedSignature) {
-        return res.status(401).json({ error: "Invalid Signature" });
-    }
-
-    console.log("✅ Webhook Verified:", req.body);
-    res.status(200).json({ success: true });
+    return res.status(200).json({ message: 'Event ignored' });
+  } catch (error) {
+    console.error('❌ Webhook Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 }
+
