@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-// ✅ This is the correct way to assign credits on new user signup
+// ✅ Make sure this is exactly `functions.auth.user()`
 exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const userId = user.uid;
   const displayName = user.displayName || "New User";
@@ -12,7 +12,7 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
     await admin.firestore().collection("users").doc(userId).set({
       credits: 30,
       displayName: displayName,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     console.log(`✅ Assigned 30 credits to ${userId}`);
@@ -20,4 +20,3 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
     console.error(`❌ Error assigning credits to ${userId}:`, error);
   }
 });
-
