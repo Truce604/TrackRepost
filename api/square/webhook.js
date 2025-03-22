@@ -1,76 +1,76 @@
-import { buffer } from 'micro';
-import * as admin from 'firebase-admin';
-import crypto from 'crypto';
+import { Client, Environment, WebhooksHelper } from "square";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+// Initialize Firebase Admin if not already initialized
+if (!getFirestore.apps?.length) {
+  initializeApp();
 }
+const db = getFirestore();
 
-export const config = {
-  api: {
-    bodyParser: false, // Required to verify Square signature
-  },
-};
+// Square setup
+const squareClient = new Client({
+  accessToken: process.env.SQUARE_ACCESS_TOKEN,
+  environment: Environment.Production,
+});
+
+const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const signature = req.headers['x-square-signature'];
-  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-  const rawBody = (await buffer(req)).toString();
+  const signature = req.headers["x-square-signature"];
+  const body = JSON.stringify(req.body);
 
-  const hmac = crypto.createHmac('sha1', webhookSecret);
-  hmac.update(rawBody);
-  const expectedSignature = hmac.digest('base64');
+  const isValid = WebhooksHelper.isValidWebhookEventSignature(
+    body,
+    signature,
+    signatureKey,
+    req.url
+  );
 
-  if (signature !== expectedSignature) {
-    console.error('❌ Invalid Square signature');
-    return res.status(400).send('Invalid signature');
+  if (!isValid) {
+    return res.status(400).json({ error: "Invalid signature" });
   }
 
-  let event;
-  try {
-    event = JSON.parse(rawBody);
-  } catch (err) {
-    console.error('❌ Invalid JSON in webhook:', err);
-    return res.status(400).send('Invalid JSON');
-  }
+  const event = req.body;
+  const payment = event?.data?.object?.payment;
 
-  const { type, data } = event;
+  if (event.type === "payment.created" && payment?.status === "COMPLETED") {
+    const note = payment.note || "";
+    const match = note.match(/(\d+)\s+Credits\s+Purchase\s+for\s+userId=(\w+)/);
 
-  if (type === 'payment.updated') {
-    const payment = data.object.payment;
-    const note = payment.note;
-
-    // Expected note format: "500 Credits Purchase for userId=abc123"
-    const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(.+)/);
     if (!match) {
-      console.error('❌ Invalid note format');
-      return res.status(400).send('Invalid note format');
+      console.error("❌ Could not parse note:", note);
+      return res.status(400).json({ error: "Invalid note format." });
     }
 
-    const credits = parseInt(match[1]);
+    const credits = parseInt(match[1], 10);
     const userId = match[2];
 
-    const userRef = admin.firestore().collection('users').doc(userId);
+    try {
+      const userRef = db.collection("users").doc(userId);
+      const userDoc = await userRef.get();
 
-    await admin.firestore().runTransaction(async (t) => {
-      const userDoc = await t.get(userRef);
-      const currentCredits = userDoc.exists ? userDoc.data().credits || 0 : 0;
-      t.set(userRef, { credits: currentCredits + credits }, { merge: true });
-    });
+      if (!userDoc.exists) {
+        await userRef.set({ credits });
+      } else {
+        await userRef.update({
+          credits: (userDoc.data().credits || 0) + credits,
+        });
+      }
 
-    console.log(`✅ Added ${credits} credits to user ${userId}`);
-    return res.status(200).send('Credits updated');
+      console.log(`✅ Updated credits for user ${userId}: +${credits}`);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("🔥 Firestore Error:", err);
+      return res.status(500).json({ error: "Failed to update credits." });
+    }
   }
 
-  res.status(200).send('Webhook received');
+  res.status(200).json({ received: true });
 }
 
 
