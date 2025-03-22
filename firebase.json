@@ -1,17 +1,19 @@
 {
-    "hosting": {
-      "public": "public",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "/campaigns",
-          "destination": "/campaigns.html"
-        },
-        {
-          "source": "/credits",
-          "destination": "/credits.html"
-        }
-      ]
-    }
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/campaigns",
+        "destination": "/campaigns.html"
+      },
+      {
+        "source": "/credits",
+        "destination": "/credits.html"
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions"
   }
-  
+}
