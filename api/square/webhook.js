@@ -1,20 +1,21 @@
-import { Client, Environment, WebhooksHelper } from "square";
+
+import { Client, Environment } from "square";
+import { Buffer } from "buffer";
+import crypto from "crypto";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin if not already initialized
-if (!getFirestore.apps?.length) {
-  initializeApp();
-}
-const db = getFirestore();
-
-// Square setup
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment: Environment.Production,
 });
 
-const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+// Initialize Firebase Admin (only once)
+if (!global._firebaseAdminInitialized) {
+  initializeApp();
+  global._firebaseAdminInitialized = true;
+}
+const db = getFirestore();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -23,54 +24,47 @@ export default async function handler(req, res) {
 
   const signature = req.headers["x-square-signature"];
   const body = JSON.stringify(req.body);
+  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const endpoint = "https://www.trackrepost.com/api/square/webhook";
 
-  const isValid = WebhooksHelper.isValidWebhookEventSignature(
-    body,
-    signature,
-    signatureKey,
-    req.url
-  );
+  // Verify signature
+  const hmac = crypto.createHmac("sha1", webhookSecret);
+  hmac.update(endpoint + body);
+  const expectedSignature = hmac.digest("base64");
 
-  if (!isValid) {
+  if (signature !== expectedSignature) {
+    console.error("❌ Invalid webhook signature");
     return res.status(400).json({ error: "Invalid signature" });
   }
 
   const event = req.body;
-  const payment = event?.data?.object?.payment;
 
-  if (event.type === "payment.created" && payment?.status === "COMPLETED") {
-    const note = payment.note || "";
-    const match = note.match(/(\d+)\s+Credits\s+Purchase\s+for\s+userId=(\w+)/);
+  if (
+    event.type === "payment.updated" &&
+    event.data?.object?.payment?.status === "COMPLETED"
+  ) {
+    const note = event.data.object.payment.note;
+    const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
 
-    if (!match) {
-      console.error("❌ Could not parse note:", note);
-      return res.status(400).json({ error: "Invalid note format." });
-    }
+    if (match) {
+      const credits = parseInt(match[1], 10);
+      const userId = match[2];
 
-    const credits = parseInt(match[1], 10);
-    const userId = match[2];
-
-    try {
       const userRef = db.collection("users").doc(userId);
-      const userDoc = await userRef.get();
+      const userSnap = await userRef.get();
 
-      if (!userDoc.exists) {
-        await userRef.set({ credits });
-      } else {
+      if (userSnap.exists) {
+        const prevCredits = userSnap.data().credits || 0;
         await userRef.update({
-          credits: (userDoc.data().credits || 0) + credits,
+          credits: prevCredits + credits,
         });
+        console.log(`✅ Updated ${userId} with ${credits} credits`);
+      } else {
+        console.warn(`⚠️ User ${userId} not found`);
       }
-
-      console.log(`✅ Updated credits for user ${userId}: +${credits}`);
-      return res.status(200).json({ success: true });
-    } catch (err) {
-      console.error("🔥 Firestore Error:", err);
-      return res.status(500).json({ error: "Failed to update credits." });
     }
   }
 
-  res.status(200).json({ received: true });
+  res.status(200).json({ success: true });
 }
-
 
