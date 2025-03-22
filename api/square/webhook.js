@@ -1,70 +1,79 @@
+import { Client, Environment } from 'square';
+import { buffer } from 'micro';
+import * as admin from 'firebase-admin';
+import crypto from 'crypto';
 
-import { Client, Environment } from "square";
-import { Buffer } from "buffer";
-import crypto from "crypto";
-import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
+}
+
+const db = admin.firestore();
 
 const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment: Environment.Production,
+  accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
-// Initialize Firebase Admin (only once)
-if (!global._firebaseAdminInitialized) {
-  initializeApp();
-  global._firebaseAdminInitialized = true;
-}
-const db = getFirestore();
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
 
-  const signature = req.headers["x-square-signature"];
-  const body = JSON.stringify(req.body);
-  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-  const endpoint = "https://www.trackrepost.com/api/square/webhook";
+  const signature = req.headers['x-square-signature'];
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const rawBody = (await buffer(req)).toString();
 
-  // Verify signature
-  const hmac = crypto.createHmac("sha1", webhookSecret);
-  hmac.update(endpoint + body);
-  const expectedSignature = hmac.digest("base64");
+  const url = 'https://www.trackrepost.com/api/square/webhook';
+  const hmac = crypto
+    .createHmac('sha1', signatureKey)
+    .update(url + rawBody)
+    .digest('base64');
 
-  if (signature !== expectedSignature) {
-    console.error("❌ Invalid webhook signature");
-    return res.status(400).json({ error: "Invalid signature" });
+  if (signature !== hmac) {
+    console.error('❌ Invalid webhook signature.');
+    return res.status(400).send('Invalid signature.');
   }
 
-  const event = req.body;
+  try {
+    const body = JSON.parse(rawBody);
+    const eventType = body?.event_type;
+    const payment = body?.data?.object?.payment;
+    const note = payment?.note;
 
-  if (
-    event.type === "payment.updated" &&
-    event.data?.object?.payment?.status === "COMPLETED"
-  ) {
-    const note = event.data.object.payment.note;
-    const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
+    if (eventType === 'payment.created' && payment?.status === 'COMPLETED') {
+      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
+      if (match) {
+        const credits = parseInt(match[1]);
+        const userId = match[2];
 
-    if (match) {
-      const credits = parseInt(match[1], 10);
-      const userId = match[2];
-
-      const userRef = db.collection("users").doc(userId);
-      const userSnap = await userRef.get();
-
-      if (userSnap.exists) {
-        const prevCredits = userSnap.data().credits || 0;
-        await userRef.update({
-          credits: prevCredits + credits,
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const doc = await transaction.get(userRef);
+          const currentCredits = doc.exists ? doc.data().credits || 0 : 0;
+          transaction.set(userRef, { credits: currentCredits + credits }, { merge: true });
         });
-        console.log(`✅ Updated ${userId} with ${credits} credits`);
+
+        console.log(`✅ Added ${credits} credits to user ${userId}`);
+        return res.status(200).send('Credits updated');
       } else {
-        console.warn(`⚠️ User ${userId} not found`);
+        console.warn('⚠️ Note format did not match expected pattern');
       }
     }
-  }
 
-  res.status(200).json({ success: true });
+    res.status(200).send('No action taken');
+  } catch (err) {
+    console.error('❌ Webhook handler error:', err);
+    res.status(500).send('Server error');
+  }
 }
+
+
 
