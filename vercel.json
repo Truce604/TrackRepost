@@ -1,0 +1,17 @@
+{
+    "rewrites": [
+      {
+        "source": "/campaigns",
+        "destination": "/campaigns.html"
+      },
+      {
+        "source": "/credits",
+        "destination": "/credits.html"
+      },
+      {
+        "source": "/payment-success",
+        "destination": "/payment-success.html"
+      }
+    ]
+  }
+  
