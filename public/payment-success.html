@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Payment Success</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,19 +22,42 @@
   <p id="message">Processing your credits...</p>
   <a href="/dashboard">Go to Dashboard</a>
 
-  <script>
-    // Parse URL parameters
+  <script type="module">
+    // ✅ Firebase config (update these if needed)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
+      authDomain: "trackrepost-921f8.firebaseapp.com",
+      projectId: "trackrepost-921f8",
+      appId: "1:967836604288:web:3782d50de7384c9201d365"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
     const params = new URLSearchParams(window.location.search);
     const credits = params.get("credits");
-    const userId = params.get("userId");
-
     const messageEl = document.getElementById("message");
 
-    if (credits && userId) {
-      messageEl.textContent = `You purchased ${credits} credits. Welcome back, user ${userId}!`;
-    } else {
-      messageEl.textContent = "Thanks for your purchase! Your credits will be applied shortly.";
-    }
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const displayName = user.displayName || "friend";
+        if (credits) {
+          messageEl.textContent = `Hey ${displayName}, you purchased ${credits} credits! 🔥`;
+        } else {
+          messageEl.textContent = `Thanks ${displayName}, your payment was successful!`;
+        }
+      } else {
+        // User not signed in, fallback message
+        if (credits) {
+          messageEl.textContent = `You purchased ${credits} credits!`;
+        } else {
+          messageEl.textContent = "Thanks for your payment!";
+        }
+      }
+    });
   </script>
 </body>
 </html>
