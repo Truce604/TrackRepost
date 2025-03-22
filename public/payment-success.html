@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Success</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    h1 {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 Payment Successful!</h1>
+  <p id="message">Processing your credits...</p>
+  <a href="/dashboard">Go to Dashboard</a>
+
+  <script>
+    // Parse URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const credits = params.get("credits");
+    const userId = params.get("userId");
+
+    const messageEl = document.getElementById("message");
+
+    if (credits && userId) {
+      messageEl.textContent = `You purchased ${credits} credits. Welcome back, user ${userId}!`;
+    } else {
+      messageEl.textContent = "Thanks for your purchase! Your credits will be applied shortly.";
+    }
+  </script>
+</body>
+</html>
