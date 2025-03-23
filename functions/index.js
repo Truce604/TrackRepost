@@ -1,11 +1,9 @@
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { Client } = require("square");
+const { Client, Environment } = require("square");
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
+admin.initializeApp();
 const db = admin.firestore();
 
 // ✅ Assign 30 credits to new users on signup
@@ -17,7 +15,7 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
     await db.collection("users").doc(userId).set({
       credits: 30,
       displayName: displayName,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     console.log(`✅ Assigned 30 credits to ${userId}`);
@@ -26,12 +24,7 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   }
 });
 
-// ✅ Square Webhook for Credit Updates
-const squareClient = new Client({
-  environment: "production", // ✅ Use string instead of Environment.Production
-  accessToken: process.env.SQUARE_ACCESS_TOKEN
-});
-
+// ✅ Square Webhook to add credits after purchase
 exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
@@ -39,11 +32,13 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
 
   try {
     const event = req.body;
+    const sig = req.headers["x-square-signature"];
+    // Optional: validate sig using process.env.SQUARE_WEBHOOK_SIGNATURE_KEY
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
-
       const note = payment.note || "";
+
       const userIdMatch = note.match(/userId=([\w-]+)/);
       const creditsMatch = note.match(/(\d+)\sCredits/);
 
@@ -52,14 +47,15 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
         const credits = parseInt(creditsMatch[1]);
 
         await db.collection("users").doc(userId).set({
-          credits: admin.firestore.FieldValue.increment(credits)
+          credits: admin.firestore.FieldValue.increment(credits),
         }, { merge: true });
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
+      } else {
+        console.warn("⚠️ Could not extract user ID or credits from note");
+        return res.status(400).send("Missing note data");
       }
-
-      return res.status(400).send("Invalid note format");
     }
 
     return res.status(200).send("Event ignored");
