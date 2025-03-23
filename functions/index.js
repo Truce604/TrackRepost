@@ -1,6 +1,5 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { Client } = require("square");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -23,19 +22,28 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   }
 });
 
-// ✅ Square Webhook to add credits after purchase
+// ✅ Handle Square Webhook for credit purchases
 exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
-    const client = new Client({
-      accessToken: process.env.SQUARE_ACCESS_TOKEN,
-      environment: "production",
-    });
-
     const event = req.body;
+    const signature = req.headers["x-square-signature"];
+    const crypto = require("crypto");
+
+    const webhookKey = functions.config().square.webhook_signature_key;
+
+    // Verify signature
+    const hmac = crypto.createHmac("sha1", webhookKey);
+    hmac.update(JSON.stringify(event));
+    const expectedSignature = hmac.digest("base64");
+
+    if (signature !== expectedSignature) {
+      console.warn("⚠️ Signature mismatch. Webhook not verified.");
+      return res.status(400).send("Invalid signature");
+    }
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
@@ -66,4 +74,5 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
     return res.status(500).send("Internal Server Error");
   }
 });
+
 
