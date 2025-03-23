@@ -1,7 +1,6 @@
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { Client, Environment } = require("square");
+const { Client } = require("square");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -31,9 +30,12 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   }
 
   try {
+    const client = new Client({
+      accessToken: process.env.SQUARE_ACCESS_TOKEN,
+      environment: "production",
+    });
+
     const event = req.body;
-    const sig = req.headers["x-square-signature"];
-    // Optional: validate sig using process.env.SQUARE_WEBHOOK_SIGNATURE_KEY
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
