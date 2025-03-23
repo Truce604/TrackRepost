@@ -12,6 +12,7 @@
   "dependencies": {
     "firebase-admin": "^11.11.1",
     "firebase-functions": "^4.9.0",
+    "raw-body": "^3.0.0",
     "square": "^42.0.0"
   }
 }
