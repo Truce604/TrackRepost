@@ -1,65 +1,64 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | TrackRepost</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | TrackRepost</title>
+  <link rel="stylesheet" href="styles.css">
 
-    <!-- ✅ Load Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- ✅ Load Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load Firebase Config -->
-    <script src="firebaseConfig.js" defer></script>
+  <!-- ✅ Firebase Config -->
+  <script src="firebaseConfig.js" defer></script>
 
-    <!-- ✅ Load Dashboard JavaScript -->
-    <script src="dashboard.js" defer></script>
+  <!-- ✅ Dashboard Logic -->
+  <script src="dashboard.js" defer></script>
 </head>
 
 <body>
+  <header>
+    <h1>📊 User Dashboard</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">🏠 Home</a></li>
+        <li><a href="credits.html">💳 Buy Credits</a></li>
+        <li><a href="repost.html">🔄 Repost & Earn</a></li>
+        <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
+      </ul>
+    </nav>
+  </header>
 
-    <header>
-        <h1>📊 User Dashboard</h1>
-        <nav>
-            <ul>
-                <li><a href="index.html">🏠 Home</a></li>
-                <li><a href="subscribe.html">💳 Buy Credits</a></li>
-                <li><a href="repost.html">🔄 Repost & Earn</a></li>
-                <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
-            </ul>
-        </nav>
-    </header>
+  <!-- ✅ User Info Section -->
+  <div class="container">
+    <h2>👤 Welcome, <span id="userName">Friend</span></h2>
+    <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
+  </div>
 
-    <!-- ✅ User Info Section -->
-    <div class="container">
-        <h2>👤 Welcome, <span id="userEmail">Guest</span></h2>
-        <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
-    </div>
+  <!-- ✅ Transaction History -->
+  <div class="container">
+    <h2>📜 Transaction History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Track</th>
+          <th>Credits</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="transactionHistory">
+        <tr><td colspan="4">Loading history...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <!-- ✅ Transaction History Section -->
-    <div class="container">
-        <h2>📜 Transaction History</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Track</th>
-                    <th>Credits</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody id="transactionHistory">
-                <tr><td colspan="4">Loading history...</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <footer>
-        <p>© 2025 TrackRepost. All Rights Reserved.</p>
-    </footer>
-
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
 </body>
 </html>
 
