@@ -1,17 +1,20 @@
 {
-    "rewrites": [
-      {
-        "source": "/campaigns",
-        "destination": "/campaigns.html"
-      },
-      {
-        "source": "/credits",
-        "destination": "/credits.html"
-      },
-      {
-        "source": "/payment-success",
-        "destination": "/payment-success.html"
-      }
-    ]
-  }
-  
+  "rewrites": [
+    {
+      "source": "/campaigns",
+      "destination": "/campaigns.html"
+    },
+    {
+      "source": "/credits",
+      "destination": "/credits.html"
+    },
+    {
+      "source": "/payment-success",
+      "destination": "/payment-success.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    }
+  ]
+}
