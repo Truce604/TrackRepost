@@ -1,3 +1,4 @@
+
 import { Client, Environment } from "square";
 
 // ✅ Setup Square client with production environment
@@ -19,7 +20,6 @@ export default async function handler(req, res) {
     }
 
     const amountInCents = Math.round(amount * 100);
-
     const idempotencyKey = `trackrepost-${userId}-${Date.now()}`;
 
     const { result } = await squareClient.checkoutApi.createCheckout(
@@ -27,17 +27,19 @@ export default async function handler(req, res) {
       {
         idempotencyKey,
         order: {
-          locationId: process.env.SQUARE_LOCATION_ID,
-          lineItems: [
-            {
-              name: `${credits} Credits`,
-              quantity: "1",
-              basePriceMoney: {
-                amount: amountInCents,
-                currency: "CAD"
+          order: {
+            locationId: process.env.SQUARE_LOCATION_ID,
+            lineItems: [
+              {
+                name: `${credits} Credits`,
+                quantity: "1",
+                basePriceMoney: {
+                  amount: amountInCents,
+                  currency: "CAD"
+                }
               }
-            }
-          ]
+            ]
+          }
         },
         redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`,
         note: `${credits} Credits Purchase for userId=${userId}`
