@@ -4,16 +4,15 @@
   "description": "TrackRepost project with Square and Firebase",
   "type": "module",
   "main": "index.js",
-  "dependencies": {
-    "firebase-admin": "^11.10.1",
-    "firebase-functions": "^6.3.2",
-    "square": "^42.0.0",
-    "micro": "^9.3.6"
-  },
   "scripts": {
     "start": "node index.js",
     "build": "echo 'Skipping build step...'"
   },
-  "author": "Your Name",
+  "dependencies": {
+    "firebase-admin": "^11.10.1",
+    "firebase-functions": "^6.3.2",
+    "micro": "^9.3.6",
+    "square": "^39.0.0"
+  },
   "license": "MIT"
 }
