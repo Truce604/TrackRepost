@@ -5,8 +5,9 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "^11.10.0",
-    "square": "^17.2.0",
+    "firebase-admin": "^11.10.1",
+    "firebase-functions": "^6.3.2",
+    "square": "^42.0.0",
     "micro": "^9.3.6"
   },
   "scripts": {
