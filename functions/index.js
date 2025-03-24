@@ -1,18 +1,14 @@
-import { onUserCreated } from "firebase-functions/v2/auth";
-import { onRequest } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
-import * as crypto from "crypto";
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const crypto = require("crypto");
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
+admin.initializeApp();
 const db = admin.firestore();
 
 // ✅ Assign 30 credits to new users on signup
-export const assignCreditsOnSignup = onUserCreated(async (event) => {
-  const userId = event.uid;
-  const displayName = event.displayName || "New User";
+exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
+  const userId = user.uid;
+  const displayName = user.displayName || "New User";
 
   try {
     await db.collection("users").doc(userId).set({
@@ -20,25 +16,23 @@ export const assignCreditsOnSignup = onUserCreated(async (event) => {
       displayName,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-
     console.log(`✅ Assigned 30 credits to ${userId}`);
   } catch (error) {
     console.error(`❌ Error assigning credits to ${userId}:`, error);
   }
 });
 
-// ✅ Webhook to add credits after payment from Square
-export const squareWebhook = onRequest(async (req, res) => {
+// ✅ Handle Square Webhook for credit purchases
+exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
     const signature = req.headers["x-square-signature"];
-    const webhookKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+    const webhookKey = functions.config().square.webhook_signature_key;
     const rawBody = JSON.stringify(req.body);
 
-    // 🔐 Signature verification
     const hmac = crypto.createHmac("sha1", webhookKey);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
@@ -79,5 +73,7 @@ export const squareWebhook = onRequest(async (req, res) => {
     return res.status(500).send("Internal Server Error");
   }
 });
+
+
 
 
