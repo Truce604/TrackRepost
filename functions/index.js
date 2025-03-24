@@ -1,18 +1,14 @@
-import { onRequest } from "firebase-functions/v2/https";
-import { onUserCreated } from "firebase-functions/v2/auth";
-import * as admin from "firebase-admin";
-import * as crypto from "crypto";
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const crypto = require("crypto");
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
+admin.initializeApp();
 const db = admin.firestore();
 
-// ✅ Assign 30 credits to new users on signup
-export const assignCreditsOnSignup = onUserCreated(async (event) => {
-  const userId = event.uid;
-  const displayName = event.displayName || "New User";
+// ✅ Assign 30 credits on user signup
+exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
+  const userId = user.uid;
+  const displayName = user.displayName || "New User";
 
   try {
     await db.collection("users").doc(userId).set({
@@ -27,15 +23,15 @@ export const assignCreditsOnSignup = onUserCreated(async (event) => {
   }
 });
 
-// ✅ Handle Square Webhook to credit users after payment
-export const squareWebhook = onRequest(async (req, res) => {
+// ✅ Handle Square webhook
+exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
     const signature = req.headers["x-square-signature"];
-    const webhookKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+    const webhookKey = functions.config().square.webhook_signature_key;
     const rawBody = JSON.stringify(req.body);
 
     const hmac = crypto.createHmac("sha1", webhookKey);
@@ -67,14 +63,14 @@ export const squareWebhook = onRequest(async (req, res) => {
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
       } else {
-        console.warn("⚠️ Could not extract user ID or credits from note");
-        return res.status(400).send("Missing note data");
+        console.warn("⚠️ Could not extract userId or credits from note");
+        return res.status(400).send("Invalid note format");
       }
     }
 
     return res.status(200).send("Event ignored");
   } catch (error) {
-    console.error("❌ Webhook Error:", error);
+    console.error("❌ Webhook processing error:", error);
     return res.status(500).send("Internal Server Error");
   }
 });
