@@ -1,17 +1,11 @@
+import { Client, Environment } from "square";
+
+const squareClient = new Client({
+  environment: Environment.Production,
+  accessToken: process.env.SQUARE_ACCESS_TOKEN,
+});
+
 export default async function handler(req, res) {
-  const squarePkg = await import("square");
-  const Client = squarePkg.default?.Client || squarePkg.Client;
-
-  if (typeof Client !== "function") {
-    console.error("❌ Square SDK 'Client' not found.");
-    return res.status(500).json({ error: "Square SDK not loading properly." });
-  }
-
-  const squareClient = new Client({
-    environment: "production",
-    accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  });
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -52,9 +46,7 @@ export default async function handler(req, res) {
 
     if (!result.checkout?.checkoutPageUrl) {
       console.error("❌ No checkout URL returned:", result);
-      return res
-        .status(500)
-        .json({ error: "Square API did not return a valid checkout link." });
+      return res.status(500).json({ error: "Square API did not return a valid checkout link." });
     }
 
     res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
