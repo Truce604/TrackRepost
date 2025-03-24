@@ -1,8 +1,15 @@
 import squarePkg from "square";
 const { Client } = squarePkg;
 
+// ✅ Log environment variables to verify they're loaded
+console.log("🧪 ENV CHECK:", {
+  ACCESS_TOKEN_PRESENT: process.env.SQUARE_ACCESS_TOKEN ? "✅" : "❌ MISSING",
+  LOCATION_ID: process.env.SQUARE_LOCATION_ID,
+  APP_ID: process.env.SQUARE_APPLICATION_ID,
+});
+
 const squareClient = new Client({
-  environment: "production", // ✅ Use lowercase string, not Environment.Production
+  environment: "production",
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
@@ -54,10 +61,16 @@ export default async function handler(req, res) {
 
     res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
   } catch (error) {
-    console.error("❌ Square Checkout Error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", details: error.message });
+    console.error("❌ Square Checkout Error:", {
+      message: error.message,
+      stack: error.stack,
+      full: error
+    });
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message
+    });
   }
 }
+
 
