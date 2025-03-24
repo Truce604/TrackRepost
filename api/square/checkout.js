@@ -1,16 +1,16 @@
 export default async function handler(req, res) {
   const squarePkg = await import("square");
-  const SquareClient = squarePkg.default;
+  const { Client } = squarePkg;
 
   console.log("🧪 ENV CHECK:", {
     ACCESS_TOKEN_PRESENT: process.env.SQUARE_ACCESS_TOKEN ? "✅" : "❌ MISSING",
     LOCATION_ID: process.env.SQUARE_LOCATION_ID,
     APP_ID: process.env.SQUARE_APPLICATION_ID,
-    SDK_TYPE: typeof SquareClient,
+    SDK_TYPE: typeof Client,
   });
 
-  const squareClient = new SquareClient({
-    environment: "production", // or "sandbox" for testing
+  const squareClient = new Client({
+    environment: "production",
     accessToken: process.env.SQUARE_ACCESS_TOKEN,
   });
 
