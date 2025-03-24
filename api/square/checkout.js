@@ -1,5 +1,4 @@
-import squarePkg from "square";
-const { Client } = squarePkg;
+import Client from "square";
 
 // ✅ Log environment variables to verify they're loaded
 console.log("🧪 ENV CHECK:", {
@@ -72,5 +71,4 @@ export default async function handler(req, res) {
     });
   }
 }
-
 
