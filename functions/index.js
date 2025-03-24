@@ -1,14 +1,18 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const crypto = require("crypto");
+import { onRequest } from "firebase-functions/v2/https";
+import { onUserCreated } from "firebase-functions/v2/auth";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 
-admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
 const db = admin.firestore();
 
 // ✅ Assign 30 credits to new users on signup
-exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
-  const userId = user.uid;
-  const displayName = user.displayName || "New User";
+export const assignCreditsOnSignup = onUserCreated(async (event) => {
+  const userId = event.uid;
+  const displayName = event.displayName || "New User";
 
   try {
     await db.collection("users").doc(userId).set({
@@ -23,26 +27,27 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   }
 });
 
-// ✅ Handle Square Webhook for credit purchases
-exports.squareWebhook = functions.https.onRequest(async (req, res) => {
+// ✅ Handle Square Webhook to credit users after payment
+export const squareWebhook = onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
-    const event = req.body;
     const signature = req.headers["x-square-signature"];
-    const webhookKey = functions.config().square.webhook_signature_key;
+    const webhookKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+    const rawBody = JSON.stringify(req.body);
 
-    // Signature verification
     const hmac = crypto.createHmac("sha1", webhookKey);
-    hmac.update(JSON.stringify(event));
+    hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.warn("⚠️ Signature mismatch. Webhook not verified.");
+      console.warn("⚠️ Invalid webhook signature");
       return res.status(400).send("Invalid signature");
     }
+
+    const event = req.body;
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
@@ -68,8 +73,8 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
     }
 
     return res.status(200).send("Event ignored");
-  } catch (err) {
-    console.error("❌ Webhook Error:", err);
+  } catch (error) {
+    console.error("❌ Webhook Error:", error);
     return res.status(500).send("Internal Server Error");
   }
 });
