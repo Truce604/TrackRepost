@@ -1,7 +1,7 @@
-
 import { Client, Environment } from "square";
 import { onRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import crypto from "crypto";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -22,10 +22,20 @@ export const squareWebhook = onRequest(async (req, res) => {
   }
 
   try {
-    const event = req.body;
-    const sig = req.headers["x-square-signature"];
+    const rawBody = JSON.stringify(req.body);
+    const receivedSignature = req.headers["x-square-signature"];
 
-    // You can add signature verification here with crypto (optional)
+    // ✅ Signature Verification
+    const hmac = crypto.createHmac("sha1", signatureKey);
+    hmac.update(rawBody);
+    const expectedSignature = hmac.digest("base64");
+
+    if (receivedSignature !== expectedSignature) {
+      console.warn("⚠️ Signature mismatch.");
+      return res.status(403).send("Invalid signature");
+    }
+
+    const event = req.body;
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
@@ -38,8 +48,7 @@ export const squareWebhook = onRequest(async (req, res) => {
         const userId = userIdMatch[1];
         const credits = parseInt(creditsMatch[1]);
 
-        const userRef = db.collection("users").doc(userId);
-        await userRef.set({
+        await db.collection("users").doc(userId).set({
           credits: admin.firestore.FieldValue.increment(credits)
         }, { merge: true });
 
