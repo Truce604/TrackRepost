@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const squarePkg = await import("square");
-  const { Client } = squarePkg;
+  const { Client, Environment } = squarePkg;
 
   console.log("🧪 ENV CHECK:", {
     ACCESS_TOKEN_PRESENT: process.env.SQUARE_ACCESS_TOKEN ? "✅" : "❌ MISSING",
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   });
 
   const squareClient = new Client({
-    environment: "production",
+    environment: Environment.Production,
     accessToken: process.env.SQUARE_ACCESS_TOKEN,
   });
 
@@ -72,5 +72,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
 
 
