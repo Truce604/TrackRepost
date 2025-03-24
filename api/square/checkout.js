@@ -1,7 +1,6 @@
+import squarePkg from "square";
+const { Client, Environment } = squarePkg;
 
-import { Client, Environment } from "square";
-
-// ✅ Setup Square client with production environment
 const squareClient = new Client({
   environment: Environment.Production,
   accessToken: process.env.SQUARE_ACCESS_TOKEN
@@ -57,6 +56,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 }
-
 
 
