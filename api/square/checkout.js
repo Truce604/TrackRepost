@@ -1,4 +1,5 @@
-import Client from "square";
+import squarePkg from "square";
+const Client = squarePkg.default;
 
 // ✅ Log environment variables to verify they're loaded
 console.log("🧪 ENV CHECK:", {
@@ -8,7 +9,7 @@ console.log("🧪 ENV CHECK:", {
 });
 
 const squareClient = new Client({
-  environment: "production",
+  environment: "production", // or "sandbox" for testing
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
@@ -71,4 +72,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
