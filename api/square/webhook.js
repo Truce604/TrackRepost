@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { buffer } from "micro";
+import getRawBody from "raw-body";
 import admin from "firebase-admin";
 
 if (!admin.apps.length) {
@@ -25,7 +25,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody = (await buffer(req)).toString();
+    const rawBodyBuffer = await getRawBody(req);
+    const rawBody = rawBodyBuffer.toString();
     console.log("🧾 Raw Body (string):", rawBody);
 
     const hmac = crypto.createHmac("sha256", secret);
@@ -74,6 +75,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
