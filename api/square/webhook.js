@@ -2,13 +2,13 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// ✅ Initialize Firebase Admin if not already initialized
+// ✅ Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// ✅ Tell Vercel to disable body parsing so we can verify signature
+// ✅ Required by Vercel to allow raw body reading
 export const config = {
   api: {
     bodyParser: false,
@@ -20,25 +20,20 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  // 🔍 Log incoming headers to debug signature
+  // 🔍 Log headers to debug
   console.log("📦 Incoming Headers:", req.headers);
 
   try {
     const rawBody = await buffer(req);
 
-    // ✅ Signature header fallback
-    const signature =
-      req.headers["x-square-hmac-sha256-signature"] ||
-      req.headers["x-square-signature"];
-
+    // ✅ Use the exact signature header from Square (confirmed via logs)
+    const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // ✅ Create HMAC with sha256 (required for newer Square apps)
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    // 🧪 Log both signatures to troubleshoot mismatches
     console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
 
@@ -49,13 +44,13 @@ export default async function handler(req, res) {
 
     const event = JSON.parse(rawBody.toString());
 
-    // ✅ Handle Square Test Notification
+    // ✅ Handle test notifications
     if (event.type === "TEST_NOTIFICATION") {
       console.log("✅ Square TEST_NOTIFICATION received");
       return res.status(200).send("Test successful");
     }
 
-    // ✅ Handle real payment events
+    // ✅ Handle successful payments
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
@@ -82,7 +77,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ If it's another event type, ignore
+    // ✅ For other event types
     return res.status(200).send("Event ignored");
   } catch (error) {
     console.error("❌ Webhook error:", error);
