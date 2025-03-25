@@ -2,13 +2,11 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// ✅ Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// ✅ Disable body parsing to get raw buffer for signature validation
 export const config = {
   api: {
     bodyParser: false,
@@ -21,30 +19,34 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody = await buffer(req); // ✅ Get raw Buffer
-    const signature = req.headers["x-square-hmacsha256-signature"]; // ✅ Correct lowercase header
+    const rawBody = await buffer(req);
+    const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // 🧪 Log raw body and header info for debugging
     console.log("📦 Incoming Headers:", req.headers);
     console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
     console.log("🔒 Received Signature:", signature);
 
-    // ✅ Create HMAC SHA256 signature from raw buffer
+    // Generate both possible signatures
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    console.log("🔐 Expected Signature:", expectedSignature);
+    const hmacNewline = crypto.createHmac("sha256", secret);
+    hmacNewline.update(Buffer.concat([rawBody, Buffer.from("\n")]));
+    const altExpectedSignature = hmacNewline.digest("base64");
 
-    if (signature !== expectedSignature) {
+    console.log("🔐 Expected Signature:", expectedSignature);
+    console.log("🔐 Alt Signature (with newline):", altExpectedSignature);
+
+    if (signature !== expectedSignature && signature !== altExpectedSignature) {
       console.warn("⚠️ Invalid signature");
       return res.status(400).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody.toString("utf8"));
 
-    if (event.type === "TEST_NOTIFICATION") {
+    if (event.event_type === "TEST_NOTIFICATION" || event.type === "TEST_NOTIFICATION") {
       console.log("✅ Square TEST_NOTIFICATION received");
       return res.status(200).send("Test successful");
     }
