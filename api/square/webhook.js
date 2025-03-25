@@ -2,7 +2,6 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// Init Firebase
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -10,71 +9,75 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false, // Needed to verify HMAC
+    bodyParser: false,
   },
 };
 
 export default async function handler(req, res) {
-  console.log("🧪 Loaded Signature Key:", process.env.SQUARE_WEBHOOK_SIGNATURE_KEY);
-  console.log("🧪 Signature Key Length:", process.env.SQUARE_WEBHOOK_SIGNATURE_KEY?.length);
+  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
-  if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
-  }
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const notificationUrl = "https://www.trackrepost.com/api/square/webhook";
 
-  const rawBody = await buffer(req);
-  const signature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  try {
+    const rawBodyBuffer = await buffer(req);
+    const rawBody = rawBodyBuffer.toString("utf8");
+    const signatureHeader = req.headers["x-square-hmacsha256-signature"];
 
-  if (!secret || !signature) {
-    console.warn("❌ Missing signature or secret");
-    return res.status(403).send("Missing signature or secret");
-  }
+    console.log("🧪 Loaded Signature Key:", signatureKey);
+    console.log("🔒 Received Signature:", signatureHeader);
+    console.log("🧾 Raw Body (string):", rawBody);
 
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(rawBody);
-  const expectedSignature = hmac.digest("base64");
+    const hmac = crypto.createHmac("sha256", signatureKey);
+    hmac.update(notificationUrl + rawBody);
+    const expectedSignature = hmac.digest("base64");
 
-  console.log("🔒 Received Signature:", signature);
-  console.log("🔐 Expected Signature:", expectedSignature);
-  console.log("🧾 Raw Body (string):", rawBody.toString());
+    console.log("🔐 Expected Signature:", expectedSignature);
 
-  if (signature !== expectedSignature) {
-    console.warn("⚠️ Invalid signature");
-    return res.status(403).send("Invalid signature");
-  }
+    if (
+      !signatureHeader ||
+      !crypto.timingSafeEqual(
+        Buffer.from(expectedSignature),
+        Buffer.from(signatureHeader)
+      )
+    ) {
+      console.warn("⚠️ Invalid signature");
+      return res.status(403).send("Invalid signature");
+    }
 
-  const event = JSON.parse(rawBody.toString());
+    const event = JSON.parse(rawBody);
 
-  if (event.event_type === "TEST_NOTIFICATION") {
-    console.log("✅ Test Notification Received");
-    return res.status(200).send("Test OK");
-  }
+    if (event.event_type === "payment.created") {
+      const payment = event.data.object.payment;
+      const note = payment.note || "";
 
-  if (event.type === "payment.created") {
-    const payment = event.data.object.payment;
-    const note = payment.note || "";
+      const userIdMatch = note.match(/userId=([\w-]+)/);
+      const creditsMatch = note.match(/(\d+)\sCredits/);
 
-    const userIdMatch = note.match(/userId=([\w-]+)/);
-    const creditsMatch = note.match(/(\d+)\sCredits/);
+      if (userIdMatch && creditsMatch) {
+        const userId = userIdMatch[1];
+        const credits = parseInt(creditsMatch[1]);
 
-    if (userIdMatch && creditsMatch) {
-      const userId = userIdMatch[1];
-      const credits = parseInt(creditsMatch[1]);
+        await db.collection("users").doc(userId).set(
+          {
+            credits: admin.firestore.FieldValue.increment(credits),
+          },
+          { merge: true }
+        );
 
-      await db.collection("users").doc(userId).set({
-        credits: admin.firestore.FieldValue.increment(credits),
-      }, { merge: true });
+        console.log(`✅ Added ${credits} credits to user ${userId}`);
+        return res.status(200).send("Success");
+      }
 
-      console.log(`✅ Added ${credits} credits to user ${userId}`);
-      return res.status(200).send("Success");
-    } else {
-      console.warn("⚠️ Missing user ID or credits in note");
+      console.warn("⚠️ Invalid note format");
       return res.status(400).send("Invalid note format");
     }
-  }
 
-  return res.status(200).send("Ignored");
+    return res.status(200).send("Ignored event type");
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    return res.status(500).send("Internal Server Error");
+  }
 }
 
 
