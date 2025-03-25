@@ -2,11 +2,13 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
+// ✅ Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
+// ✅ Disable body parsing to get raw buffer for signature validation
 export const config = {
   api: {
     bodyParser: false,
@@ -18,19 +20,21 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  console.log("📦 Incoming Headers:", req.headers);
-
   try {
-    const rawBody = await buffer(req); // ✅ Use raw Buffer directly
-
-    const signature = req.headers["x-square-hmacsha256-signature"];
+    const rawBody = await buffer(req); // ✅ Get raw Buffer
+    const signature = req.headers["x-square-hmacsha256-signature"]; // ✅ Correct lowercase header
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+    // 🧪 Log raw body and header info for debugging
+    console.log("📦 Incoming Headers:", req.headers);
+    console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
+    console.log("🔒 Received Signature:", signature);
+
+    // ✅ Create HMAC SHA256 signature from raw buffer
     const hmac = crypto.createHmac("sha256", secret);
-    hmac.update(rawBody); // ✅ No toString()
+    hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
 
     if (signature !== expectedSignature) {
@@ -38,7 +42,7 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid signature");
     }
 
-    const event = JSON.parse(rawBody.toString("utf8")); // ✅ parse here safely
+    const event = JSON.parse(rawBody.toString("utf8"));
 
     if (event.type === "TEST_NOTIFICATION") {
       console.log("✅ Square TEST_NOTIFICATION received");
