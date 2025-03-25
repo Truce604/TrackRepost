@@ -2,13 +2,11 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// ✅ Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// ✅ Required for raw body parsing
 export const config = {
   api: {
     bodyParser: false,
@@ -20,20 +18,16 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  // 🔍 Log incoming headers
   console.log("📦 Incoming Headers:", req.headers);
 
   try {
-    // ✅ Convert raw buffer to UTF-8 string (exact match for Square signature)
-    const rawBodyBuffer = await buffer(req);
-    const rawBody = rawBodyBuffer.toString("utf8");
+    const rawBody = await buffer(req); // ✅ Use raw Buffer directly
 
     const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // ✅ Create SHA256 HMAC signature
     const hmac = crypto.createHmac("sha256", secret);
-    hmac.update(rawBody);
+    hmac.update(rawBody); // ✅ No toString()
     const expectedSignature = hmac.digest("base64");
 
     console.log("🔒 Received Signature:", signature);
@@ -44,15 +38,13 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid signature");
     }
 
-    const event = JSON.parse(rawBody);
+    const event = JSON.parse(rawBody.toString("utf8")); // ✅ parse here safely
 
-    // ✅ Handle test notification from Square
     if (event.type === "TEST_NOTIFICATION") {
       console.log("✅ Square TEST_NOTIFICATION received");
       return res.status(200).send("Test successful");
     }
 
-    // ✅ Handle real payment event
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
