@@ -1,16 +1,26 @@
 import crypto from "crypto";
-import { buffer } from "micro";
 import admin from "firebase-admin";
 
+// ✅ Firebase Admin Init
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
+// ✅ Disable body parser
 export const config = {
   api: {
     bodyParser: false,
   },
+};
+
+// ✅ Read raw buffer from stream
+const getRawBody = async (readable) => {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 };
 
 export default async function handler(req, res) {
@@ -19,15 +29,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody = await buffer(req);
+    const rawBody = await getRawBody(req);
     const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    console.log("📦 Incoming Headers:", req.headers);
-    console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
-    console.log("🔒 Received Signature:", signature);
-
-    // Generate both possible signatures
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
@@ -36,6 +41,9 @@ export default async function handler(req, res) {
     hmacNewline.update(Buffer.concat([rawBody, Buffer.from("\n")]));
     const altExpectedSignature = hmacNewline.digest("base64");
 
+    console.log("📦 Incoming Headers:", req.headers);
+    console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
+    console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
     console.log("🔐 Alt Signature (with newline):", altExpectedSignature);
 
