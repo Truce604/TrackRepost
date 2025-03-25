@@ -27,14 +27,14 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await getRawBody(req);
-    const signature = req.headers["x-square-hmacsha256-signature"];
+    const signature = req.headers["x-square-signature"]; // ✅ Using SHA1 signature
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    const hmac = crypto.createHmac("sha256", secret);
+    const hmac = crypto.createHmac("sha1", secret); // ✅ SHA1 for V1-style signatures
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    const hmacNewline = crypto.createHmac("sha256", secret);
+    const hmacNewline = crypto.createHmac("sha1", secret);
     hmacNewline.update(Buffer.concat([rawBody, Buffer.from("\n")]));
     const altExpectedSignature = hmacNewline.digest("base64");
 
