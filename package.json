@@ -12,6 +12,7 @@
     "firebase-admin": "^11.10.1",
     "firebase-functions": "^6.3.2",
     "micro": "^9.3.6",
+    "raw-body": "^3.0.0",
     "square": "^39.0.0"
   },
   "license": "MIT"
