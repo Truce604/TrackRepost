@@ -1,53 +1,49 @@
-import { createHmac } from "crypto";
-import getRawBody from "raw-body";
+import crypto from "crypto";
+import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// Initialize Firebase
+export const config = {
+  api: {
+    bodyParser: false, // Disable default body parsing
+  },
+};
+
+// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
-
-export const config = {
-  api: {
-    bodyParser: false, // Required to get raw body
-  },
-};
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-  const signature = req.headers["x-square-hmacsha256-signature"];
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  console.log("🧪 Loaded Signature Key:", signatureKey);
+  console.log("🧪 Signature Key Length:", signatureKey?.length);
 
   try {
-    const rawBodyBuffer = await getRawBody(req);
-    const rawBody = rawBodyBuffer.toString("utf8");
+    const rawBodyBuffer = await buffer(req);
+    const rawBody = rawBodyBuffer.toString("utf-8");
+    const receivedSignature = req.headers["x-square-hmacsha256-signature"];
 
-    const hmac = createHmac("sha256", secret);
+    const hmac = crypto.createHmac("sha256", signatureKey);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    console.log("🧪 Loaded Signature Key:", secret);
-    console.log("🔒 Received Signature:", signature);
+    console.log("🔒 Received Signature:", receivedSignature);
     console.log("🔐 Expected Signature:", expectedSignature);
     console.log("🧾 Raw Body (string):", rawBody);
 
-    if (signature !== expectedSignature) {
+    if (receivedSignature !== expectedSignature) {
       console.warn("⚠️ Invalid signature");
       return res.status(403).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody);
 
-    if (event.event_type === "TEST_NOTIFICATION") {
-      console.log("✅ Test webhook received!");
-      return res.status(200).send("Test webhook acknowledged.");
-    }
-
-    if (event.type === "payment.created") {
+    if (event.event_type === "payment.created") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
@@ -65,17 +61,18 @@ export default async function handler(req, res) {
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
       } else {
-        console.warn("⚠️ Missing user ID or credits in note");
+        console.warn("⚠️ Missing or invalid note format");
         return res.status(400).send("Missing note data");
       }
     }
 
     return res.status(200).send("Event ignored");
   } catch (err) {
-    console.error("❌ Webhook error:", err);
+    console.error("❌ Webhook Error:", err);
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
