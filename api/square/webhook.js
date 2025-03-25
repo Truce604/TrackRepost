@@ -27,21 +27,26 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await getRawBody(req);
-    const signature = req.headers["x-square-signature"]; // ✅ for v1 webhooks
+    const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    const hmac = crypto.createHmac("sha1", secret); // ✅ v1 uses SHA-1
+    const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
+    const hmacNewline = crypto.createHmac("sha256", secret);
+    hmacNewline.update(Buffer.concat([rawBody, Buffer.from("\n")]));
+    const altExpectedSignature = hmacNewline.digest("base64");
+
     console.log("📦 Incoming Headers:", req.headers);
-    console.log("🧾 Raw Body:", rawBody.toString("utf8"));
+    console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
     console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
+    console.log("🔐 Alt Signature (with newline):", altExpectedSignature);
 
-    if (signature !== expectedSignature) {
+    if (signature !== expectedSignature && signature !== altExpectedSignature) {
       console.warn("⚠️ Invalid signature");
-      return res.status(400).send("Invalid signature");
+      return res.status(403).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody.toString("utf8"));
@@ -83,6 +88,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
