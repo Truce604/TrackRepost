@@ -1,20 +1,17 @@
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// ✅ Firebase Admin Init
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// ✅ Disable body parser
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// ✅ Read raw buffer from stream
 const getRawBody = async (readable) => {
   const chunks = [];
   for await (const chunk of readable) {
@@ -30,24 +27,19 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await getRawBody(req);
-    const signature = req.headers["x-square-hmacsha256-signature"];
+    const signature = req.headers["x-square-signature"]; // ✅ for v1 webhooks
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    const hmac = crypto.createHmac("sha256", secret);
+    const hmac = crypto.createHmac("sha1", secret); // ✅ v1 uses SHA-1
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    const hmacNewline = crypto.createHmac("sha256", secret);
-    hmacNewline.update(Buffer.concat([rawBody, Buffer.from("\n")]));
-    const altExpectedSignature = hmacNewline.digest("base64");
-
     console.log("📦 Incoming Headers:", req.headers);
-    console.log("🧾 Raw Body (string):", rawBody.toString("utf8"));
+    console.log("🧾 Raw Body:", rawBody.toString("utf8"));
     console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
-    console.log("🔐 Alt Signature (with newline):", altExpectedSignature);
 
-    if (signature !== expectedSignature && signature !== altExpectedSignature) {
+    if (signature !== expectedSignature) {
       console.warn("⚠️ Invalid signature");
       return res.status(400).send("Invalid signature");
     }
@@ -91,6 +83,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
