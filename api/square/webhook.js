@@ -1,46 +1,44 @@
-import { Client, Environment } from "square";
-import { onRequest } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 import crypto from "crypto";
+import { buffer } from "micro";
+import admin from "firebase-admin";
 
+// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
-
 const db = admin.firestore();
 
-const squareClient = new Client({
-  environment: Environment.Production,
-  accessToken: process.env.SQUARE_ACCESS_TOKEN
-});
+export const config = {
+  api: {
+    bodyParser: false, // Required for raw body HMAC validation
+  },
+};
 
-const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-export const squareWebhook = onRequest(async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
-    const rawBody = JSON.stringify(req.body);
-    const receivedSignature = req.headers["x-square-signature"];
+    const rawBody = await buffer(req);
+    const signature = req.headers["x-square-signature"];
+    const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // ✅ Signature Verification
-    const hmac = crypto.createHmac("sha1", signatureKey);
+    const hmac = crypto.createHmac("sha1", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    if (receivedSignature !== expectedSignature) {
-      console.warn("⚠️ Signature mismatch.");
-      return res.status(403).send("Invalid signature");
+    if (signature !== expectedSignature) {
+      console.warn("⚠️ Invalid signature");
+      return res.status(400).send("Invalid signature");
     }
 
-    const event = req.body;
+    const event = JSON.parse(rawBody.toString());
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
-
       const note = payment.note || "";
+
       const userIdMatch = note.match(/userId=([\w-]+)/);
       const creditsMatch = note.match(/(\d+)\sCredits/);
 
@@ -49,22 +47,22 @@ export const squareWebhook = onRequest(async (req, res) => {
         const credits = parseInt(creditsMatch[1]);
 
         await db.collection("users").doc(userId).set({
-          credits: admin.firestore.FieldValue.increment(credits)
+          credits: admin.firestore.FieldValue.increment(credits),
         }, { merge: true });
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
       } else {
-        console.warn("⚠️ Could not extract user ID or credits from note");
+        console.warn("⚠️ Missing or invalid note format");
         return res.status(400).send("Missing note data");
       }
     }
 
     return res.status(200).send("Event ignored");
-  } catch (err) {
-    console.error("❌ Webhook Error:", err);
+  } catch (error) {
+    console.error("❌ Webhook error:", error);
     return res.status(500).send("Internal Server Error");
   }
-});
+}
 
 
