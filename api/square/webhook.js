@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin
+// Firebase init
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -10,7 +10,7 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false, // Required for raw body HMAC validation
+    bodyParser: false,
   },
 };
 
@@ -21,14 +21,14 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await buffer(req);
-    const signature = req.headers["x-square-signature"];
+    const signature =
+      req.headers["x-square-hmac-sha256-signature"] || req.headers["x-square-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    const hmac = crypto.createHmac("sha1", secret);
+    const hmac = crypto.createHmac("sha256", secret); // ✅ Switch from sha1 to sha256
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
-    // 🔍 Log both signatures for debugging
     console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
 
@@ -38,6 +38,12 @@ export default async function handler(req, res) {
     }
 
     const event = JSON.parse(rawBody.toString());
+
+    // ✅ Handle TEST_NOTIFICATION
+    if (event.type === "TEST_NOTIFICATION") {
+      console.log("✅ Square TEST_NOTIFICATION received");
+      return res.status(200).send("Test successful");
+    }
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
@@ -71,5 +77,6 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
