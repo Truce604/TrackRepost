@@ -2,13 +2,13 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// ✅ Initialize Firebase Admin
+// ✅ Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// ✅ Required by Vercel to allow raw body reading
+// ✅ Required for raw body parsing
 export const config = {
   api: {
     bodyParser: false,
@@ -20,16 +20,18 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  // 🔍 Log headers to debug
+  // 🔍 Log incoming headers
   console.log("📦 Incoming Headers:", req.headers);
 
   try {
-    const rawBody = await buffer(req);
+    // ✅ Convert raw buffer to UTF-8 string (exact match for Square signature)
+    const rawBodyBuffer = await buffer(req);
+    const rawBody = rawBodyBuffer.toString("utf8");
 
-    // ✅ Use the exact signature header from Square (confirmed via logs)
     const signature = req.headers["x-square-hmacsha256-signature"];
     const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+    // ✅ Create SHA256 HMAC signature
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
@@ -42,15 +44,15 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid signature");
     }
 
-    const event = JSON.parse(rawBody.toString());
+    const event = JSON.parse(rawBody);
 
-    // ✅ Handle test notifications
+    // ✅ Handle test notification from Square
     if (event.type === "TEST_NOTIFICATION") {
       console.log("✅ Square TEST_NOTIFICATION received");
       return res.status(200).send("Test successful");
     }
 
-    // ✅ Handle successful payments
+    // ✅ Handle real payment event
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
@@ -77,13 +79,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ For other event types
     return res.status(200).send("Event ignored");
   } catch (error) {
     console.error("❌ Webhook error:", error);
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
