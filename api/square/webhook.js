@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
+// Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -14,40 +15,35 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+  const signature = req.headers["x-square-hmacsha256-signature"];
+  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-  const notificationUrl = "https://www.trackrepost.com/api/square/webhook";
+  console.log("🧪 Loaded Signature Key:", secret);
+  console.log("🧪 Signature Key Length:", secret.length);
+
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
   try {
-    const rawBodyBuffer = await buffer(req);
-    const rawBody = rawBodyBuffer.toString("utf8");
-    const signatureHeader = req.headers["x-square-hmacsha256-signature"];
-
-    console.log("🧪 Loaded Signature Key:", signatureKey);
-    console.log("🔒 Received Signature:", signatureHeader);
+    const rawBody = (await buffer(req)).toString();
     console.log("🧾 Raw Body (string):", rawBody);
 
-    const hmac = crypto.createHmac("sha256", signatureKey);
-    hmac.update(notificationUrl + rawBody);
+    const hmac = crypto.createHmac("sha256", secret);
+    hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
+    console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
 
-    if (
-      !signatureHeader ||
-      !crypto.timingSafeEqual(
-        Buffer.from(expectedSignature),
-        Buffer.from(signatureHeader)
-      )
-    ) {
+    if (signature !== expectedSignature) {
       console.warn("⚠️ Invalid signature");
       return res.status(403).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody);
 
-    if (event.event_type === "payment.created") {
+    if (event.type === "payment.updated") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
@@ -67,18 +63,19 @@ export default async function handler(req, res) {
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
+      } else {
+        console.warn("⚠️ Could not extract user ID or credits from note");
+        return res.status(400).send("Missing note data");
       }
-
-      console.warn("⚠️ Invalid note format");
-      return res.status(400).send("Invalid note format");
     }
 
-    return res.status(200).send("Ignored event type");
+    return res.status(200).send("Event ignored");
   } catch (err) {
-    console.error("❌ Webhook error:", err);
+    console.error("❌ Webhook Error:", err);
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
