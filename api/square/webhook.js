@@ -2,7 +2,6 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -43,7 +42,7 @@ export default async function handler(req, res) {
 
     const event = JSON.parse(rawBody);
 
-    if (event.type === "payment.updated") {
+    if (event.event_type === "payment.updated") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
