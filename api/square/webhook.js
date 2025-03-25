@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import getRawBody from "raw-body";
+import { buffer } from "micro";
 import admin from "firebase-admin";
 
 if (!admin.apps.length) {
@@ -9,31 +9,28 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // We must use raw body for HMAC check
   },
 };
 
 export default async function handler(req, res) {
-  const signature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-  console.log("🧪 Loaded Signature Key:", secret);
-  console.log("🧪 Signature Key Length:", secret.length);
-
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
+  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const signature = req.headers["x-square-hmacsha256-signature"];
+
   try {
-    const rawBodyBuffer = await getRawBody(req);
-    const rawBody = rawBodyBuffer.toString();
-    console.log("🧾 Raw Body (string):", rawBody);
+    const rawBody = await buffer(req); // DO NOT .toString() here
+
+    console.log("🧪 Loaded Signature Key:", secret);
+    console.log("🔒 Received Signature:", signature);
 
     const hmac = crypto.createHmac("sha256", secret);
-    hmac.update(rawBody);
+    hmac.update(rawBody); // Use raw Buffer directly
     const expectedSignature = hmac.digest("base64");
 
-    console.log("🔒 Received Signature:", signature);
     console.log("🔐 Expected Signature:", expectedSignature);
 
     if (signature !== expectedSignature) {
@@ -41,9 +38,9 @@ export default async function handler(req, res) {
       return res.status(403).send("Invalid signature");
     }
 
-    const event = JSON.parse(rawBody);
+    const event = JSON.parse(rawBody.toString());
 
-    if (event.event_type === "payment.updated") {
+    if (event.type === "payment.updated") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
@@ -75,6 +72,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
