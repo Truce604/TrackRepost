@@ -2,7 +2,6 @@ import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -10,7 +9,7 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false, // ⛔ Disable body parsing for raw HMAC
+    bodyParser: false,
   },
 };
 
@@ -26,7 +25,7 @@ export default async function handler(req, res) {
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
   console.log("🧪 Loaded Signature Key:", secret);
-  console.log("🧪 Signature Key Length:", secret.length);
+  console.log("🧪 Signature Key Length:", secret?.length);
   console.log("📦 Incoming Headers:", req.headers);
   console.log("🧾 Raw Body (string):", rawBodyString);
 
@@ -42,13 +41,12 @@ export default async function handler(req, res) {
     return res.status(403).send("Invalid signature");
   }
 
-  // ✅ Signature verified
   try {
     const event = JSON.parse(rawBodyString);
 
     if (event.event_type === "TEST_NOTIFICATION") {
       console.log("✅ Test Notification Received");
-      return res.status(200).send("Test Received");
+      return res.status(200).send("Test received");
     }
 
     if (event.type === "payment.created") {
@@ -69,17 +67,18 @@ export default async function handler(req, res) {
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
       } else {
-        console.warn("⚠️ Could not extract userId or credits");
-        return res.status(400).send("Invalid note format");
+        console.warn("⚠️ Could not extract userId or credits from note");
+        return res.status(400).send("Missing note data");
       }
     }
 
-    res.status(200).send("Event ignored");
-  } catch (error) {
-    console.error("❌ Webhook handler error:", error);
-    res.status(500).send("Internal Server Error");
+    return res.status(200).send("Event ignored");
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
