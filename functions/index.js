@@ -1,48 +1,46 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const getRawBody = require("raw-body");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// ✅ Assign 30 credits to new users on signup
+// ✅ Assign 30 credits to new users
 exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const userId = user.uid;
   const displayName = user.displayName || "New User";
 
-  try {
-    await db.collection("users").doc(userId).set({
-      credits: 30,
-      displayName,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    console.log(`✅ Assigned 30 credits to ${userId}`);
-  } catch (error) {
-    console.error(`❌ Error assigning credits to ${userId}:`, error);
-  }
+  await db.collection("users").doc(userId).set({
+    credits: 30,
+    displayName,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  console.log(`✅ Assigned 30 credits to ${userId}`);
 });
 
-// ✅ Handle Square Webhook for credit purchases
+// ✅ Handle Square webhook
 exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
+    const rawBody = await getRawBody(req);
     const signature = req.headers["x-square-signature"];
-    const webhookKey = functions.config().square.webhook_signature_key;
-    const rawBody = JSON.stringify(req.body);
+    const secret = functions.config().square.webhook_signature_key;
 
-    const hmac = crypto.createHmac("sha1", webhookKey);
+    const hmac = crypto.createHmac("sha1", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.warn("⚠️ Invalid webhook signature");
-      return res.status(400).send("Invalid signature");
+      console.warn("⚠️ Invalid signature");
+      return res.status(403).send("Invalid signature");
     }
 
-    const event = req.body;
+    const event = JSON.parse(rawBody.toString());
 
     if (event.type === "payment.created") {
       const payment = event.data.object.payment;
@@ -60,20 +58,17 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
         }, { merge: true });
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
-        return res.status(200).send("Success");
+        return res.status(200).send("Credits updated");
       } else {
-        console.warn("⚠️ Could not extract userId or credits from note");
         return res.status(400).send("Invalid note format");
       }
     }
 
-    return res.status(200).send("Event ignored");
-  } catch (error) {
-    console.error("❌ Webhook processing error:", error);
-    return res.status(500).send("Internal Server Error");
+    return res.status(200).send("Ignored");
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    return res.status(500).send("Server error");
   }
 });
-
-
 
 
