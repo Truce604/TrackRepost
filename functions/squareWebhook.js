@@ -1,36 +1,34 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const crypto = require("crypto");
-const getRawBody = require("raw-body");
+import functions from "firebase-functions";
+import admin from "firebase-admin";
+import crypto from "crypto";
+import getRawBody from "raw-body";
 
-admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 
-exports.squareWebhook = functions.https.onRequest(async (req, res) => {
+export const squareWebhook = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
-    const signature = req.headers["x-square-signature"];
-    const webhookKey = functions.config().square.webhook_signature_key;
-
-    // 🔒 Read raw body for signature validation
+    const signature = req.headers["x-square-hmacsha256-signature"];
     const rawBody = await getRawBody(req);
     const expectedSignature = crypto
-      .createHmac("sha1", webhookKey)
+      .createHmac("sha256", process.env.SQUARE_WEBHOOK_SIGNATURE_KEY)
       .update(rawBody)
       .digest("base64");
 
     if (signature !== expectedSignature) {
-      console.warn("⚠️ Signature mismatch. Webhook not verified.");
-      return res.status(400).send("Invalid signature");
+      console.warn("⚠️ Signature mismatch.");
+      return res.status(403).send("Invalid signature");
     }
 
-    // Parse the actual JSON body after signature check
     const event = JSON.parse(rawBody.toString("utf8"));
 
-    if (event.type === "payment.created") {
+    if (event.type === "payment.updated") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
@@ -49,16 +47,15 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
         );
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
-        return res.status(200).send("Credits added successfully");
-      } else {
-        console.warn("⚠️ Could not extract user ID or credits from note");
-        return res.status(400).send("Missing note data");
+        return res.status(200).send("Credits updated");
       }
+
+      return res.status(400).send("Missing userId or credits");
     }
 
-    return res.status(200).send("Event ignored");
+    return res.status(200).send("Ignored non-payment.updated event");
   } catch (err) {
-    console.error("❌ Webhook Error:", err);
+    console.error("❌ Webhook error:", err);
     return res.status(500).send("Internal Server Error");
   }
 });
