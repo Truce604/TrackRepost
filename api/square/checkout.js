@@ -45,21 +45,13 @@ export default async function handler(req, res) {
     );
 
     if (!result.checkout?.checkoutPageUrl) {
-      console.error("❌ No checkout URL returned:", result);
-      return res.status(500).json({ error: "Square API did not return a valid checkout link." });
+      return res.status(500).json({ error: "No checkout URL returned." });
     }
 
     res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
   } catch (error) {
-    console.error("❌ Square Checkout Error:", {
-      message: error.message,
-      stack: error.stack,
-      full: error,
-    });
-    res.status(500).json({
-      error: "Internal Server Error",
-      details: error.message,
-    });
+    console.error("❌ Checkout Error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 }
 
