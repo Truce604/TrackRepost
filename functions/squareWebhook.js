@@ -1,36 +1,44 @@
 
+
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const getRawBody = require("raw-body");
 
-const db = admin.firestore(); // no initializeApp here
+admin.initializeApp();
+const db = admin.firestore();
 
-exports.squareWebhook = functions.https.onRequest(async (req, res) => {
-  try {
+exports.squareWebhook = functions
+  .runWith({ secrets: ["SQUARE_WEBHOOK_SIGNATURE_KEY"] })
+  .https.onRequest(async (req, res) => {
     const signature = req.headers["x-square-signature"];
-    const rawBody = await getRawBody(req);
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
+    if (!webhookSecret) {
+      console.error("Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
+      return res.status(500).send("Webhook secret not set");
+    }
+
+    const rawBody = await getRawBody(req);
 
     const hmac = crypto.createHmac("sha1", webhookSecret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.error("Invalid Square signature");
-      return res.status(403).send("Forbidden");
+      console.error("Invalid signature");
+      return res.status(403).send("Unauthorized");
     }
 
-    const event = JSON.parse(rawBody.toString());
+    const event = JSON.parse(rawBody);
 
     if (event.type === "payment.created") {
-      const payment = event.data.object.payment;
-      const note = payment.note || "";
-
-      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(.+)/);
+      const note = event.data.object.payment.note;
+      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
 
       if (match) {
-        const credits = parseInt(match[1]);
+        const credits = parseInt(match[1], 10);
         const userId = match[2];
 
         const userRef = db.collection("users").doc(userId);
@@ -38,20 +46,15 @@ exports.squareWebhook = functions.https.onRequest(async (req, res) => {
           credits: admin.firestore.FieldValue.increment(credits),
         });
 
-        console.log(`✅ Updated ${credits} credits for userId=${userId}`);
+        console.log(`✅ Added ${credits} credits to user ${userId}`);
+        return res.status(200).send("Success");
       } else {
-        console.warn("⚠️ Payment note format did not match expected pattern:", note);
+        console.warn("No matching note format found");
       }
     }
 
-    res.status(200).send("ok");
-  } catch (err) {
-    console.error("❌ Webhook error:", err);
-    res.status(500).send("Server error");
-  }
-});
-
-
+    res.status(200).send("Ignored");
+  });
 
 
 
