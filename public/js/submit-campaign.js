@@ -21,20 +21,20 @@ const genreInput = document.getElementById("genre");
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
 
-// Auto-detect genre (mocked logic for now, replace with real API once available)
+const genreList = [
+  "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
+  "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
+  "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
+  "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
+  "Trance", "Trap", "Triphop", "World"
+];
+
+// Auto-detect genre (mocked logic for now)
 const autoDetectGenre = async (url) => {
   try {
     const trackTitle = url.toLowerCase();
-    const genres = [
-      "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
-      "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
-      "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
-      "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
-      "Trance", "Trap", "Triphop", "World"
-    ];
-
-    const match = genres.find((g) => trackTitle.includes(g.toLowerCase()));
-    return match || "Pop"; // fallback default
+    const match = genreList.find((g) => trackTitle.includes(g.toLowerCase()));
+    return match || "Pop"; // fallback
   } catch (error) {
     console.error("Genre detection failed", error);
     return "Pop";
@@ -49,9 +49,15 @@ form.trackUrl.addEventListener("change", async () => {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const trackUrl = form.trackUrl.value;
-  const genre = genreInput.value;
+  const trackUrl = form.trackUrl.value.trim();
+  const genre = genreInput.value.trim();
   const credits = parseInt(form.credits.value);
+
+  if (!trackUrl || !genre || isNaN(credits) || credits <= 0) {
+    statusBox.classList.remove("hidden");
+    statusBox.textContent = "❌ Please complete all fields correctly.";
+    return;
+  }
 
   statusBox.classList.remove("hidden");
   statusBox.textContent = "Submitting...";
@@ -66,10 +72,10 @@ form.addEventListener("submit", async (e) => {
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
       await setDoc(campaignRef, {
         userId: user.uid,
-        trackUrl,
+        soundcloudUrl: trackUrl,
         genre,
         credits,
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
       });
 
       statusBox.textContent = "✅ Campaign submitted successfully!";
