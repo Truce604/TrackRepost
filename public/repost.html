@@ -1,67 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repost Campaign</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="firebaseConfig.js"></script>
-    <script src="repost.js" defer></script>
-</head>
-<body>
-    <header>
-        <h1>🎵 Repost Campaign</h1>
-        <p>Boost your music reach by engaging with this track.</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repost & Earn Credits | TrackRepost</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="bg-black text-white font-sans">
+    <header class="p-6 border-b border-gray-800 flex justify-between items-center">
+      <h1 class="text-xl font-bold">TrackRepost</h1>
+      <a href="/dashboard.html" class="text-sm underline">Dashboard</a>
     </header>
 
-    <div class="container">
-        <h2>🔊 Track Details</h2>
-        <div id="trackContainer">
-            <p>Loading track...</p>
-        </div>
+    <main class="max-w-3xl mx-auto px-4 py-10">
+      <h2 class="text-3xl font-bold mb-4">Repost Tracks & Earn Credits</h2>
+      <p class="text-gray-400 mb-6">
+        Choose tracks to repost, like, or comment on and earn credits. Your SoundCloud account must be connected.
+      </p>
 
-        <button id="repostBtn">Repost & Earn</button>
-    </div>
+      <div id="track-list" class="space-y-6">
+        <!-- Tracks from campaigns will be injected here -->
+      </div>
+    </main>
 
-    <script>
-        // ✅ Extract URL Parameters
-        function getUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                id: params.get("id"),
-                track: params.get("track"),
-                owner: params.get("owner"),
-                credits: params.get("credits")
-            };
-        }
-
-        // ✅ Load Track Info
-        document.addEventListener("DOMContentLoaded", function () {
-            const { track, credits } = getUrlParams();
-            const trackContainer = document.getElementById("trackContainer");
-
-            if (track) {
-                trackContainer.innerHTML = `
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(track)}">
-                    </iframe>
-                    <p><strong>Credits Earned:</strong> ${credits}</p>
-                `;
-            } else {
-                trackContainer.innerHTML = "<p>Error: No track found.</p>";
-            }
-        });
-
-        // ✅ Handle Repost Button Click
-        document.getElementById("repostBtn").addEventListener("click", function () {
-            alert("🚨 You must be signed into SoundCloud to repost this track.");
-            window.location.href = "https://soundcloud.com/connect"; // SoundCloud login page
-        });
-    </script>
-</body>
+    <script type="module" src="/js/repost.js"></script>
+  </body>
 </html>
 
 
