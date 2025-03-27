@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -14,15 +15,19 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  const signature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
+  const signature = req.headers["x-square-hmacsha256-signature"];
+  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
   try {
     const rawBody = (await buffer(req)).toString("utf8");
+
+    // Debug log for signature mismatch troubleshooting
+    console.log("🔍 Incoming Headers:", req.headers);
+    console.log("🔍 Raw Body:", rawBody);
 
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
         const credits = parseInt(creditsMatch[1]);
 
         await db.collection("users").doc(userId).set({
-          credits: admin.firestore.FieldValue.increment(credits),
+          credits: FieldValue.increment(credits),
         }, { merge: true });
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
@@ -64,6 +69,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
