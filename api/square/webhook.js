@@ -14,33 +14,38 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  const signature = req.headers["x-square-hmacsha256-signature"];
+  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
-  const signature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const rawBody = (await buffer(req)).toString("utf8");
 
+  let event;
   try {
-    const rawBodyBuffer = await buffer(req);
-    const rawBody = rawBodyBuffer.toString("utf8");
+    event = JSON.parse(rawBody);
+  } catch (err) {
+    console.error("❌ Failed to parse body:", err);
+    return res.status(400).send("Invalid JSON");
+  }
 
+  // ✅ Allow test notifications without signature check
+  if (event.event_type === "TEST_NOTIFICATION") {
+    console.log("✅ Received test notification from Square");
+    return res.status(200).send("Test received");
+  }
+
+  // 🔐 Real signature check for live events
+  try {
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
       console.warn("⚠️ Signature mismatch");
-      console.warn("Expected:", expectedSignature);
-      console.warn("Received:", signature);
       return res.status(403).send("Invalid signature");
-    }
-
-    const event = JSON.parse(rawBody);
-
-    if (event.event_type === "TEST_NOTIFICATION") {
-      console.log("✅ Received test notification from Square");
-      return res.status(200).send("Test notification received");
     }
 
     if (event.type === "payment.updated") {
@@ -72,6 +77,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
