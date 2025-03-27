@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Running Campaigns | TrackRepost</title>
+  <link rel="stylesheet" href="/styles/main.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .campaign-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .campaign-card h3 {
+      margin: 0 0 0.5rem;
+    }
+
+    .campaign-card p {
+      margin: 0.25rem 0;
+    }
+
+    .timestamp {
+      font-size: 0.85rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Your Running Campaigns</h1>
+  <div id="campaigns">Loading...</div>
+
+  <script type="module" src="/js/load-campaigns.js"></script>
+</body>
+</html>
