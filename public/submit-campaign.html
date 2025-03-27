@@ -1,33 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Submit Campaign</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-config.js"></script> <!-- Your firebase config file -->
-  <script src="/js/submit-campaign.js" defer></script>
+  <script defer src="/submit-campaign.js"></script>
 </head>
 <body>
-  <h1>Submit a Campaign</h1>
+  <h1>Submit Your Track for Repost</h1>
   <form id="campaignForm">
-    <label>SoundCloud Track URL:</label><br>
-    <input type="url" id="trackUrl" required><br><br>
+    <label>
+      Track Title:<br>
+      <input type="text" id="trackTitle" required />
+    </label>
+    <br><br>
 
-    <label>Genre:</label><br>
-    <select id="genre" required>
-      <option value="hiphop">Hip-Hop</option>
-      <option value="electronic">Electronic</option>
-      <option value="pop">Pop</option>
-      <option value="rnb">R&B</option>
-      <option value="other">Other</option>
-    </select><br><br>
+    <label>
+      SoundCloud URL:<br>
+      <input type="url" id="trackUrl" required />
+    </label>
+    <br><br>
 
-    <label>Credits to assign:</label><br>
-    <input type="number" id="credits" min="1" required><br><br>
+    <label>
+      Genre:<br>
+      <select id="genre" required>
+        <option value="hiphop">Hip Hop</option>
+        <option value="edm">EDM</option>
+        <option value="pop">Pop</option>
+        <option value="rock">Rock</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <br><br>
 
-    <button type="submit">Submit</button>
+    <label>
+      Total Credits to Spend:<br>
+      <input type="number" id="totalCredits" min="1" required />
+    </label>
+    <br><br>
+
+    <label>
+      Credits Per Repost:<br>
+      <input type="number" id="creditsPerRepost" min="1" required />
+    </label>
+    <br><br>
+
+    <button type="submit">Submit Campaign</button>
   </form>
+
   <p id="status"></p>
 </body>
 </html>
