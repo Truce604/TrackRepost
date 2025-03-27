@@ -20,25 +20,20 @@ const db = getFirestore(app);
 const genreInput = document.getElementById("genre");
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
+const creditDisplay = document.getElementById("current-credits");
 
-const genreList = [
-  "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
-  "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
-  "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
-  "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
-  "Trance", "Trap", "Triphop", "World"
-];
-
-// Auto-detect genre (mocked logic for now)
+// Auto-detect genre based on mock SoundCloud title parsing
 const autoDetectGenre = async (url) => {
-  try {
-    const trackTitle = url.toLowerCase();
-    const match = genreList.find((g) => trackTitle.includes(g.toLowerCase()));
-    return match || "Pop"; // fallback
-  } catch (error) {
-    console.error("Genre detection failed", error);
-    return "Pop";
-  }
+  const genres = [
+    "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
+    "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
+    "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
+    "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
+    "Trance", "Trap", "Triphop", "World"
+  ];
+  const title = url.toLowerCase();
+  const match = genres.find(g => title.includes(g.toLowerCase()));
+  return match || "Pop";
 };
 
 form.trackUrl.addEventListener("change", async () => {
@@ -46,44 +41,43 @@ form.trackUrl.addEventListener("change", async () => {
   genreInput.value = genre;
 });
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const trackUrl = form.trackUrl.value.trim();
-  const genre = genreInput.value.trim();
-  const credits = parseInt(form.credits.value);
-
-  if (!trackUrl || !genre || isNaN(credits) || credits <= 0) {
-    statusBox.classList.remove("hidden");
-    statusBox.textContent = "❌ Please complete all fields correctly.";
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    form.style.display = "none";
+    statusBox.textContent = "Please log in to submit a campaign.";
     return;
   }
 
-  statusBox.classList.remove("hidden");
-  statusBox.textContent = "Submitting...";
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
+  creditDisplay.textContent = `You currently have ${credits} credits.`;
 
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      statusBox.textContent = "You must be logged in to submit a campaign.";
-      return;
-    }
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const trackUrl = form.trackUrl.value;
+    const genre = genreInput.value;
+
+    statusBox.classList.remove("hidden");
+    statusBox.textContent = "Submitting...";
 
     try {
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
       await setDoc(campaignRef, {
         userId: user.uid,
-        soundcloudUrl: trackUrl,
+        trackUrl,
         genre,
-        credits,
-        createdAt: serverTimestamp(),
+        credits: 0,
+        createdAt: new Date().toISOString(),
       });
 
       statusBox.textContent = "✅ Campaign submitted successfully!";
       form.reset();
       genreInput.value = "";
-    } catch (error) {
-      console.error("Error submitting campaign:", error);
-      statusBox.textContent = "❌ Submission failed. Try again.";
+    } catch (err) {
+      console.error("Submission error:", err);
+      statusBox.textContent = "❌ Submission failed. Please try again.";
     }
   });
 });
