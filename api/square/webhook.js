@@ -10,7 +10,7 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // ✅ Needed for signature validation
   },
 };
 
@@ -22,19 +22,22 @@ export default async function handler(req, res) {
   const signature = req.headers["x-square-hmacsha256-signature"];
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+  if (!signature || !secret) {
+    console.warn("❌ Missing signature or secret key");
+    return res.status(403).send("Forbidden");
+  }
+
   try {
     const rawBody = (await buffer(req)).toString("utf8");
-
-    // Debug log for signature mismatch troubleshooting
-    console.log("🔍 Incoming Headers:", req.headers);
-    console.log("🔍 Raw Body:", rawBody);
 
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.warn("⚠️ Invalid signature");
+      console.warn("⚠️ Signature mismatch");
+      console.log("Expected:", expectedSignature);
+      console.log("Received:", signature);
       return res.status(403).send("Invalid signature");
     }
 
@@ -69,6 +72,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
