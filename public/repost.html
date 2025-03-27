@@ -1,31 +1,31 @@
+<!-- public/repost.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Repost & Earn Credits | TrackRepost</title>
+    <title>Repost and Earn</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="bg-black text-white font-sans">
-    <header class="p-6 border-b border-gray-800 flex justify-between items-center">
+    <header class="p-4 border-b border-gray-700 flex items-center justify-between">
       <h1 class="text-xl font-bold">TrackRepost</h1>
-      <a href="/dashboard.html" class="text-sm underline">Dashboard</a>
+      <nav>
+        <a href="/dashboard.html" class="mr-4 hover:underline">Dashboard</a>
+        <a href="/submit-campaign.html" class="hover:underline">Submit</a>
+      </nav>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-10">
-      <h2 class="text-3xl font-bold mb-4">Repost Tracks & Earn Credits</h2>
-      <p class="text-gray-400 mb-6">
-        Choose tracks to repost, like, or comment on and earn credits. Your SoundCloud account must be connected.
-      </p>
+    <main class="p-4 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-semibold mb-6">Repost and Earn Credits</h2>
 
-      <div id="track-list" class="space-y-6">
-        <!-- Tracks from campaigns will be injected here -->
-      </div>
+      <div id="repost-section" class="space-y-6"></div>
+
+      <div id="status" class="mt-4 text-center text-sm text-green-400 hidden"></div>
     </main>
 
     <script type="module" src="/js/repost.js"></script>
   </body>
 </html>
-
 
 
