@@ -1,121 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrackRepost - Boost Your Music Reach</title>
-    <link rel="stylesheet" href="styles.css">
-
-    <!-- ✅ Load Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- ✅ Load Firebase Config FIRST -->
-    <script src="firebaseConfig.js" defer></script>
-
-    <!-- ✅ Load Main JavaScript AFTER Firebase -->
-    <script src="index.js" defer></script>
-</head>
-
-<body>
-
-    <header>
-        <h1>🎵 TrackRepost - Boost Your Music Reach</h1>
-        <p>Promote Your Music, Get More Plays</p>
-        <nav>
-            <ul>
-                <li><a href="index.html">🏠 Home</a></li>
-                <li><a href="subscribe.html">💳 Buy Credits</a></li>
-                <li><a href="repost.html">🔄 Repost & Earn</a></li>
-                <li><a href="dashboard.html">📊 Dashboard</a></li>
-                <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
-            </ul>
-        </nav>
-    </header>
-
-    <!-- ✅ Authentication Section -->
-    <div class="container" id="authSection">
-        <h2>Login or Sign Up</h2>
-        <input type="email" id="email" placeholder="Enter Email">
-        <input type="password" id="password" placeholder="Enter Password">
-        <div class="button-group">
-            <button id="signupBtn">Sign Up</button>
-            <button id="loginBtn">Login</button>
-        </div>
-        <p id="authMessage"></p>
-    </div>
-
-    <!-- ✅ User Dashboard -->
-    <div class="container" id="userDashboard" style="display: none;">
-        <h2>Welcome, <span id="userEmail">Guest</span></h2>
-        <p><strong>Your Credits:</strong> <span id="userCredits">0</span></p>
-        <a href="subscribe.html">
-            <button>💳 Buy Credits</button>
-        </a>
-    </div>
-
-    <!-- ✅ Active Campaigns -->
-    <div class="container">
-        <h2>🔥 Active Campaigns</h2>
-        <div id="activeCampaigns">
-            <p>Loading campaigns...</p>
-        </div>
-    </div>
-
-    <footer>
-        <p>© 2025 TrackRepost. All Rights Reserved.</p>
-    </footer>
-
-    <!-- ✅ Ensure Buttons Work Properly -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="0; url=/submit-campaign.html" />
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ Page Loaded Successfully!");
-
-            // ✅ Ensure Firebase is Loaded
-            if (typeof firebase === "undefined") {
-                console.error("🚨 Firebase failed to load! Check index.html script imports.");
-                return;
-            }
-
-            // ✅ Attach Event Listeners for Buttons
-            const attachEvent = (id, func) => {
-                const btn = document.getElementById(id);
-                if (btn && typeof window[func] === "function") {
-                    btn.addEventListener("click", window[func]);
-                } else {
-                    console.error(`🚨 Function '${func}' is missing or '${id}' button not found!`);
-                }
-            };
-
-            attachEvent("signupBtn", "signupUser");
-            attachEvent("loginBtn", "loginUser");
-            attachEvent("logoutBtn", "logoutUser");
-
-            // ✅ Ensure Active Campaigns Load Once Firebase is Ready
-            if (typeof loadActiveCampaigns === "function") {
-                loadActiveCampaigns();
-            } else {
-                console.error("🚨 loadActiveCampaigns function is missing!");
-            }
-
-            // ✅ Firebase Auth Listener to Show/Hide Sections
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    document.getElementById("authSection").style.display = "none";
-                    document.getElementById("userDashboard").style.display = "block";
-                    document.getElementById("logoutBtn").style.display = "inline-block";
-                    document.getElementById("userEmail").textContent = user.email;
-                    loadUserCredits(user.uid);
-                } else {
-                    document.getElementById("authSection").style.display = "block";
-                    document.getElementById("userDashboard").style.display = "none";
-                    document.getElementById("logoutBtn").style.display = "none";
-                }
-            });
-        });
+      window.location.href = "/submit-campaign.html";
     </script>
-
-</body>
+    <title>Redirecting...</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 2rem;
+        text-align: center;
+        background-color: #111827;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Redirecting...</h1>
+    <p>If you're not redirected automatically, <a href="/submit-campaign.html">click here</a>.</p>
+  </body>
 </html>
 
