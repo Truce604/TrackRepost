@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { buffer } from "micro";
 import admin from "firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -10,7 +9,7 @@ const db = admin.firestore();
 
 export const config = {
   api: {
-    bodyParser: false, // ✅ Needed for signature validation
+    bodyParser: false,
   },
 };
 
@@ -22,13 +21,9 @@ export default async function handler(req, res) {
   const signature = req.headers["x-square-hmacsha256-signature"];
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  if (!signature || !secret) {
-    console.warn("❌ Missing signature or secret key");
-    return res.status(403).send("Forbidden");
-  }
-
   try {
-    const rawBody = (await buffer(req)).toString("utf8");
+    const rawBodyBuffer = await buffer(req);
+    const rawBody = rawBodyBuffer.toString("utf8");
 
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
@@ -36,12 +31,17 @@ export default async function handler(req, res) {
 
     if (signature !== expectedSignature) {
       console.warn("⚠️ Signature mismatch");
-      console.log("Expected:", expectedSignature);
-      console.log("Received:", signature);
+      console.warn("Expected:", expectedSignature);
+      console.warn("Received:", signature);
       return res.status(403).send("Invalid signature");
     }
 
     const event = JSON.parse(rawBody);
+
+    if (event.event_type === "TEST_NOTIFICATION") {
+      console.log("✅ Received test notification from Square");
+      return res.status(200).send("Test notification received");
+    }
 
     if (event.type === "payment.updated") {
       const payment = event.data.object.payment;
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
         const credits = parseInt(creditsMatch[1]);
 
         await db.collection("users").doc(userId).set({
-          credits: FieldValue.increment(credits),
+          credits: admin.firestore.FieldValue.increment(credits),
         }, { merge: true });
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
@@ -72,7 +72,6 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
-
 
 
 
