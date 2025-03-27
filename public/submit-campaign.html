@@ -2,63 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Submit Campaign | TrackRepost</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <header class="p-4 bg-white shadow-md">
-    <h1 class="text-2xl font-bold">Submit a Campaign</h1>
+<body>
+  <header>
+    <h1>🎧 Submit Your Track for Promotion</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="repost.html">Repost & Earn</a>
+      <a href="logout.html">Logout</a>
+    </nav>
   </header>
 
-  <main class="max-w-xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
-    <form id="campaign-form" class="space-y-6">
-      <div>
-        <label for="trackUrl" class="block font-medium">SoundCloud Track URL</label>
-        <input
-          type="url"
-          id="trackUrl"
-          name="trackUrl"
-          placeholder="https://soundcloud.com/your-track"
-          required
-          class="w-full px-4 py-2 border rounded"
-        />
-      </div>
+  <main>
+    <section class="form-section">
+      <form id="campaign-form">
+        <label for="trackUrl">SoundCloud Track URL:</label>
+        <input type="url" id="trackUrl" name="trackUrl" required placeholder="https://soundcloud.com/yourtrack" />
 
-      <div>
-        <label for="genre" class="block font-medium">Genre (auto-detected)</label>
-        <input
-          type="text"
-          id="genre"
-          name="genre"
-          readonly
-          placeholder="Auto-detected genre"
-          class="w-full px-4 py-2 bg-gray-100 border rounded"
-        />
-      </div>
+        <label for="genre">Auto-Detected Genre:</label>
+        <input type="text" id="genre" name="genre" readonly />
 
-      <div>
-        <label for="credits" class="block font-medium">Credits to Spend</label>
-        <input
-          type="number"
-          id="credits"
-          name="credits"
-          placeholder="100"
-          min="1"
-          required
-          class="w-full px-4 py-2 border rounded"
-        />
-      </div>
+        <p><strong>Your Available Credits:</strong> <span id="userCredits">Loading...</span></p>
 
-      <div id="status" class="hidden text-sm text-center text-gray-700"></div>
-
-      <button
-        type="submit"
-        class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
-      >
-        Submit Campaign
-      </button>
-    </form>
+        <button type="submit">🚀 Submit Campaign</button>
+        <p id="status" class="hidden"></p>
+      </form>
+    </section>
   </main>
 
   <script type="module" src="/js/submit-campaign.js"></script>
