@@ -1,66 +1,55 @@
-import functions from "firebase-functions";
-import admin from "firebase-admin";
-import crypto from "crypto";
-import getRawBody from "raw-body";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-const db = admin.firestore();
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const crypto = require("crypto");
+const getRawBody = require("raw-body");
 
-export const squareWebhook = functions.https.onRequest(async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
-  }
+const db = admin.firestore(); // no initializeApp here
 
+exports.squareWebhook = functions.https.onRequest(async (req, res) => {
   try {
-    const signature = req.headers["x-square-hmacsha256-signature"];
+    const signature = req.headers["x-square-signature"];
     const rawBody = await getRawBody(req);
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.SQUARE_WEBHOOK_SIGNATURE_KEY)
-      .update(rawBody)
-      .digest("base64");
+    const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
+    const hmac = crypto.createHmac("sha1", webhookSecret);
+    hmac.update(rawBody);
+    const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.warn("⚠️ Signature mismatch.");
-      return res.status(403).send("Invalid signature");
+      console.error("Invalid Square signature");
+      return res.status(403).send("Forbidden");
     }
 
-    const event = JSON.parse(rawBody.toString("utf8"));
+    const event = JSON.parse(rawBody.toString());
 
-    if (event.type === "payment.updated") {
+    if (event.type === "payment.created") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
-      const userIdMatch = note.match(/userId=([\w-]+)/);
-      const creditsMatch = note.match(/(\d+)\sCredits/);
+      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(.+)/);
 
-      if (userIdMatch && creditsMatch) {
-        const userId = userIdMatch[1];
-        const credits = parseInt(creditsMatch[1]);
+      if (match) {
+        const credits = parseInt(match[1]);
+        const userId = match[2];
 
-        await db.collection("users").doc(userId).set(
-          {
-            credits: admin.firestore.FieldValue.increment(credits),
-          },
-          { merge: true }
-        );
+        const userRef = db.collection("users").doc(userId);
+        await userRef.update({
+          credits: admin.firestore.FieldValue.increment(credits),
+        });
 
-        console.log(`✅ Added ${credits} credits to user ${userId}`);
-        return res.status(200).send("Credits updated");
+        console.log(`✅ Updated ${credits} credits for userId=${userId}`);
+      } else {
+        console.warn("⚠️ Payment note format did not match expected pattern:", note);
       }
-
-      return res.status(400).send("Missing userId or credits");
     }
 
-    return res.status(200).send("Ignored non-payment.updated event");
+    res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);
-    return res.status(500).send("Internal Server Error");
+    res.status(500).send("Server error");
   }
 });
-
-
 
 
 
