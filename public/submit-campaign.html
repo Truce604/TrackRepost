@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Submit Campaign</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script> <!-- Your firebase config file -->
+  <script src="/js/submit-campaign.js" defer></script>
+</head>
+<body>
+  <h1>Submit a Campaign</h1>
+  <form id="campaignForm">
+    <label>SoundCloud Track URL:</label><br>
+    <input type="url" id="trackUrl" required><br><br>
+
+    <label>Genre:</label><br>
+    <select id="genre" required>
+      <option value="hiphop">Hip-Hop</option>
+      <option value="electronic">Electronic</option>
+      <option value="pop">Pop</option>
+      <option value="rnb">R&B</option>
+      <option value="other">Other</option>
+    </select><br><br>
+
+    <label>Credits to assign:</label><br>
+    <input type="number" id="credits" min="1" required><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+  <p id="status"></p>
+</body>
+</html>
