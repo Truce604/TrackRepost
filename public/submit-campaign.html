@@ -1,127 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Submit Your Track | TrackRepost</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <style>
-      body {
-        background: #0d0d0d;
-        color: #f2f2f2;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 2rem;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit Campaign | TrackRepost</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <header class="p-4 bg-white shadow-md">
+    <h1 class="text-2xl font-bold">Submit a Campaign</h1>
+  </header>
 
-      h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-      }
+  <main class="max-w-xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+    <form id="campaign-form" class="space-y-6">
+      <div>
+        <label for="trackUrl" class="block font-medium">SoundCloud Track URL</label>
+        <input
+          type="url"
+          id="trackUrl"
+          name="trackUrl"
+          placeholder="https://soundcloud.com/your-track"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+      </div>
 
-      p.intro {
-        max-width: 600px;
-        text-align: center;
-        margin-bottom: 2rem;
-        color: #aaa;
-      }
+      <div>
+        <label for="genre" class="block font-medium">Genre (auto-detected)</label>
+        <input
+          type="text"
+          id="genre"
+          name="genre"
+          readonly
+          placeholder="Auto-detected genre"
+          class="w-full px-4 py-2 bg-gray-100 border rounded"
+        />
+      </div>
 
-      form {
-        background: #1a1a1a;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
-        width: 100%;
-        max-width: 500px;
-      }
+      <div>
+        <label for="credits" class="block font-medium">Credits to Spend</label>
+        <input
+          type="number"
+          id="credits"
+          name="credits"
+          placeholder="100"
+          min="1"
+          required
+          class="w-full px-4 py-2 border rounded"
+        />
+      </div>
 
-      label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: bold;
-      }
+      <div id="status" class="hidden text-sm text-center text-gray-700"></div>
 
-      input,
-      select {
-        width: 100%;
-        padding: 0.75rem;
-        border-radius: 8px;
-        border: none;
-        margin-bottom: 1.25rem;
-        background: #262626;
-        color: #fff;
-      }
-
-      button {
-        width: 100%;
-        padding: 0.75rem;
-        background: #ff6a00;
-        color: white;
-        font-weight: bold;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-      }
-
-      button:hover {
-        background: #ff8c1a;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Submit Your Track</h1>
-    <p class="intro">
-      Welcome to TrackRepost. To get started, drop your SoundCloud link below.
-      We’ll automatically match the genre and help you get reposts fast.
-    </p>
-
-    <form id="campaign-form">
-      <label for="soundcloud-url">SoundCloud URL</label>
-      <input type="url" id="soundcloud-url" name="soundcloudUrl" required />
-
-      <label for="credits">How many credits do you want to spend?</label>
-      <input type="number" id="credits" name="credits" min="1" required />
-
-      <label for="genre">Select Genre</label>
-      <select id="genre" name="genre" required>
-        <option value="Alternative Rock">Alternative Rock</option>
-        <option value="Ambient">Ambient</option>
-        <option value="Classical">Classical</option>
-        <option value="Country">Country</option>
-        <option value="Dance & EDM">Dance & EDM</option>
-        <option value="Dancehall">Dancehall</option>
-        <option value="Deep House">Deep House</option>
-        <option value="Disco">Disco</option>
-        <option value="Drum & Bass">Drum & Bass</option>
-        <option value="Dubstep">Dubstep</option>
-        <option value="Electronic">Electronic</option>
-        <option value="Folk & Singer-Songwriter">Folk & Singer-Songwriter</option>
-        <option value="Hip-hop & Rap">Hip-hop & Rap</option>
-        <option value="House">House</option>
-        <option value="Indie">Indie</option>
-        <option value="Jazz & Blues">Jazz & Blues</option>
-        <option value="Latin">Latin</option>
-        <option value="Metal">Metal</option>
-        <option value="Piano">Piano</option>
-        <option value="Pop">Pop</option>
-        <option value="R&B & Soul">R&B & Soul</option>
-        <option value="Reggae">Reggae</option>
-        <option value="Reggaeton">Reggaeton</option>
-        <option value="Rock">Rock</option>
-        <option value="Soundtrack">Soundtrack</option>
-        <option value="Techno">Techno</option>
-        <option value="Trance">Trance</option>
-        <option value="Trap">Trap</option>
-        <option value="Triphop">Triphop</option>
-        <option value="World">World</option>
-      </select>
-
-      <button type="submit">Submit Campaign</button>
+      <button
+        type="submit"
+        class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
+      >
+        Submit Campaign
+      </button>
     </form>
+  </main>
 
-    <script src="/js/submit-campaign.js"></script>
-  </body>
+  <script type="module" src="/js/submit-campaign.js"></script>
+</body>
 </html>
+
