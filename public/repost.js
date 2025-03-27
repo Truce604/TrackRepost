@@ -1,120 +1,91 @@
-// ✅ Ensure Firebase is loaded before running scripts
-if (!window.auth || !window.db) {
-    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
-} else {
-    console.log("✅ Firebase Loaded Successfully!");
-}
+// public/js/repost.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  increment,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const auth = window.auth;
-const db = window.db;
+const firebaseConfig = {
+  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+  authDomain: "trackrepost-921f8.firebaseapp.com", 
+  projectId: "trackrepost-921f8", 
+  storageBucket: "trackrepost-921f8.appspot.com", 
+  messagingSenderId: "967836604288", 
+  appId: "1:967836604288:web:3782d50de7384c9201d365", 
+  measurementId: "G-G65Q3HC3R8" 
+};
 
-// ✅ Load Repost Campaign
-function loadRepostCampaign() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const campaignId = urlParams.get("id");
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    if (!campaignId) {
-        console.error("🚨 No campaign ID provided!");
-        document.getElementById("campaignDetails").innerHTML = "<p>Campaign not found.</p>";
-        return;
+const container = document.getElementById("repost-container");
+const statusBox = document.getElementById("status");
+
+const renderCampaign = (campaign, id) => {
+  const div = document.createElement("div");
+  div.className = "rounded-lg p-4 bg-white shadow";
+  div.innerHTML = `
+    <h2 class="text-xl font-semibold mb-2">${campaign.genre}</h2>
+    <p><a href="${campaign.trackUrl}" target="_blank" class="text-blue-500 underline">Listen on SoundCloud</a></p>
+    <p class="my-1">Earn credits by reposting!</p>
+    <button data-id="${id}" class="repost-btn px-4 py-2 bg-green-600 text-white rounded">Repost</button>
+  `;
+  container.appendChild(div);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    statusBox.textContent = "Please log in to view campaigns.";
+    return;
+  }
+
+  const campaignsRef = collection(db, "campaigns");
+  const q = query(campaignsRef, where("userId", "!=", user.uid));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    statusBox.textContent = "No campaigns available right now.";
+    return;
+  }
+
+  statusBox.textContent = "";
+  snapshot.forEach(docSnap => {
+    renderCampaign(docSnap.data(), docSnap.id);
+  });
+
+  container.addEventListener("click", async (e) => {
+    if (!e.target.classList.contains("repost-btn")) return;
+
+    const campaignId = e.target.dataset.id;
+    const userRef = doc(db, "users", user.uid);
+
+    try {
+      await updateDoc(userRef, {
+        credits: increment(1)
+      });
+
+      await setDoc(doc(db, "reposts", `${user.uid}_${campaignId}`), {
+        userId: user.uid,
+        campaignId,
+        timestamp: new Date().toISOString(),
+      });
+
+      e.target.disabled = true;
+      e.target.textContent = "Reposted! +1 Credit";
+    } catch (err) {
+      console.error("Repost failed", err);
     }
-
-    console.log(`🔄 Loading campaign: ${campaignId}`);
-
-    db.collection("campaigns").doc(campaignId).get()
-        .then(doc => {
-            if (doc.exists) {
-                const data = doc.data();
-                const trackUrl = encodeURIComponent(data.track);
-                const campaignOwner = data.owner;
-                const baseCredits = data.credits || 1;
-
-                document.getElementById("campaignDetails").innerHTML = `
-                    <h3>🔥 Now Promoting:</h3>
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                        src="https://w.soundcloud.com/player/?url=${trackUrl}">
-                    </iframe>
-                    <button onclick="attemptRepost('${campaignId}', '${campaignOwner}', ${baseCredits})">
-                        Repost & Earn ${baseCredits} Credits
-                    </button>
-                `;
-
-            } else {
-                console.warn("🚨 Campaign not found.");
-                document.getElementById("campaignDetails").innerHTML = "<p>Campaign not found.</p>";
-            }
-        })
-        .catch(error => {
-            console.error("❌ Error loading campaign:", error);
-        });
-}
-
-// ✅ Attempt to Repost a Track
-function attemptRepost(campaignId, campaignOwner, baseCredits) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("🚨 You must be logged in to repost.");
-        return;
-    }
-
-    console.log(`🔄 Attempting to repost campaign ${campaignId}`);
-
-    // ✅ Check if user has already reposted this campaign
-    db.collection("reposts").where("userId", "==", user.uid).where("campaignId", "==", campaignId)
-        .get()
-        .then(snapshot => {
-            if (!snapshot.empty) {
-                alert("🚨 You have already reposted this track.");
-                return;
-            }
-
-            // ✅ Fetch user followers count to calculate correct credits
-            db.collection("users").doc(user.uid).get()
-                .then(doc => {
-                    if (!doc.exists) {
-                        alert("🚨 User data not found.");
-                        return;
-                    }
-
-                    const followers = doc.data().followers || 100; // Default to 100 followers if unknown
-                    const earnedCredits = Math.floor(followers / 100) || 1;
-
-                    console.log(`✅ Calculated Credits: ${earnedCredits}`);
-
-                    // ✅ Save repost to Firestore
-                    db.collection("reposts").add({
-                        userId: user.uid,
-                        campaignId: campaignId,
-                        earnedCredits: earnedCredits,
-                        timestamp: new Date()
-                    }).then(() => {
-                        console.log("✅ Repost saved successfully!");
-
-                        // ✅ Update user's credits
-                        db.collection("users").doc(user.uid).update({
-                            credits: firebase.firestore.FieldValue.increment(earnedCredits)
-                        }).then(() => {
-                            alert(`🎉 Success! You earned ${earnedCredits} credits.`);
-                            window.location.href = `comment.html?id=${campaignId}`;
-                        });
-
-                    }).catch(error => {
-                        console.error("❌ Error saving repost:", error);
-                    });
-
-                }).catch(error => {
-                    console.error("❌ Error fetching user data:", error);
-                });
-
-        })
-        .catch(error => {
-            console.error("❌ Error checking repost history:", error);
-        });
-}
-
-// ✅ Ensure Page Loads & Functions are Attached
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Repost Page Loaded Successfully!");
-    loadRepostCampaign();
+  });
 });
-
