@@ -3,32 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SoundCloud Login - TrackRepost</title>
+  <title>SoundCloud Callback - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="js/soundcloud-callback.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>🔄 Connecting to SoundCloud...</h1>
-    <p id="status">Please wait while we finalize your login.</p>
+    <h1>Connecting to SoundCloud...</h1>
+    <p id="status">Verifying your connection...</p>
   </div>
-
-  <script>
-    // Step 1: Grab the access token from the URL
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
-
-    if (accessToken) {
-      localStorage.setItem("soundcloud_access_token", accessToken);
-      document.getElementById("status").textContent = "✅ SoundCloud connected!";
-      
-      // Optional: redirect back to dashboard or another page
-      setTimeout(() => {
-        window.location.href = "dashboard.html";
-      }, 1500);
-    } else {
-      document.getElementById("status").textContent = "❌ Failed to connect to SoundCloud.";
-    }
-  </script>
 </body>
 </html>
+
