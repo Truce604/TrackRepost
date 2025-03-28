@@ -3,38 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Submit Campaign | TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Submit a Campaign - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebaseConfig.js"></script>
+
+  <!-- Submit Campaign Logic -->
+  <script type="module" src="submit-campaign.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>🎧 Submit Your Track for Promotion</h1>
-    <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="repost.html">Repost & Earn</a>
-      <a href="logout.html">Logout</a>
-    </nav>
+    <h1>🚀 Submit Your Campaign</h1>
   </header>
 
-  <main>
-    <section class="form-section">
-      <form id="campaign-form">
-        <label for="trackUrl">SoundCloud Track URL:</label>
-        <input type="url" id="trackUrl" name="trackUrl" required placeholder="https://soundcloud.com/yourtrack" />
+  <main class="container">
+    <div id="current-credits" class="credit-display">Loading credits...</div>
 
-        <label for="genre">Auto-Detected Genre:</label>
-        <input type="text" id="genre" name="genre" readonly />
+    <form id="campaign-form" class="campaign-form">
+      <label for="trackUrl">SoundCloud Track URL</label>
+      <input type="url" name="trackUrl" id="trackUrl" placeholder="https://soundcloud.com/your-track" required />
 
-        <p><strong>Your Available Credits:</strong> <span id="userCredits">Loading...</span></p>
+      <label for="genre">Auto-Detected Genre</label>
+      <input type="text" name="genre" id="genre" readonly />
 
-        <button type="submit">🚀 Submit Campaign</button>
-        <p id="status" class="hidden"></p>
-      </form>
-    </section>
+      <button type="submit">Submit Campaign</button>
+    </form>
+
+    <div id="status" class="status-message hidden"></div>
   </main>
 
-  <script src="js/submit-campaign.js" type="module" defer></script>
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background: #121212;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 2rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .campaign-form label {
+      display: block;
+      margin-top: 1rem;
+    }
+
+    .campaign-form input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      width: 100%;
+      background-color: #00c897;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .status-message {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .credit-display {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: #121212;
+      color: white;
+      margin-top: 2rem;
+    }
+  </style>
 </body>
 </html>
+
 
