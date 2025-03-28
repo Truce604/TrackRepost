@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connect SoundCloud | TrackRepost</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #0f0f0f;
+        color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .card h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .card p {
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #ccc;
+      }
+
+      .btn {
+        margin-top: 2rem;
+        display: inline-block;
+        padding: 0.8rem 1.5rem;
+        background: #ff5500;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: background 0.3s;
+      }
+
+      .btn:hover {
+        background: #ff7733;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>🎧 Connect Your SoundCloud</h1>
+      <p>
+        To earn and spend credits, we need permission to like, repost, and comment on tracks
+        through your SoundCloud account. This keeps everything fair and automatic.
+      </p>
+      <a href="/api/auth/soundcloud" class="btn">Connect SoundCloud</a>
+    </div>
+  </body>
+</html>
