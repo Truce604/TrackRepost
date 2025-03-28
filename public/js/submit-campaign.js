@@ -1,3 +1,4 @@
+// public/js/submit-campaign.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
@@ -6,11 +7,11 @@ import {
 import {
   getFirestore,
   doc,
-  setDoc,
-  getDoc
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 🔐 Load Firebase config from firebaseConfig.js
+// ✅ Firebase Config (automatically loaded from firebaseConfig.js)
 import { firebaseConfig } from "./firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
@@ -18,74 +19,69 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const form = document.getElementById("campaign-form");
+const trackUrlInput = document.getElementById("trackUrl");
+const genreInput = document.getElementById("genre");
 const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
-const genreInput = document.getElementById("genre");
 
-// 🎵 Mocked genre detection based on track URL (will be replaced later)
-const autoDetectGenre = async (url) => {
-  const genres = [
-    "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
-    "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
-    "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
-    "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
-    "Trance", "Trap", "Triphop", "World"
-  ];
-  const title = url.toLowerCase();
-  const match = genres.find(g => title.includes(g.toLowerCase()));
-  return match || "Pop";
-};
-
-// Auto-detect genre on SoundCloud URL input
-form.trackUrl.addEventListener("change", async () => {
-  const genre = await autoDetectGenre(form.trackUrl.value);
-  genreInput.value = genre;
-});
-
-// 👤 Wait for auth and then populate credits
+// 👤 Wait for user to log in
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     form.style.display = "none";
-    creditDisplay.textContent = "Please log in to submit a campaign.";
+    statusBox.textContent = "⚠️ You must be logged in to submit a campaign.";
     return;
   }
 
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
-  creditDisplay.textContent = `You currently have ${credits} credits.`;
+  // 🧮 Load current credits
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
+    creditDisplay.textContent = `You currently have ${credits} credits.`;
+  } catch (err) {
+    console.error("Error loading credits:", err);
+    creditDisplay.textContent = "Couldn't load credits.";
+  }
 
-  // 🎯 Handle form submission
+  // 📣 Handle form submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const trackUrl = form.trackUrl.value.trim();
-    const genre = genreInput.value;
-
-    if (!trackUrl || !genre) {
-      statusBox.textContent = "Missing track or genre.";
-      statusBox.classList.remove("hidden");
+    const trackUrl = trackUrlInput.value.trim();
+    if (!trackUrl) {
+      statusBox.textContent = "Please enter a valid SoundCloud track URL.";
       return;
     }
 
-    statusBox.textContent = "Submitting...";
-    statusBox.classList.remove("hidden");
+    // 🔍 Auto-detect genre (simple keyword matching)
+    const genres = [
+      "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
+      "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
+      "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
+      "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
+      "Trance", "Trap", "Triphop", "World"
+    ];
+    const genre = genres.find(g => trackUrl.toLowerCase().includes(g.toLowerCase())) || "Pop";
+    genreInput.value = genre;
 
+    // 📤 Submit to Firestore
     try {
+      statusBox.textContent = "Submitting campaign...";
+
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
       await setDoc(campaignRef, {
-        userId: user.uid,
-        trackUrl,
-        genre,
-        credits: 0, // starts at 0 — user will purchase or earn more
-        createdAt: new Date().toISOString()
+        owner: user.uid,
+        track: trackUrl,
+        genre: genre,
+        credits: 0,
+        createdAt: new Date().toISOString(),
       });
 
       statusBox.textContent = "✅ Campaign submitted successfully!";
       form.reset();
       genreInput.value = "";
     } catch (err) {
-      console.error("❌ Submission failed:", err);
+      console.error("Error submitting campaign:", err);
       statusBox.textContent = "❌ Submission failed. Please try again.";
     }
   });
