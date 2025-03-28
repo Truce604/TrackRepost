@@ -1,31 +1,46 @@
 <!-- public/repost.html -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Repost and Earn</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body class="bg-black text-white font-sans">
-    <header class="p-4 border-b border-gray-700 flex items-center justify-between">
-      <h1 class="text-xl font-bold">TrackRepost</h1>
-      <nav>
-        <a href="/dashboard.html" class="mr-4 hover:underline">Dashboard</a>
-        <a href="/submit-campaign.html" class="hover:underline">Submit</a>
-      </nav>
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repost & Earn - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+  <script src="firebaseConfig.js" defer></script>
+  <script src="js/repost.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>🎧 Repost & Earn Credits</h1>
+  </header>
 
-    <main class="p-4 max-w-3xl mx-auto">
-      <h2 class="text-2xl font-semibold mb-6">Repost and Earn Credits</h2>
+  <main class="container">
+    <div id="campaign-container">
+      <h2>Loading campaign...</h2>
+    </div>
 
-      <div id="repost-section" class="space-y-6"></div>
+    <form id="repost-form" class="hidden">
+      <label>
+        <input type="checkbox" id="likeTrack" checked /> ❤️ Like the track (earn +1 credit)
+      </label>
 
-      <div id="status" class="mt-4 text-center text-sm text-green-400 hidden"></div>
-    </main>
+      <label for="comment">Leave a comment (earn +2 credits):</label>
+      <textarea id="comment" rows="3" placeholder="Optional comment..."></textarea>
 
-    <script type="module" src="/js/repost.js"></script>
-  </body>
+      <button type="submit">🔁 Repost Now</button>
+    </form>
+
+    <div id="status" class="status"></div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost</p>
+  </footer>
+</body>
 </html>
+
 
 
