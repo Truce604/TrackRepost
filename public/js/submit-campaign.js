@@ -1,7 +1,15 @@
 // public/submit-campaign.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
@@ -13,16 +21,18 @@ const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ✅ DOM Elements
 const genreInput = document.getElementById("genre");
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
 
-// Auto-detect genre based on mock SoundCloud title parsing
+// ✅ Auto-detect genre from track URL (mocked with title keywords)
 const autoDetectGenre = async (url) => {
   const genres = [
     "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
@@ -32,15 +42,17 @@ const autoDetectGenre = async (url) => {
     "Trance", "Trap", "Triphop", "World"
   ];
   const title = url.toLowerCase();
-  const match = genres.find(g => title.includes(g.toLowerCase()));
+  const match = genres.find((g) => title.includes(g.toLowerCase()));
   return match || "Pop";
 };
 
+// ✅ Detect genre when SoundCloud URL changes
 form.trackUrl.addEventListener("change", async () => {
   const genre = await autoDetectGenre(form.trackUrl.value);
   genreInput.value = genre;
 });
 
+// ✅ Auth state logic
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     form.style.display = "none";
@@ -48,36 +60,38 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  // ✅ Get current credits from user profile
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
   const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
   creditDisplay.textContent = `You currently have ${credits} credits.`;
 
+  // ✅ Form submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    statusBox.classList.remove("hidden");
+    statusBox.textContent = "Submitting...";
 
     const trackUrl = form.trackUrl.value;
     const genre = genreInput.value;
 
-    statusBox.classList.remove("hidden");
-    statusBox.textContent = "Submitting...";
-
     try {
-      const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
+      const campaignId = `${user.uid}_${Date.now()}`;
+      const campaignRef = doc(db, "campaigns", campaignId);
       await setDoc(campaignRef, {
         userId: user.uid,
         trackUrl,
         genre,
         credits: 0,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       });
 
       statusBox.textContent = "✅ Campaign submitted successfully!";
       form.reset();
       genreInput.value = "";
-    } catch (err) {
-      console.error("Submission error:", err);
-      statusBox.textContent = "❌ Submission failed. Please try again.";
+    } catch (error) {
+      console.error("❌ Submission failed:", error);
+      statusBox.textContent = "❌ Submission failed. Try again.";
     }
   });
 });
