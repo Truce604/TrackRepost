@@ -1,64 +1,41 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard | TrackRepost</title>
-  <link rel="stylesheet" href="styles.css">
-
-  <!-- ✅ Load Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- ✅ Firebase Config -->
-  <script src="firebaseConfig.js" defer></script>
-
-  <!-- ✅ Dashboard Logic -->
-  <script src="dashboard.js" defer></script>
+  <title>Dashboard - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
   <header>
-    <h1>📊 User Dashboard</h1>
-    <nav>
-      <ul>
-        <li><a href="index.html">🏠 Home</a></li>
-        <li><a href="credits.html">💳 Buy Credits</a></li>
-        <li><a href="repost.html">🔄 Repost & Earn</a></li>
-        <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
-      </ul>
-    </nav>
+    <h1>📊 Your Dashboard</h1>
   </header>
 
-  <!-- ✅ User Info Section -->
   <div class="container">
-    <h2>👤 Welcome, <span id="userName">Friend</span></h2>
-    <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
-  </div>
+    <div id="userInfo" class="info-box">Loading user...</div>
 
-  <!-- ✅ Transaction History -->
-  <div class="container">
-    <h2>📜 Transaction History</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Track</th>
-          <th>Credits</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody id="transactionHistory">
-        <tr><td colspan="4">Loading history...</td></tr>
-      </tbody>
-    </table>
+    <div class="credits-box">
+      <h2>💰 Credits</h2>
+      <p id="creditBalance">Loading...</p>
+      <a href="credits.html" class="button">Buy More Credits</a>
+    </div>
+
+    <div class="campaigns-section">
+      <h2>📣 Your Campaigns</h2>
+      <div id="campaigns" class="campaigns-grid">Loading campaigns...</div>
+    </div>
+
+    <button id="logoutButton" class="logout-btn">Logout</button>
   </div>
 
   <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
+
+  <!-- Firebase SDKs -->
+  <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>
+
+
 
