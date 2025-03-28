@@ -1,37 +1,39 @@
-
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Credits - TrackRepost</title>
-    <link rel="stylesheet" href="styles.css">
-
-    <!-- ✅ Load Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- ✅ Load Firebase Config -->
-    <script src="firebaseConfig.js" defer></script>
-
-    <!-- ✅ Load Credits Script -->
-    <script src="credits.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Credits – TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+  <script src="firebaseConfig.js" defer></script>
+  <script src="js/credits.js" defer></script>
 </head>
-
 <body>
-    <header>
-        <h1>💰 Your Credits</h1>
-    </header>
+  <header>
+    <h1>💰 Credits</h1>
+  </header>
 
-    <div class="container">
-        <h2>Current Balance:</h2>
-        <p id="creditBalance">Loading...</p>
-    </div>
+  <main class="container">
+    <section>
+      <h2>Your Balance</h2>
+      <p id="creditBalance">Loading...</p>
+    </section>
 
-    <footer>
-        <p>© 2025 TrackRepost. All Rights Reserved.</p>
-    </footer>
+    <section>
+      <h2>Buy More Credits</h2>
+      <div class="button-group">
+        <button data-credits="100">Buy 100 Credits ($1.00)</button>
+        <button data-credits="500">Buy 500 Credits ($5.00)</button>
+        <button data-credits="1000">Buy 1000 Credits ($10.00)</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
 </body>
 </html>
-   
