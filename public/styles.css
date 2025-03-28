@@ -1,103 +1,107 @@
 /* General Styling */
 body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Header */
-  header {
-    padding: 20px;
-    background: #ffcc00;
-    color: black;
-    font-size: 1.5em;
-    text-shadow: 2px 2px 5px rgba(255, 153, 0, 0.8);
-  }
-  
-  /* Containers */
-  .container {
-    width: 90%;
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Input Fields and Selects */
-  input, select, textarea {
-    padding: 12px;
-    margin: 10px 0;
-    width: 90%;
-    max-width: 450px;
-    border: 2px solid #ffcc00;
-    border-radius: 25px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 1em;
-    text-align: center;
-  }
-  
-  input::placeholder, textarea::placeholder {
-    color: #cccccc;
-  }
-  
-  /* Labels */
-  label {
-    display: block;
-    margin-top: 15px;
-    font-weight: bold;
-    color: #ffcc00;
-    text-shadow: 1px 1px 3px rgba(255, 204, 0, 0.7);
-  }
-  
-  /* Buttons */
-  button {
-    background: linear-gradient(45deg, #ffcc00, #ff9900);
-    color: black;
-    border: none;
-    padding: 12px 25px;
-    margin-top: 15px;
-    font-size: 1em;
-    cursor: pointer;
-    border-radius: 25px;
-    box-shadow: 0 4px 10px rgba(255, 153, 0, 0.6);
-    transition: all 0.3s ease;
-  }
-  
-  button:hover {
-    background: linear-gradient(45deg, #ff9900, #ff6600);
-    transform: scale(1.05);
-  }
-  
-  /* Headers */
-  h1, h2, h3 {
-    margin-top: 20px;
-    color: #ffcc00;
-    text-shadow: 2px 2px 10px rgba(255, 204, 0, 0.8);
-  }
-  
-  /* Status messages */
-  #status {
-    margin-top: 15px;
-    font-size: 1em;
-    font-weight: bold;
-    color: #ffcc00;
-  }
-  
-  /* Footer */
-  footer {
-    margin-top: 40px;
-    font-size: 0.9em;
-    opacity: 0.8;
-  }
-  
-  /* Hidden helper */
-  .hidden {
-    display: none;
-  }
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+header {
+  padding: 20px;
+  background: #ffcc00;
+  color: #111;
+  font-size: 1.8em;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.3);
+}
+
+/* Containers */
+.container {
+  width: 90%;
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Input Fields */
+input[type="text"],
+input[type="url"],
+input[type="number"] {
+  padding: 12px;
+  margin: 10px auto;
+  width: 90%;
+  max-width: 400px;
+  border: 2px solid #ffcc00;
+  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1em;
+  display: block;
+  text-align: center;
+}
+
+input[readonly] {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Buttons */
+button {
+  background: linear-gradient(45deg, #ffcc00, #ff9900);
+  color: black;
+  border: none;
+  padding: 12px 20px;
+  margin-top: 20px;
+  font-size: 1.1em;
+  cursor: pointer;
+  border-radius: 25px;
+  box-shadow: 0 4px 12px rgba(255, 153, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: linear-gradient(45deg, #ff9900, #ff6600);
+  transform: scale(1.05);
+}
+
+/* Headings */
+h1, h2, h3 {
+  color: #ffcc00;
+  text-shadow: 2px 2px 8px rgba(255, 204, 0, 0.4);
+  margin-top: 0;
+}
+
+/* Credit Display */
+#current-credits {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 20px;
+}
+
+/* Status Messages */
+.status-message {
+  margin-top: 15px;
+  font-size: 1em;
+  color: #ffcc00;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Footer */
+footer {
+  margin-top: 40px;
+  padding: 15px;
+  background: #111;
+  color: white;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
   
