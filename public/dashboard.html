@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebaseConfig.js"></script>
 </head>
 <body>
   <header>
@@ -12,6 +20,13 @@
   </header>
 
   <div class="container">
+    <!-- 🔐 Auth Buttons -->
+    <div id="site-header">
+      <button id="login-btn">Sign in with Google</button>
+      <button id="logout-btn" style="display:none;">Log Out</button>
+      <div id="user-info"></div>
+    </div>
+
     <div id="userInfo" class="info-box">Loading user...</div>
 
     <div class="credits-box">
@@ -24,16 +39,15 @@
       <h2>📣 Your Campaigns</h2>
       <div id="campaigns" class="campaigns-grid">Loading campaigns...</div>
     </div>
-
-    <button id="logoutButton" class="logout-btn">Logout</button>
   </div>
 
   <footer>
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- Firebase SDKs -->
-  <script src="js/dashboard.js" type="module" defer></script>
-
+  <!-- Scripts -->
+  <script type="module" src="js/login.js" defer></script>
+  <script type="module" src="js/dashboard.js" defer></script>
 </body>
 </html>
+
