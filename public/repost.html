@@ -11,30 +11,68 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
 
-  <!-- Config + Logic -->
+  <!-- Firebase Config -->
   <script src="firebaseConfig.js"></script>
   <script type="module" src="js/repost.js" defer></script>
-  <script type="module" src="js/header.js" defer></script>
 </head>
-
 <body>
-  <div id="site-header"></div>
-
   <header>
     <h1>🔁 Repost & Earn Credits</h1>
   </header>
 
+  <!-- 🧠 Site-wide navigation header -->
+  <div id="site-header"></div>
+  <script type="module" src="js/header.js" defer></script>
+
   <main class="container">
+    <!-- 🔁 Repost campaigns section -->
     <div id="repost-container">
       <p>Loading available campaigns...</p>
+    </div>
+
+    <!-- 🔐 Login prompt if not signed in -->
+    <div id="login-container" class="container" style="display: none;">
+      <h2>Welcome to TrackRepost</h2>
+      <p>You must be logged in to repost and earn credits.</p>
+      <button id="login-btn">Log in with Google</button>
     </div>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
+
+  <!-- 🔐 Login script -->
+  <script type="module">
+    import {
+      getAuth,
+      signInWithPopup,
+      GoogleAuthProvider,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    const loginContainer = document.getElementById("login-container");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        loginContainer.style.display = "block";
+      }
+    });
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        location.reload();
+      } catch (err) {
+        console.error("Login failed", err);
+      }
+    });
+  </script>
 </body>
 </html>
+
 
 
 
