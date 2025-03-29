@@ -3,47 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Running Campaigns | TrackRepost</title>
-  <link rel="stylesheet" href="/styles/main.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background: #f8f9fa;
-    }
+  <title>Your Running Campaign - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
 
-    .campaign-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
+  <!-- Firebase Config -->
+  <script src="firebaseConfig.js"></script>
 
-    .campaign-card h3 {
-      margin: 0 0 0.5rem;
-    }
-
-    .campaign-card p {
-      margin: 0.25rem 0;
-    }
-
-    .timestamp {
-      font-size: 0.85rem;
-      color: #777;
-    }
-  </style>
+  <!-- Header + Running Campaign -->
+  <script type="module" src="js/header.js" defer></script>
+  <script type="module" src="js/running-campaigns.js" defer></script>
 </head>
 <body>
+  <div id="site-header"></div>
 
-  <h1>Your Running Campaigns</h1>
-  <div id="campaigns">Loading...</div>
+  <main class="container">
+    <h2>🎧 Your Active Campaign</h2>
+    <div id="campaign-details">
+      <p>Loading campaign...</p>
+    </div>
+  </main>
 
-  <script type="module" src="/js/load-campaigns.js"></script>
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
 </body>
 </html>
+
