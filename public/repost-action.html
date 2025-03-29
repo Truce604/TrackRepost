@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complete Repost - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+
+  <!-- Config + Logic -->
+  <script src="firebaseConfig.js"></script>
+  <script type="module" src="js/repost-action.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>🔁 Complete Your Repost</h1>
+  </header>
+
+  <main class="container">
+    <div id="track-info">
+      <p><strong>Track:</strong> <a href="#" target="_blank" id="track-url">Loading...</a></p>
+      <p><strong>Genre:</strong> <span id="track-genre">Loading...</span></p>
+    </div>
+
+    <form id="repost-options">
+      <label>
+        <input type="checkbox" id="likeTrack" checked />
+        ❤️ Like this track (earn +1 credit)
+      </label>
+
+      <label>
+        <input type="checkbox" id="leaveComment" />
+        💬 Leave a comment (earn +2 credits)
+      </label>
+
+      <label>
+        <input type="checkbox" id="followUser" />
+        ➕ Follow campaign owner (earn +2 credits)
+      </label>
+
+      <textarea id="commentText" placeholder="Your comment here..." style="width: 100%; margin-top: 10px; display: none;"></textarea>
+
+      <button type="submit">✅ Confirm Repost</button>
+    </form>
+
+    <div id="status" class="status-message"></div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+</body>
+</html>
