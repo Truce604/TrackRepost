@@ -3,85 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Submit a Campaign - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Connect SoundCloud - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
-
-  <!-- Firebase Config -->
-  <script src="firebaseConfig.js"></script>
-
-  <!-- Submit Campaign Logic -->
-  <script type="module" src="js/submit-campaign.js" defer></script>
+  <!-- Header + Script -->
+  <script type="module" src="js/connect-soundcloud.js" defer></script>
+  <script type="module" src="js/header.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>🚀 Submit Your Campaign</h1>
+    <h1>🎧 Connect Your SoundCloud</h1>
   </header>
 
   <main class="container">
-    <div id="current-credits" class="credit-display">Loading credits...</div>
+    <p>To earn credits and promote your music, connect your SoundCloud account.</p>
+    <p>This lets us verify your followers and repost on your behalf.</p>
 
-    <form id="campaign-form" class="campaign-form">
-      <label for="trackUrl">SoundCloud Track URL</label>
-      <input type="url" name="trackUrl" id="trackUrl" placeholder="https://soundcloud.com/your-track" required />
-
-      <label for="genre">Auto-Detected Genre</label>
-      <input type="text" name="genre" id="genre" readonly />
-
-      <button type="submit">Submit Campaign</button>
-    </form>
-
-    <div id="status" class="status-message hidden"></div>
+    <button id="connectBtn">🔗 Connect SoundCloud</button>
   </main>
-
-  <!-- 🔐 Login UI if not signed in -->
-  <div id="login-container" class="container" style="display: none;">
-    <h2>Welcome to TrackRepost</h2>
-    <p>You must be logged in to submit your campaign.</p>
-    <button id="login-btn">Log in with Google</button>
-  </div>
-
-  <!-- 🔐 Login Script -->
-  <script type="module">
-    import {
-      getAuth,
-      signInWithPopup,
-      GoogleAuthProvider,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-    const loginContainer = document.getElementById("login-container");
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        loginContainer.style.display = "block";
-      }
-    });
-
-    document.getElementById("login-btn").addEventListener("click", async () => {
-      try {
-        await signInWithPopup(auth, provider);
-        location.reload();
-      } catch (err) {
-        console.error("Login failed", err);
-      }
-    });
-  </script>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
-
-  <div id="site-header"></div>
-  <script type="module" src="js/header.js" defer></script>
 </body>
 </html>
+
 
 
 
