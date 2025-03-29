@@ -9,7 +9,8 @@ import {
   getDocs,
   doc,
   updateDoc,
-  increment
+  increment,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -36,25 +37,30 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDocs(collection(db, "users"));
-    const userData = userSnap.docs.find(doc => doc.id === user.uid)?.data();
-    const followers = userData?.followers || 1000; // Default if not set
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      container.innerHTML = `<p>User profile not found.</p>`;
+      return;
+    }
+
+    const currentUserData = userSnap.data();
+    const followers = currentUserData.followers || 1000;
 
     const campaignsSnap = await getDocs(collection(db, "campaigns"));
-    const available = campaignsSnap.docs.filter(doc => doc.data().userId !== user.uid);
+    const campaigns = campaignsSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(c => c.userId !== user.uid);
 
-    if (available.length === 0) {
+    if (campaigns.length === 0) {
       container.innerHTML = `<p>No campaigns available to repost.</p>`;
       return;
     }
 
     container.innerHTML = "";
 
-    available.forEach(docSnap => {
-      const campaign = docSnap.data();
-      const id = docSnap.id;
+    campaigns.forEach(campaign => {
       const creditsEarned = Math.floor(followers / 100);
-
       const card = document.createElement("div");
       card.className = "campaign-card";
       card.innerHTML = `
@@ -65,45 +71,42 @@ onAuthStateChanged(auth, async (user) => {
           <input type="checkbox" class="like-toggle" checked />
           ❤️ Like this track for 1 extra credit
         </label>
-        <button class="repost-btn" data-id="${id}" data-user="${campaign.userId}" data-earn="${creditsEarned}">Repost & Earn</button>
-        <div class="status-msg" id="status-${id}"></div>
+        <button class="repost-btn" data-id="${campaign.id}" data-user="${campaign.userId}" data-earn="${creditsEarned}">Repost & Earn</button>
+        <div class="status-msg" id="status-${campaign.id}"></div>
       `;
 
       container.appendChild(card);
     });
 
     container.addEventListener("click", async (e) => {
-      if (e.target.classList.contains("repost-btn")) {
-        const btn = e.target;
-        const campaignId = btn.dataset.id;
-        const ownerId = btn.dataset.user;
-        const creditsToEarn = parseInt(btn.dataset.earn);
-        const likeChecked = btn.parentElement.querySelector(".like-toggle").checked;
+      if (!e.target.classList.contains("repost-btn")) return;
 
-        const totalEarned = likeChecked ? creditsToEarn + 1 : creditsToEarn;
-        const status = document.getElementById(`status-${campaignId}`);
+      const btn = e.target;
+      const campaignId = btn.dataset.id;
+      const ownerId = btn.dataset.user;
+      const creditsToEarn = parseInt(btn.dataset.earn);
+      const likeChecked = btn.parentElement.querySelector(".like-toggle").checked;
+      const totalEarned = likeChecked ? creditsToEarn + 1 : creditsToEarn;
+      const status = document.getElementById(`status-${campaignId}`);
 
-        try {
-          // 👤 Reward current user
-          await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            credits: increment(totalEarned)
-          });
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          credits: increment(totalEarned)
+        });
 
-          // 💸 Deduct from campaign owner
-          await updateDoc(doc(db, "users", ownerId), {
-            credits: increment(-totalEarned)
-          });
+        await updateDoc(doc(db, "users", ownerId), {
+          credits: increment(-totalEarned)
+        });
 
-          status.textContent = `✅ Earned ${totalEarned} credits!`;
-        } catch (err) {
-          console.error("Error crediting repost:", err);
-          status.textContent = "❌ Something went wrong.";
-        }
+        status.textContent = `✅ Earned ${totalEarned} credits!`;
+      } catch (err) {
+        console.error("🔥 Error updating credits:", err);
+        status.textContent = "❌ Failed to update credits.";
       }
     });
 
   } catch (err) {
-    console.error("Failed to load repost campaigns:", err);
+    console.error("❌ Error loading campaigns:", err);
     container.innerHTML = `<p>Error loading repost campaigns.</p>`;
   }
 });
