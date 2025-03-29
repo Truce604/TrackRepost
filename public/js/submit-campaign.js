@@ -1,7 +1,16 @@
-// public/js/submit-campaign.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
@@ -22,7 +31,20 @@ const genreInput = document.getElementById("genre");
 const creditDisplay = document.getElementById("current-credits");
 const statusBox = document.getElementById("status");
 
-// Genre detection (simple fallback)
+// Add a login button dynamically
+const loginBtn = document.createElement("button");
+loginBtn.textContent = "Log in to submit your track";
+loginBtn.style.marginTop = "20px";
+loginBtn.onclick = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error("Login failed", err);
+    statusBox.textContent = "❌ Login failed.";
+  }
+};
+
 const autoDetectGenre = async (url) => {
   const genres = [
     "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
@@ -36,47 +58,42 @@ const autoDetectGenre = async (url) => {
   return match || "Pop";
 };
 
-// Detect genre on track URL change
 form.trackUrl.addEventListener("change", async () => {
   const genre = await autoDetectGenre(form.trackUrl.value);
   genreInput.value = genre;
 });
 
-// 🔐 Auth state handling
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      statusBox.textContent = "❌ Login failed.";
-      return;
-    }
+    form.style.display = "none";
+    creditDisplay.textContent = "";
+    statusBox.textContent = "You must be logged in to submit a campaign.";
+    statusBox.appendChild(loginBtn);
+    return;
   }
 
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
+  form.style.display = "block";
+  statusBox.textContent = "";
+  loginBtn.remove();
 
-  // Fetch current credit balance
-  const userRef = doc(db, "users", currentUser.uid);
+  const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
   const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
   creditDisplay.textContent = `You currently have ${credits} credits.`;
 
-  // Submit logic
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    statusBox.classList.remove("hidden");
 
     const trackUrl = form.trackUrl.value;
     const genre = genreInput.value;
 
-    statusBox.classList.remove("hidden");
     statusBox.textContent = "Submitting...";
 
     try {
-      const campaignRef = doc(db, "campaigns", `${currentUser.uid}_${Date.now()}`);
+      const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
       await setDoc(campaignRef, {
-        userId: currentUser.uid,
+        userId: user.uid,
         trackUrl,
         genre,
         credits: 0,
@@ -87,11 +104,12 @@ onAuthStateChanged(auth, async (user) => {
       form.reset();
       genreInput.value = "";
     } catch (err) {
-      console.error("❌ Submission error:", err);
+      console.error("Submission error:", err);
       statusBox.textContent = "❌ Submission failed. Please try again.";
     }
   });
 });
+
 
 
 
