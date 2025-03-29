@@ -1,39 +1,94 @@
-/* General Styling */
+/* === Base Styling === */
 body {
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   color: white;
-  text-align: center;
   margin: 0;
   padding: 0;
+  text-align: center;
 }
 
-/* Header */
-header {
-  padding: 20px;
+a {
+  color: #ffcc00;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* === Header === */
+#site-header {
   background: #ffcc00;
-  color: black; /* Fix: Visible on yellow */
-  font-size: 1.5em;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle contrast */
+  color: black;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Containers */
+.site-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logo a {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: black;
+}
+
+#auth-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#auth-button {
+  background: black;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#auth-button:hover {
+  background: #333;
+}
+
+/* === Container === */
 .container {
   width: 90%;
-  max-width: 500px;
-  margin: 20px auto;
+  max-width: 600px;
+  margin: 30px auto;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 15px;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
-/* Input Fields */
-input {
-  padding: 12px;
-  margin: 10px;
+/* === Forms === */
+form {
+  margin-top: 20px;
+}
+
+label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+input, select, textarea {
   width: 80%;
-  max-width: 350px;
+  max-width: 400px;
+  padding: 12px;
+  margin-top: 5px;
   border: 2px solid #ffcc00;
   border-radius: 25px;
   background: rgba(255, 255, 255, 0.1);
@@ -42,13 +97,21 @@ input {
   text-align: center;
 }
 
-/* Buttons */
+input::placeholder {
+  color: #ccc;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* === Buttons === */
 button {
   background: linear-gradient(45deg, #ffcc00, #ff9900);
   color: black;
   border: none;
   padding: 12px 20px;
-  margin: 10px;
+  margin: 20px 10px;
   font-size: 1em;
   cursor: pointer;
   border-radius: 25px;
@@ -61,42 +124,65 @@ button:hover {
   transform: scale(1.05);
 }
 
-/* Dashboard */
-h2 {
-  margin-top: 20px;
+/* === Headings === */
+h1, h2, h3 {
   color: #ffcc00;
-  text-shadow: 2px 2px 10px rgba(255, 204, 0, 0.8);
+  text-shadow: 2px 2px 10px rgba(255, 204, 0, 0.6);
 }
 
-/* Form Labels */
-label {
-  display: block;
-  margin: 10px 0 5px;
-  font-weight: bold;
-}
-
-/* Status Message */
+/* === Status Messages === */
 .status-message {
-  margin-top: 15px;
-  font-size: 1em;
-  font-weight: 500;
+  margin-top: 1rem;
+  font-size: 1rem;
 }
 
-/* Credit Display */
-.credit-display {
-  font-weight: bold;
-  margin-bottom: 15px;
-  font-size: 1.1em;
-}
-
-/* Hidden Utility */
 .hidden {
   display: none;
 }
 
-/* Footer */
+/* === Footer === */
 footer {
-  margin-top: 30px;
+  margin-top: 40px;
+  padding: 1rem;
+  background: #121212;
+  color: white;
   font-size: 0.9em;
   opacity: 0.8;
+}
+
+/* === Credit Display === */
+.credit-display {
+  font-weight: bold;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+/* === Campaign Card === */
+.campaign-card {
+  background: rgba(255, 255, 255, 0.08);
+  margin: 20px auto;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: left;
+  max-width: 500px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.campaign-card h3 {
+  margin-bottom: 5px;
+}
+
+.campaign-card p {
+  margin: 5px 0;
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+  input, select, textarea {
+    width: 100%;
+  }
+
+  .container {
+    padding: 15px;
+  }
 }
