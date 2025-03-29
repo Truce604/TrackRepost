@@ -1,15 +1,37 @@
-
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=submit-campaign.html">
   <meta charset="UTF-8" />
-  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrackRepost - Promote Your Music</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="firebaseConfig.js" defer></script>
+  <script type="module" src="js/index.js" defer></script>
 </head>
 <body>
-  <p>Redirecting to submit-campaign...</p>
+  <header>
+    <h1>🎵 TrackRepost</h1>
+  </header>
+
+  <main class="container">
+    <h2>Boost your SoundCloud plays</h2>
+    <p>Submit your track and get real reposts from real users. Earn credits by helping others.</p>
+
+    <div id="auth-section">
+      <p>Loading...</p>
+    </div>
+
+    <div class="homepage-buttons">
+      <a href="submit-campaign.html"><button>🚀 Submit Campaign</button></a>
+      <a href="repost.html"><button>🔁 Earn Credits</button></a>
+      <a href="dashboard.html"><button>📊 Dashboard</button></a>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
 </body>
 </html>
-
-
