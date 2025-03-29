@@ -1,16 +1,15 @@
-// public/js/repost.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
   getFirestore,
-  doc,
-  getDoc,
-  updateDoc,
   collection,
   getDocs,
-  increment,
-  addDoc,
-  serverTimestamp
+  doc,
+  updateDoc,
+  increment
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -27,69 +26,84 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const campaignsContainer = document.getElementById("campaigns");
+const container = document.getElementById("repost-container");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    campaignsContainer.innerHTML = "<p>Please log in to repost and earn credits.</p>";
+    container.innerHTML = `<p>Please log in to see repost campaigns.</p>`;
     return;
   }
 
-  const userSnap = await getDoc(doc(db, "users", user.uid));
-  const followerCount = userSnap.exists() ? userSnap.data().followers || 0 : 0;
-  const earnedPerRepost = Math.floor(followerCount / 100);
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDocs(collection(db, "users"));
+    const userData = userSnap.docs.find(doc => doc.id === user.uid)?.data();
+    const followers = userData?.followers || 1000; // Default if not set
 
-  const campaignsSnap = await getDocs(collection(db, "campaigns"));
+    const campaignsSnap = await getDocs(collection(db, "campaigns"));
+    const available = campaignsSnap.docs.filter(doc => doc.data().userId !== user.uid);
 
-  campaignsSnap.forEach((docSnap) => {
-    const data = docSnap.data();
-    if (data.userId === user.uid || data.credits < earnedPerRepost) return; // Don't show user's own or unfunded
+    if (available.length === 0) {
+      container.innerHTML = `<p>No campaigns available to repost.</p>`;
+      return;
+    }
 
-    const card = document.createElement("div");
-    card.className = "campaign-card";
-    card.innerHTML = `
-      <h3>${data.genre}</h3>
-      <p><a href="${data.trackUrl}" target="_blank">🔗 Listen on SoundCloud</a></p>
-      <label>
-        <input type="checkbox" class="like-checkbox" checked>
-        ❤️ Like this track (1 credit)
-      </label>
-      <textarea class="comment-box" placeholder="Leave a comment (2 credits)"></textarea>
-      <button class="repost-btn">🔁 Repost & Earn ${earnedPerRepost}+ credits</button>
-    `;
+    container.innerHTML = "";
 
-    card.querySelector(".repost-btn").addEventListener("click", async () => {
-      const likeChecked = card.querySelector(".like-checkbox").checked;
-      const commentText = card.querySelector(".comment-box").value.trim();
-      const extra = (likeChecked ? 1 : 0) + (commentText ? 2 : 0);
-      const totalCreditsEarned = earnedPerRepost + extra;
+    available.forEach(docSnap => {
+      const campaign = docSnap.data();
+      const id = docSnap.id;
+      const creditsEarned = Math.floor(followers / 100);
 
-      try {
-        await updateDoc(doc(db, "users", user.uid), {
-          credits: increment(totalCreditsEarned),
-        });
+      const card = document.createElement("div");
+      card.className = "campaign-card";
+      card.innerHTML = `
+        <h3>${campaign.genre}</h3>
+        <p><a href="${campaign.trackUrl}" target="_blank">🔗 SoundCloud Track</a></p>
+        <p>💸 Earn ${creditsEarned} credits for reposting</p>
+        <label>
+          <input type="checkbox" class="like-toggle" checked />
+          ❤️ Like this track for 1 extra credit
+        </label>
+        <button class="repost-btn" data-id="${id}" data-user="${campaign.userId}" data-earn="${creditsEarned}">Repost & Earn</button>
+        <div class="status-msg" id="status-${id}"></div>
+      `;
 
-        await updateDoc(doc(db, "campaigns", docSnap.id), {
-          credits: increment(-totalCreditsEarned),
-        });
+      container.appendChild(card);
+    });
 
-        await addDoc(collection(db, "reposts"), {
-          userId: user.uid,
-          campaignId: docSnap.id,
-          liked: likeChecked,
-          comment: commentText || null,
-          earned: totalCreditsEarned,
-          createdAt: serverTimestamp(),
-        });
+    container.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("repost-btn")) {
+        const btn = e.target;
+        const campaignId = btn.dataset.id;
+        const ownerId = btn.dataset.user;
+        const creditsToEarn = parseInt(btn.dataset.earn);
+        const likeChecked = btn.parentElement.querySelector(".like-toggle").checked;
 
-        card.querySelector(".repost-btn").disabled = true;
-        card.querySelector(".repost-btn").textContent = `✅ Reposted for ${totalCreditsEarned} credits!`;
-      } catch (err) {
-        console.error("Repost error:", err);
-        alert("❌ Something went wrong. Try again.");
+        const totalEarned = likeChecked ? creditsToEarn + 1 : creditsToEarn;
+        const status = document.getElementById(`status-${campaignId}`);
+
+        try {
+          // 👤 Reward current user
+          await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            credits: increment(totalEarned)
+          });
+
+          // 💸 Deduct from campaign owner
+          await updateDoc(doc(db, "users", ownerId), {
+            credits: increment(-totalEarned)
+          });
+
+          status.textContent = `✅ Earned ${totalEarned} credits!`;
+        } catch (err) {
+          console.error("Error crediting repost:", err);
+          status.textContent = "❌ Something went wrong.";
+        }
       }
     });
 
-    campaignsContainer.appendChild(card);
-  });
+  } catch (err) {
+    console.error("Failed to load repost campaigns:", err);
+    container.innerHTML = `<p>Error loading repost campaigns.</p>`;
+  }
 });
