@@ -1,63 +1,87 @@
-import { Client, Environment } from "square";
+// public/js/credits.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const squareClient = new Client({
-  environment: Environment.Production,
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
+// Firebase config
+import { firebaseConfig } from "../firebaseConfig.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const creditDisplay = document.getElementById("creditBalance");
+const statusBox = document.getElementById("status");
+
+// Show current credits
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    creditDisplay.textContent = "Please log in to view your credits.";
+    return;
+  }
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
+  creditDisplay.textContent = `You currently have ${credits} credits.`;
 });
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+// Handle credit purchase
+document.querySelectorAll(".buy-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const credits = parseInt(button.dataset.credits);
+    const amount = parseInt(button.dataset.price); // In cents
+    const plan = button.dataset.plan || null;
 
-  try {
-    const { amount, credits, userId, plan } = req.body;
+    statusBox.textContent = "Redirecting to payment...";
 
-    if (!amount || !credits || !userId) {
-      return res.status(400).json({ error: "Missing required fields." });
-    }
-
-    const amountInCents = Math.round(amount * 100);
-    const idempotencyKey = `trackrepost-${userId}-${Date.now()}`;
-
-    const note = `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`;
-
-    const { result } = await squareClient.checkoutApi.createCheckout(
-      process.env.SQUARE_LOCATION_ID,
-      {
-        idempotencyKey,
-        order: {
-          order: {
-            locationId: process.env.SQUARE_LOCATION_ID,
-            lineItems: [
-              {
-                name: `${credits} Credits`,
-                quantity: "1",
-                basePriceMoney: {
-                  amount: amountInCents,
-                  currency: "CAD",
-                },
-              },
-            ],
-          },
-        },
-        redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`,
-        note,
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        statusBox.textContent = "❌ You must be logged in.";
+        return;
       }
-    );
 
-    const checkoutUrl = result?.checkout?.checkoutPageUrl;
+      // Debug log
+      console.log("Creating checkout for:", {
+        userId: user.uid,
+        credits,
+        amount,
+        plan
+      });
 
-    if (!checkoutUrl) {
-      return res.status(500).json({ error: "No checkout URL returned." });
+      const res = await fetch("/api/square/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          credits,
+          amount,
+          plan
+        })
+      });
+
+      const data = await res.json();
+
+      if (data && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        console.error("Checkout failed response:", data);
+        statusBox.textContent = "❌ Failed to initiate payment.";
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      statusBox.textContent = "❌ Error redirecting to payment.";
     }
-
-    res.status(200).json({ checkoutUrl });
-  } catch (error) {
-    console.error("❌ Checkout Error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-}
+  });
+});
 
 
 
