@@ -1,4 +1,3 @@
-// public/js/submit-campaign.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
@@ -9,22 +8,25 @@ import {
   doc,
   setDoc,
   getDoc,
+  collection,
   query,
   where,
-  collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { firebaseConfig } from "../firebaseConfig.js";
+
+// Firebase config
+import { firebaseConfig } from "./firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const genreInput = document.getElementById("genre");
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
+const genreInput = document.getElementById("genre");
 
+// Genre detection (simple fallback method)
 const autoDetectGenre = async (url) => {
   const genres = [
     "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
@@ -33,8 +35,8 @@ const autoDetectGenre = async (url) => {
     "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
     "Trance", "Trap", "Triphop", "World"
   ];
-  const title = url.toLowerCase();
-  const match = genres.find(g => title.includes(g.toLowerCase()));
+  const lower = url.toLowerCase();
+  const match = genres.find(g => lower.includes(g.toLowerCase()));
   return match || "Pop";
 };
 
@@ -50,37 +52,33 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // 🔐 Get user profile
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
   const userData = userSnap.exists() ? userSnap.data() : {};
-  const credits = userData.credits || 0;
   const isPro = userData.isPro || false;
+  const currentCredits = userData.credits || 0;
+  creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
 
-  creditDisplay.textContent = `You currently have ${credits} credits.`;
-
-  // 🔐 Check for existing campaigns
+  // Enforce campaign limit for free users
   const campaignQuery = query(
     collection(db, "campaigns"),
     where("userId", "==", user.uid)
   );
   const campaignSnap = await getDocs(campaignQuery);
-  const hasCampaign = !campaignSnap.empty;
+  const activeCampaignCount = campaignSnap.size;
 
-  if (!isPro && hasCampaign) {
+  if (!isPro && activeCampaignCount >= 1) {
     form.style.display = "none";
-    statusBox.textContent = "⚠️ Free users can only run 1 campaign. Upgrade to Pro to submit more.";
+    statusBox.innerHTML = `⚠️ Free users can only run 1 campaign. <a href="pro-plan.html">Upgrade to Pro</a> to run more.`;
     return;
   }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    statusBox.textContent = "Submitting...";
 
     const trackUrl = form.trackUrl.value;
     const genre = genreInput.value;
-
-    statusBox.classList.remove("hidden");
-    statusBox.textContent = "Submitting...";
 
     try {
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
@@ -89,19 +87,18 @@ onAuthStateChanged(auth, async (user) => {
         trackUrl,
         genre,
         credits: 0,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       });
 
-      statusBox.textContent = "✅ Campaign submitted successfully!";
+      statusBox.textContent = "✅ Campaign submitted!";
       form.reset();
       genreInput.value = "";
     } catch (err) {
-      console.error("Submission error:", err);
-      statusBox.textContent = "❌ Submission failed. Please try again.";
+      console.error(err);
+      statusBox.textContent = "❌ Failed to submit campaign.";
     }
   });
 });
-
 
 
 
