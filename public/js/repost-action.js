@@ -10,6 +10,9 @@ import {
   updateDoc,
   setDoc,
   collection,
+  query,
+  where,
+  getDocs,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { firebaseConfig } from "../firebaseConfig.js";
@@ -50,7 +53,7 @@ const buildRepostUI = (data) => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    status.textContent = "Checking eligibility...";
+    status.textContent = "Checking repost limits...";
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -65,6 +68,7 @@ const buildRepostUI = (data) => {
         return;
       }
 
+      // Get user data
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.exists() ? userSnap.data() : {};
@@ -82,11 +86,30 @@ const buildRepostUI = (data) => {
       if (comment) totalReward += 2;
 
       if (data.credits < totalReward) {
-        status.textContent = `❌ This campaign only has ${data.credits} credits, but you would earn ${totalReward}. Try another one.`;
+        status.textContent = `❌ Not enough campaign credits to pay you (${totalReward} needed).`;
         return;
       }
 
-      // Proceed to update credits
+      // Enforce repost limit (10 every 12 hours)
+      const now = new Date();
+      const resetHour = now.getHours() < 12 ? 0 : 12;
+      const windowStart = new Date(now);
+      windowStart.setHours(resetHour, 0, 0, 0);
+
+      const repostsQuery = query(
+        collection(db, "reposts"),
+        where("userId", "==", user.uid),
+        where("timestamp", ">", windowStart)
+      );
+
+      const repostsSnap = await getDocs(repostsQuery);
+      const regularReposts = repostsSnap.docs.filter(doc => !doc.data().prompted);
+      if (regularReposts.length >= 10) {
+        status.textContent = "⏳ You've hit your repost limit for now. Try again later.";
+        return;
+      }
+
+      // Save repost record
       await setDoc(repostRef, {
         userId: user.uid,
         campaignId,
