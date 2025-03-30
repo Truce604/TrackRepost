@@ -14,38 +14,39 @@
   <!-- Firebase Config -->
   <script src="firebaseConfig.js"></script>
 
-  <!-- Logic -->
+  <!-- SoundCloud Connect Logic -->
   <script type="module" src="js/connect-soundcloud.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>🔗 Connecting SoundCloud</h1>
+    <h1>🎧 Connect Your SoundCloud</h1>
   </header>
 
   <main class="container">
-    <p>Connecting your SoundCloud profile…</p>
-    <div class="spinner"></div>
+    <form id="soundcloud-form">
+      <label for="soundcloudUrl">Paste your SoundCloud profile URL:</label>
+      <input
+        type="url"
+        id="soundcloudUrl"
+        name="soundcloudUrl"
+        placeholder="https://soundcloud.com/yourusername"
+        required
+      />
+      <button type="submit">Connect Profile</button>
+    </form>
+
+    <div id="status" class="status-message"></div>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <style>
-    .spinner {
-      margin: 30px auto;
-      border: 6px solid rgba(255, 204, 0, 0.2);
-      border-top: 6px solid #ffcc00;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+  <!-- Site Navigation -->
+  <div id="site-header"></div>
+  <script type="module" src="js/header.js" defer></script>
 </body>
 </html>
+
+
 
