@@ -1,6 +1,3 @@
-
-
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
@@ -34,19 +31,32 @@ exports.squareWebhook = functions
     const event = JSON.parse(rawBody);
 
     if (event.type === "payment.created") {
-      const note = event.data.object.payment.note;
-      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
+      const note = event.data.object.payment.note || "";
+      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)(?:\sPlan=(\w+))?/);
 
       if (match) {
         const credits = parseInt(match[1], 10);
         const userId = match[2];
+        const plan = match[3]; // optional
 
         const userRef = db.collection("users").doc(userId);
-        await userRef.update({
+        const updateData = {
           credits: admin.firestore.FieldValue.increment(credits),
-        });
+        };
 
-        console.log(`✅ Added ${credits} credits to user ${userId}`);
+        if (plan) {
+          const now = new Date();
+          const expiresAt = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+          updateData.proPlan = {
+            tier: plan,
+            active: true,
+            expiresAt,
+          };
+        }
+
+        await userRef.set(updateData, { merge: true });
+
+        console.log(`✅ ${credits} credits added to ${userId}${plan ? ` with ${plan} plan` : ""}`);
         return res.status(200).send("Success");
       } else {
         console.warn("No matching note format found");
