@@ -3,33 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Credits – TrackRepost</title>
+  <title>Buy Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
-  <script src="firebaseConfig.js" defer></script>
-  <script src="js/credits.js" defer></script>
+
+  <!-- Firebase Config -->
+  <script src="firebaseConfig.js"></script>
+
+  <!-- Script for Purchase Buttons -->
+  <script type="module" src="js/credits.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>💰 Credits</h1>
+    <h1>💰 Buy Credits</h1>
   </header>
 
   <main class="container">
-    <section>
-      <h2>Your Balance</h2>
-      <p id="creditBalance">Loading...</p>
-    </section>
+    <div id="creditBalance" class="credit-display">Loading your balance...</div>
 
-    <section>
-      <h2>Buy More Credits</h2>
-      <div class="button-group">
-        <button data-credits="100">Buy 100 Credits ($1.00)</button>
-        <button data-credits="500">Buy 500 Credits ($5.00)</button>
-        <button data-credits="1000">Buy 1000 Credits ($10.00)</button>
-      </div>
-    </section>
+    <h2>Choose Your Plan</h2>
+
+    <div class="plan-card">
+      <h3>500 Credits</h3>
+      <p>$24.99</p>
+      <button class="buy-btn" data-credits="500" data-price="2499">Buy Now</button>
+    </div>
+
+    <div class="plan-card">
+      <h3>1000 Credits</h3>
+      <p>$34.99</p>
+      <button class="buy-btn" data-credits="1000" data-price="3499">Buy Now</button>
+    </div>
+
+    <div class="plan-card">
+      <h3>2500 Credits + 1 Month Artist Plan</h3>
+      <p>$79.99</p>
+      <button class="buy-btn" data-credits="2500" data-price="7999" data-plan="artist">Buy Now</button>
+    </div>
+
+    <div class="plan-card">
+      <h3>5000 Credits + 1 Month Network Plan</h3>
+      <p>$139.99</p>
+      <button class="buy-btn" data-credits="5000" data-price="13999" data-plan="network">Buy Now</button>
+    </div>
+
+    <div class="plan-card">
+      <h3>25000 Credits + 1 Month Promoter Plan</h3>
+      <p>$549.99</p>
+      <button class="buy-btn" data-credits="25000" data-price="54999" data-plan="promoter">Buy Now</button>
+    </div>
+
+    <div id="status" class="status-message"></div>
   </main>
 
   <footer>
@@ -37,3 +65,4 @@
   </footer>
 </body>
 </html>
+
