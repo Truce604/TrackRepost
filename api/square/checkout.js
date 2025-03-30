@@ -46,17 +46,18 @@ export default async function handler(req, res) {
       }
     );
 
-    if (!result.checkout?.checkoutPageUrl) {
+    const checkoutUrl = result?.checkout?.checkoutPageUrl;
+
+    if (!checkoutUrl) {
       return res.status(500).json({ error: "No checkout URL returned." });
     }
 
-    res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
+    res.status(200).json({ checkoutUrl });
   } catch (error) {
     console.error("❌ Checkout Error:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 }
-
 
 
 
