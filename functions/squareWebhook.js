@@ -31,32 +31,34 @@ exports.squareWebhook = functions
     const event = JSON.parse(rawBody);
 
     if (event.type === "payment.created") {
-      const note = event.data.object.payment.note || "";
-      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)(?:\sPlan=(\w+))?/);
+      const note = event.data.object.payment.note;
+      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)(?:\sPlan=(\w+))?/);
 
       if (match) {
         const credits = parseInt(match[1], 10);
         const userId = match[2];
-        const plan = match[3]; // optional
+        const plan = match[3] || null;
 
-        const userRef = db.collection("users").doc(userId);
-        const updateData = {
+        const updates = {
           credits: admin.firestore.FieldValue.increment(credits),
         };
 
         if (plan) {
-          const now = new Date();
-          const expiresAt = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
-          updateData.proPlan = {
+          const now = admin.firestore.Timestamp.now();
+          const oneMonthFromNow = admin.firestore.Timestamp.fromDate(
+            new Date(now.toDate().setMonth(now.toDate().getMonth() + 1))
+          );
+
+          updates.pro = {
             tier: plan,
-            active: true,
-            expiresAt,
+            expiresAt: oneMonthFromNow,
           };
         }
 
-        await userRef.set(updateData, { merge: true });
+        const userRef = db.collection("users").doc(userId);
+        await userRef.set(updates, { merge: true });
 
-        console.log(`✅ ${credits} credits added to ${userId}${plan ? ` with ${plan} plan` : ""}`);
+        console.log(`✅ Added ${credits} credits to user ${userId}${plan ? ` with ${plan} plan` : ""}`);
         return res.status(200).send("Success");
       } else {
         console.warn("No matching note format found");
