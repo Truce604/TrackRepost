@@ -9,55 +9,65 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
-    authDomain: "trackrepost-921f8.firebaseapp.com", 
-    projectId: "trackrepost-921f8", 
-    storageBucket: "trackrepost-921f8.appspot.com", 
-    messagingSenderId: "967836604288", 
-    appId: "1:967836604288:web:3782d50de7384c9201d365", 
-    measurementId: "G-G65Q3HC3R8" 
-};
+// Firebase config
+import { firebaseConfig } from "../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 const creditDisplay = document.getElementById("creditBalance");
-const buttons = document.querySelectorAll("button[data-credits]");
+const statusBox = document.getElementById("status");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    creditDisplay.textContent = "Please log in.";
+    creditDisplay.textContent = "Please log in to view your credits.";
     return;
   }
 
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
+  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
+  creditDisplay.textContent = `You currently have ${credits} credits.`;
+});
 
-  if (userSnap.exists()) {
-    const data = userSnap.data();
-    creditDisplay.textContent = `${data.credits || 0} credits`;
-  } else {
-    creditDisplay.textContent = "No data.";
-  }
+// Handle Buy Button Clicks
+document.querySelectorAll(".buy-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const credits = button.dataset.credits;
+    const price = button.dataset.price;
+    const plan = button.dataset.plan || null;
 
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const credits = parseInt(btn.getAttribute("data-credits"));
+    statusBox.textContent = "Redirecting to payment...";
 
-      const res = await fetch("/api/square/checkout", {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        statusBox.textContent = "You must be logged in.";
+        return;
+      }
+
+      const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, credits }),
+        body: JSON.stringify({
+          userId: user.uid,
+          credits: parseInt(credits),
+          amount: parseInt(price),
+          plan
+        })
       });
 
       const data = await res.json();
-      if (data.checkoutUrl) {
+      if (data && data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        alert("Something went wrong. Try again.");
+        statusBox.textContent = "❌ Failed to initiate payment.";
       }
-    });
+    } catch (err) {
+      console.error(err);
+      statusBox.textContent = "❌ Error redirecting to payment.";
+    }
   });
 });
+
