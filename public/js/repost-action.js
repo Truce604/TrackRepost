@@ -1,4 +1,3 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
@@ -11,19 +10,18 @@ import {
   updateDoc,
   setDoc,
   collection,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase config
 import { firebaseConfig } from "../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
 const container = document.getElementById("repost-action-container");
-
-// Get campaign ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const campaignId = urlParams.get("id");
 
@@ -32,7 +30,6 @@ if (!campaignId) {
   throw new Error("Missing campaign ID");
 }
 
-// UI Builder
 const buildRepostUI = (data, campaignId) => {
   container.innerHTML = `
     <h2>${data.genre} – Earn Credits!</h2>
@@ -71,7 +68,24 @@ const buildRepostUI = (data, campaignId) => {
         return;
       }
 
-      // Get options
+      // Enforce 10 reposts per 12-hour window unless prompted
+      const now = new Date();
+      const localHour = now.getHours();
+      const resetHour = localHour >= 12 ? 12 : 0;
+      const windowStart = new Date(now);
+      windowStart.setHours(resetHour, 0, 0, 0);
+
+      const repostsQuery = query(
+        collection(db, "reposts"),
+        where("userId", "==", user.uid),
+        where("timestamp", ">=", windowStart)
+      );
+      const repostsSnap = await getDocs(repostsQuery);
+      if (repostsSnap.size >= 10) {
+        status.textContent = "⏳ You've hit your repost limit for this period. Come back later!";
+        return;
+      }
+
       const like = document.getElementById("like").checked;
       const follow = document.getElementById("follow").checked;
       const comment = document.getElementById("comment").checked;
@@ -80,13 +94,12 @@ const buildRepostUI = (data, campaignId) => {
       let earnedCredits = 0;
       const userSnap = await getDoc(doc(db, "users", user.uid));
       const followerCount = userSnap.exists() ? userSnap.data().followers || 0 : 0;
-      earnedCredits += Math.floor(followerCount / 100); // Base reward
+      earnedCredits += Math.floor(followerCount / 100);
 
       if (like) earnedCredits += 1;
       if (follow) earnedCredits += 2;
       if (comment) earnedCredits += 2;
 
-      // Save repost log
       await setDoc(repostRef, {
         userId: user.uid,
         campaignId,
@@ -99,12 +112,10 @@ const buildRepostUI = (data, campaignId) => {
         commentText
       });
 
-      // Add credits to user
       await updateDoc(doc(db, "users", user.uid), {
         credits: (userSnap.data().credits || 0) + earnedCredits
       });
 
-      // Deduct from campaign
       await updateDoc(doc(db, "campaigns", campaignId), {
         credits: data.credits - earnedCredits
       });
@@ -114,7 +125,6 @@ const buildRepostUI = (data, campaignId) => {
   });
 };
 
-// Load campaign data
 const loadCampaign = async () => {
   try {
     const docSnap = await getDoc(doc(db, "campaigns", campaignId));
