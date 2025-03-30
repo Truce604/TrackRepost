@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upgrade to Pro - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+  <script src="firebaseConfig.js"></script>
+
+  <!-- Logic (we'll create this next) -->
+  <script type="module" src="js/pro-plan.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <h1>🌟 Upgrade to Pro</h1>
+  </header>
+
+  <main class="container">
+    <p>Ready to level up? Unlock these Pro features:</p>
+
+    <ul style="text-align: left; margin-top: 20px;">
+      <li>✅ Run multiple campaigns at once</li>
+      <li>⚡ Get priority placement in repost feeds</li>
+      <li>📈 Access advanced campaign analytics</li>
+      <li>🔁 Increased daily repost limits</li>
+    </ul>
+
+    <div class="plan-badge" style="margin-top: 30px;">$10/month</div>
+
+    <button id="buy-pro-btn">Upgrade to Pro</button>
+
+    <div id="status" class="status-message"></div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
+
+  <div id="site-header"></div>
+  <script type="module" src="js/header.js" defer></script>
+</body>
+</html>
