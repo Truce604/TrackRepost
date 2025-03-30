@@ -1,57 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Complete Repost - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+const firebaseConfig = {
+  apiKey: "xxx",
+  authDomain: "xxx",
+  projectId: "xxx",
+  storageBucket: "xxx",
+  messagingSenderId: "xxx",
+  appId: "xxx",
+  measurementId: "xxx",
+};
 
-  <!-- Config + Logic -->
-  <script src="firebaseConfig.js"></script>
-  <script type="module" src="js/repost-action.js" defer></script>
-</head>
-<body>
-  <header>
-    <h1>🔁 Complete Your Repost</h1>
-  </header>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-  <main class="container">
-    <div id="track-info">
-      <p><strong>Track:</strong> <a href="#" target="_blank" id="track-url">Loading...</a></p>
-      <p><strong>Genre:</strong> <span id="track-genre">Loading...</span></p>
-    </div>
+async function alreadyReposted(userId, campaignId) {
+  const q = query(
+    collection(db, "reposts"),
+    where("userId", "==", userId),
+    where("campaignId", "==", campaignId)
+  );
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+}
 
-    <form id="repost-options">
-      <label>
-        <input type="checkbox" id="likeTrack" checked />
-        ❤️ Like this track (earn +1 credit)
-      </label>
+async function repostLimitReached(userId) {
+  const twelveHoursAgo = Timestamp.fromDate(new Date(Date.now() - 12 * 60 * 60 * 1000));
+  const q = query(
+    collection(db, "reposts"),
+    where("userId", "==", userId),
+    where("timestamp", ">=", twelveHoursAgo),
+    where("prompted", "==", false)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.size >= 10;
+}
 
-      <label>
-        <input type="checkbox" id="leaveComment" />
-        💬 Leave a comment (earn +2 credits)
-      </label>
+async function logRepost({ userId, campaignId, trackUrl, prompted }) {
+  await addDoc(collection(db, "reposts"), {
+    userId,
+    campaignId,
+    trackUrl,
+    prompted,
+    timestamp: Timestamp.now()
+  });
+}
 
-      <label>
-        <input type="checkbox" id="followUser" />
-        ➕ Follow campaign owner (earn +2 credits)
-      </label>
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
 
-      <textarea id="commentText" placeholder="Your comment here..." style="width: 100%; margin-top: 10px; display: none;"></textarea>
+  const urlParams = new URLSearchParams(window.location.search);
+  const campaignId = urlParams.get("id");
+  const trackUrl = urlParams.get("track");
 
-      <button type="submit">✅ Confirm Repost</button>
-    </form>
+  if (!campaignId || !trackUrl) return;
 
-    <div id="status" class="status-message"></div>
-  </main>
+  if (await alreadyReposted(user.uid, campaignId)) {
+    alert("❌ You already reposted this track.");
+    return;
+  }
 
-  <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
-  </footer>
-</body>
-</html>
+  if (await repostLimitReached(user.uid)) {
+    alert("❌ You’ve reached the repost limit (10 every 12 hours).");
+    return;
+  }
+
+  // Log repost (auto-assume it's not prompted for now)
+  await logRepost({
+    userId: user.uid,
+    campaignId,
+    trackUrl,
+    prompted: false
+  });
+
+  alert("✅ Repost logged successfully! Credits awarded.");
+  window.location.href = "/dashboard.html";
+});
+
