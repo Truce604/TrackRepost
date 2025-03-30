@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, credits, userId } = req.body;
+    const { amount, credits, userId, plan } = req.body;
 
     if (!amount || !credits || !userId) {
       return res.status(400).json({ error: "Missing required fields." });
@@ -19,6 +19,8 @@ export default async function handler(req, res) {
 
     const amountInCents = Math.round(amount * 100);
     const idempotencyKey = `trackrepost-${userId}-${Date.now()}`;
+
+    const note = `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`;
 
     const { result } = await squareClient.checkoutApi.createCheckout(
       process.env.SQUARE_LOCATION_ID,
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
           },
         },
         redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`,
-        note: `${credits} Credits Purchase for userId=${userId}`,
+        note,
       }
     );
 
@@ -54,6 +56,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 }
+
 
 
 
