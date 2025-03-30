@@ -10,17 +10,14 @@ import {
   updateDoc,
   setDoc,
   collection,
-  serverTimestamp,
-  query,
-  where,
-  getDocs
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 import { firebaseConfig } from "../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 const container = document.getElementById("repost-action-container");
 const urlParams = new URLSearchParams(window.location.search);
 const campaignId = urlParams.get("id");
@@ -30,7 +27,7 @@ if (!campaignId) {
   throw new Error("Missing campaign ID");
 }
 
-const buildRepostUI = (data, campaignId) => {
+const buildRepostUI = (data) => {
   container.innerHTML = `
     <h2>${data.genre} – Earn Credits!</h2>
     <iframe width="100%" height="166" scrolling="no" frameborder="no"
@@ -41,7 +38,7 @@ const buildRepostUI = (data, campaignId) => {
       <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label><br>
       <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label><br>
       <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label><br>
-      <input type="text" id="commentText" placeholder="Enter your comment here..." style="margin-top: 10px; width: 100%;" />
+      <input type="text" id="commentText" placeholder="Enter your comment here..." />
       <button type="submit">✅ Complete Repost & Earn</button>
     </form>
 
@@ -53,7 +50,7 @@ const buildRepostUI = (data, campaignId) => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    status.textContent = "Processing...";
+    status.textContent = "Checking eligibility...";
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -68,38 +65,28 @@ const buildRepostUI = (data, campaignId) => {
         return;
       }
 
-      // Enforce 10 reposts per 12-hour window unless prompted
-      const now = new Date();
-      const localHour = now.getHours();
-      const resetHour = localHour >= 12 ? 12 : 0;
-      const windowStart = new Date(now);
-      windowStart.setHours(resetHour, 0, 0, 0);
-
-      const repostsQuery = query(
-        collection(db, "reposts"),
-        where("userId", "==", user.uid),
-        where("timestamp", ">=", windowStart)
-      );
-      const repostsSnap = await getDocs(repostsQuery);
-      if (repostsSnap.size >= 10) {
-        status.textContent = "⏳ You've hit your repost limit for this period. Come back later!";
-        return;
-      }
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      const followers = userData.followers || 0;
+      const baseReward = Math.floor(followers / 100);
 
       const like = document.getElementById("like").checked;
       const follow = document.getElementById("follow").checked;
       const comment = document.getElementById("comment").checked;
       const commentText = document.getElementById("commentText").value;
 
-      let earnedCredits = 0;
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      const followerCount = userSnap.exists() ? userSnap.data().followers || 0 : 0;
-      earnedCredits += Math.floor(followerCount / 100);
+      let totalReward = baseReward;
+      if (like) totalReward += 1;
+      if (follow) totalReward += 2;
+      if (comment) totalReward += 2;
 
-      if (like) earnedCredits += 1;
-      if (follow) earnedCredits += 2;
-      if (comment) earnedCredits += 2;
+      if (data.credits < totalReward) {
+        status.textContent = `❌ This campaign only has ${data.credits} credits, but you would earn ${totalReward}. Try another one.`;
+        return;
+      }
 
+      // Proceed to update credits
       await setDoc(repostRef, {
         userId: user.uid,
         campaignId,
@@ -113,14 +100,22 @@ const buildRepostUI = (data, campaignId) => {
       });
 
       await updateDoc(doc(db, "users", user.uid), {
-        credits: (userSnap.data().credits || 0) + earnedCredits
+        credits: (userData.credits || 0) + totalReward
       });
 
       await updateDoc(doc(db, "campaigns", campaignId), {
-        credits: data.credits - earnedCredits
+        credits: data.credits - totalReward
       });
 
-      status.textContent = `✅ Repost complete! You earned ${earnedCredits} credits.`;
+      await setDoc(doc(collection(db, "transactions")), {
+        userId: user.uid,
+        type: "earned",
+        amount: totalReward,
+        reason: `Reposted ${data.trackUrl}`,
+        timestamp: serverTimestamp()
+      });
+
+      status.textContent = `✅ Repost complete! You earned ${totalReward} credits.`;
     });
   });
 };
@@ -134,12 +129,7 @@ const loadCampaign = async () => {
     }
 
     const data = docSnap.data();
-    if (data.credits <= 0) {
-      container.innerHTML = "<p>⚠️ This campaign has run out of credits.</p>";
-      return;
-    }
-
-    buildRepostUI(data, campaignId);
+    buildRepostUI(data);
   } catch (err) {
     console.error("Error loading campaign:", err);
     container.innerHTML = "<p>❌ Failed to load campaign.</p>";
