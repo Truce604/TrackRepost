@@ -1,13 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
   getFirestore,
   doc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
@@ -20,55 +20,61 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-function getAccessTokenFromHash() {
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  return params.get("access_token");
-}
+const form = document.getElementById("soundcloud-form");
+const status = document.getElementById("status");
 
-async function fetchSoundCloudProfile(token) {
-  const response = await fetch("https://api.soundcloud.com/me", {
-    headers: {
-      Authorization: `OAuth ${token}`
-    }
-  });
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  status.textContent = "🔍 Fetching profile...";
 
-  if (!response.ok) throw new Error("Failed to fetch SoundCloud profile");
-  return response.json();
-}
+  const profileUrl = form.soundcloudUrl.value;
+  const match = profileUrl.match(/soundcloud\.com\/([^\/\s]+)/);
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-
-  const token = getAccessTokenFromHash();
-  if (!token) {
-    alert("Missing SoundCloud access token.");
+  if (!match) {
+    status.textContent = "❌ Invalid SoundCloud URL.";
     return;
   }
 
+  const handle = match[1];
+  const apiUrl = `https://soundcloud.com/${handle}`;
+
   try {
-    const profile = await fetchSoundCloudProfile(token);
+    const response = await fetch(apiUrl);
+    const html = await response.text();
 
-    const userData = {
-      soundcloudId: profile.id,
-      soundcloudUsername: profile.username,
-      soundcloudUrl: profile.permalink_url,
-      soundcloudFollowers: profile.followers_count,
-      soundcloudAvatar: profile.avatar_url,
-      soundcloudBio: profile.description || "",
-      soundcloudToken: token, // optional to store for reposting
-      updatedAt: new Date().toISOString()
-    };
+    const displayNameMatch = html.match(/<title>([^<]+)\| Listen/);
+    const bioMatch = html.match(/<meta name="description" content="([^"]+)"/);
+    const followersMatch = html.match(/([0-9,]+)\s+followers/i);
 
-    await setDoc(doc(db, "users", user.uid), userData, { merge: true });
+    const displayName = displayNameMatch ? displayNameMatch[1].trim() : handle;
+    const bio = bioMatch ? bioMatch[1].trim() : "No bio found";
+    const followers = followersMatch ? parseInt(followersMatch[1].replace(/,/g, '')) : 0;
 
-    window.location.href = "submit-campaign.html";
-  } catch (error) {
-    console.error("SoundCloud connect failed:", error);
-    alert("Error connecting to SoundCloud. Try again.");
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        status.textContent = "❌ You must be logged in.";
+        return;
+      }
+
+      await setDoc(doc(db, "users", user.uid), {
+        soundcloud: {
+          handle,
+          url: profileUrl,
+          displayName,
+          bio,
+          followers
+        }
+      }, { merge: true });
+
+      status.textContent = `✅ Connected to @${handle} with ${followers} followers!`;
+    });
+  } catch (err) {
+    console.error(err);
+    status.textContent = "❌ Failed to fetch profile.";
   }
 });
+
 
