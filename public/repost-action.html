@@ -2,7 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import {
   getFirestore,
   collection,
+  doc,
+  getDoc,
   addDoc,
+  updateDoc,
+  increment,
   query,
   where,
   getDocs,
@@ -14,13 +18,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "xxx",
-  authDomain: "xxx",
-  projectId: "xxx",
-  storageBucket: "xxx",
-  messagingSenderId: "xxx",
-  appId: "xxx",
-  measurementId: "xxx",
+  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+  authDomain: "trackrepost-921f8.firebaseapp.com", 
+  projectId: "trackrepost-921f8", 
+  storageBucket: "trackrepost-921f8.appspot.com", 
+  messagingSenderId: "967836604288", 
+  appId: "1:967836604288:web:3782d50de7384c9201d365", 
+  measurementId: "G-G65Q3HC3R8" 
 };
 
 const app = initializeApp(firebaseConfig);
@@ -78,7 +82,45 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Log repost (auto-assume it's not prompted for now)
+  // Fetch follower count
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  const followerCount = userDoc.exists() ? (userDoc.data().soundcloud?.followers || 0) : 0;
+  const earnedCredits = Math.floor(followerCount / 100);
+
+  if (earnedCredits === 0) {
+    alert("❌ You need at least 100 followers to earn credits from reposting.");
+    return;
+  }
+
+  // Fetch campaign and deduct credits from owner
+  const campaignRef = doc(db, "campaigns", campaignId);
+  const campaignSnap = await getDoc(campaignRef);
+
+  if (!campaignSnap.exists()) {
+    alert("❌ Campaign not found.");
+    return;
+  }
+
+  const campaign = campaignSnap.data();
+  const campaignOwner = campaign.userId;
+
+  if (campaign.credits < earnedCredits) {
+    alert("❌ Campaign does not have enough credits left.");
+    return;
+  }
+
+  // Deduct from campaign owner
+  await updateDoc(campaignRef, {
+    credits: campaign.credits - earnedCredits
+  });
+
+  // Award to reposting user
+  const userRef = doc(db, "users", user.uid);
+  await updateDoc(userRef, {
+    credits: increment(earnedCredits)
+  });
+
+  // Log repost
   await logRepost({
     userId: user.uid,
     campaignId,
@@ -86,7 +128,6 @@ onAuthStateChanged(auth, async (user) => {
     prompted: false
   });
 
-  alert("✅ Repost logged successfully! Credits awarded.");
+  alert(`✅ Repost logged! You earned ${earnedCredits} credits.`);
   window.location.href = "/dashboard.html";
 });
-
