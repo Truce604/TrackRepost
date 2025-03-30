@@ -1,10 +1,11 @@
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const getRawBody = require("raw-body");
 
-admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 
 exports.squareWebhook = functions
@@ -33,28 +34,32 @@ exports.squareWebhook = functions
 
     if (event.type === "payment.created") {
       const note = event.data.object.payment.note;
-      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)(?:\sPlan=(\w+))?/);
+      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
 
       if (match) {
         const credits = parseInt(match[1], 10);
         const userId = match[2];
-        const plan = match[3]; // Optional
 
         const userRef = db.collection("users").doc(userId);
 
-        const updates = {
+        const updateData = {
           credits: admin.firestore.FieldValue.increment(credits),
         };
 
-        if (plan) {
-          const now = admin.firestore.Timestamp.now();
-          const expiry = admin.firestore.Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // +30 days
-          updates.proPlan = plan;
-          updates.proPlanExpiry = expiry;
-          console.log(`💎 Upgraded ${userId} to ${plan} Plan until ${expiry.toDate().toLocaleString()}`);
+        if (credits >= 2500) {
+          const now = new Date();
+          const oneMonthLater = new Date();
+          oneMonthLater.setMonth(now.getMonth() + 1);
+
+          updateData.proPlan = credits === 2500 ? "artist"
+                           : credits === 5000 ? "network"
+                           : credits === 25000 ? "promoter"
+                           : null;
+
+          updateData.proPlanExpires = admin.firestore.Timestamp.fromDate(oneMonthLater);
         }
 
-        await userRef.set(updates, { merge: true });
+        await userRef.update(updateData);
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
@@ -65,6 +70,3 @@ exports.squareWebhook = functions
 
     res.status(200).send("Ignored");
   });
-
-
-
