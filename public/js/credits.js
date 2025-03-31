@@ -1,6 +1,3 @@
-// public/js/credits.js
-console.log("✅ credits.js is running...");
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
@@ -12,8 +9,16 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase config
-import { firebaseConfig } from "../firebaseConfig.js";
+// ✅ Firebase config inline (replace with your actual keys)
+const firebaseConfig = {
+  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+  authDomain: "trackrepost-921f8.firebaseapp.com", 
+  projectId: "trackrepost-921f8", 
+  storageBucket: "trackrepost-921f8.appspot.com", 
+  messagingSenderId: "967836604288", 
+  appId: "1:967836604288:web:3782d50de7384c9201d365", 
+  measurementId: "G-G65Q3HC3R8" 
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -22,32 +27,21 @@ const db = getFirestore(app);
 const creditDisplay = document.getElementById("creditBalance");
 const statusBox = document.getElementById("status");
 
-// Show credit balance
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     creditDisplay.textContent = "Please log in to view your credits.";
     return;
   }
 
-  try {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
-    creditDisplay.textContent = `You currently have ${credits} credits.`;
-  } catch (err) {
-    console.error("🔥 Failed to fetch credit balance:", err);
-    creditDisplay.textContent = "Error loading credits.";
-  }
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
+  creditDisplay.textContent = `You currently have ${credits} credits.`;
 });
 
-// 🔥 Debug: check that buttons exist
-const buyButtons = document.querySelectorAll(".buy-btn");
-console.log("🧪 Found", buyButtons.length, "buy buttons");
-
-buyButtons.forEach((button) => {
+// ✅ Buy button logic
+document.querySelectorAll(".buy-btn").forEach((button) => {
   button.addEventListener("click", async () => {
-    console.log("🟡 Buy button clicked:", button);
-
     const credits = button.dataset.credits;
     const price = button.dataset.price;
     const plan = button.dataset.plan || null;
@@ -73,17 +67,14 @@ buyButtons.forEach((button) => {
       });
 
       const data = await res.json();
-      console.log("🔁 Response from server:", data);
-
       if (data && data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
         statusBox.textContent = "❌ Failed to initiate payment.";
       }
     } catch (err) {
-      console.error("❌ Checkout redirect error:", err);
+      console.error(err);
       statusBox.textContent = "❌ Error redirecting to payment.";
     }
   });
 });
-
