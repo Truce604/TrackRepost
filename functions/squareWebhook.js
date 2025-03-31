@@ -3,9 +3,7 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const getRawBody = require("raw-body");
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+admin.initializeApp();
 const db = admin.firestore();
 
 exports.squareWebhook = functions
@@ -15,58 +13,60 @@ exports.squareWebhook = functions
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
     if (!webhookSecret) {
-      console.error("Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
+      console.error("❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
       return res.status(500).send("Webhook secret not set");
     }
 
     const rawBody = await getRawBody(req);
-
     const hmac = crypto.createHmac("sha1", webhookSecret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
 
     if (signature !== expectedSignature) {
-      console.error("Invalid signature");
+      console.error("❌ Invalid signature");
       return res.status(403).send("Unauthorized");
     }
 
     const event = JSON.parse(rawBody);
 
     if (event.type === "payment.created") {
-      const note = event.data.object.payment.note;
-      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
+      const note = event.data?.object?.payment?.note;
+      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)(?:\sPlan=(\w+))?/);
 
-      if (match) {
-        const credits = parseInt(match[1], 10);
-        const userId = match[2];
+      if (!match) {
+        console.warn("⚠️ Note format did not match:", note);
+        return res.status(200).send("Note format unrecognized");
+      }
 
+      const credits = parseInt(match[1], 10);
+      const userId = match[2];
+      const plan = match[3] || null;
+
+      try {
         const userRef = db.collection("users").doc(userId);
 
-        const updateData = {
-          credits: admin.firestore.FieldValue.increment(credits),
-        };
+        // Update credits
+        await userRef.update({
+          credits: admin.firestore.FieldValue.increment(credits)
+        });
 
-        if (credits >= 2500) {
-          const now = new Date();
-          const oneMonthLater = new Date();
-          oneMonthLater.setMonth(now.getMonth() + 1);
-
-          updateData.proPlan = credits === 2500 ? "artist"
-                           : credits === 5000 ? "network"
-                           : credits === 25000 ? "promoter"
-                           : null;
-
-          updateData.proPlanExpires = admin.firestore.Timestamp.fromDate(oneMonthLater);
+        // Optionally update plan
+        if (plan) {
+          await userRef.update({
+            proPlan: plan,
+            planStart: admin.firestore.Timestamp.now()
+          });
+          console.log(`✅ Applied ${plan} plan to user ${userId}`);
         }
-
-        await userRef.update(updateData);
 
         console.log(`✅ Added ${credits} credits to user ${userId}`);
         return res.status(200).send("Success");
-      } else {
-        console.warn("No matching note format found");
+      } catch (err) {
+        console.error("❌ Firestore update failed:", err);
+        return res.status(500).send("Firestore update error");
       }
     }
 
-    res.status(200).send("Ignored");
+    res.status(200).send("Event ignored");
   });
+
