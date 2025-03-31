@@ -1,9 +1,8 @@
 const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const admin = require("./firebaseAdmin"); // ✅ Use shared initialized instance
 const crypto = require("crypto");
 const getRawBody = require("raw-body");
 
-admin.initializeApp();
 const db = admin.firestore();
 
 exports.squareWebhook = functions
@@ -17,9 +16,15 @@ exports.squareWebhook = functions
       return res.status(500).send("Webhook secret not set");
     }
 
-    const rawBody = await getRawBody(req);
+    let rawBody;
+    try {
+      rawBody = await getRawBody(req);
+    } catch (err) {
+      console.error("❌ Failed to read raw body:", err);
+      return res.status(400).send("Invalid request body");
+    }
 
-    // Verify signature
+    // ✅ Verify signature
     const hmac = crypto.createHmac("sha1", webhookSecret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
@@ -68,4 +73,3 @@ exports.squareWebhook = functions
 
     res.status(200).send("Event ignored");
   });
-
