@@ -1,87 +1,65 @@
-// public/js/credits.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// functions/api/square/checkout.js (or appropriate server route handler)
+import { Client, Environment } from "square";
 
-// Firebase config
-import { firebaseConfig } from "../firebaseConfig.js";
+const squareClient = new Client({
+  environment: Environment.Production,
+  accessToken: process.env.SQUARE_ACCESS_TOKEN,
+});
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const creditDisplay = document.getElementById("creditBalance");
-const statusBox = document.getElementById("status");
-
-// Show current credits
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    creditDisplay.textContent = "Please log in to view your credits.";
-    return;
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-  const credits = userSnap.exists() ? userSnap.data().credits || 0 : 0;
-  creditDisplay.textContent = `You currently have ${credits} credits.`;
-});
+  try {
+    const { amount, credits, userId, plan } = req.body;
 
-// Handle credit purchase
-document.querySelectorAll(".buy-btn").forEach((button) => {
-  button.addEventListener("click", async () => {
-    const credits = parseInt(button.dataset.credits);
-    const amount = parseInt(button.dataset.price); // In cents
-    const plan = button.dataset.plan || null;
-
-    statusBox.textContent = "Redirecting to payment...";
-
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        statusBox.textContent = "❌ You must be logged in.";
-        return;
-      }
-
-      // Debug log
-      console.log("Creating checkout for:", {
-        userId: user.uid,
-        credits,
-        amount,
-        plan
-      });
-
-      const res = await fetch("/api/square/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.uid,
-          credits,
-          amount,
-          plan
-        })
-      });
-
-      const data = await res.json();
-
-      if (data && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        console.error("Checkout failed response:", data);
-        statusBox.textContent = "❌ Failed to initiate payment.";
-      }
-    } catch (err) {
-      console.error("Checkout error:", err);
-      statusBox.textContent = "❌ Error redirecting to payment.";
+    if (!amount || !credits || !userId) {
+      return res.status(400).json({ error: "Missing required fields." });
     }
-  });
-});
+
+    const amountInCents = parseInt(amount); // Already in cents
+    const idempotencyKey = `checkout-${userId}-${Date.now()}`;
+
+    const note = `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`;
+
+    const { result } = await squareClient.checkoutApi.createCheckout(
+      process.env.SQUARE_LOCATION_ID,
+      {
+        idempotencyKey,
+        order: {
+          order: {
+            locationId: process.env.SQUARE_LOCATION_ID,
+            lineItems: [
+              {
+                name: `${credits} Credits${plan ? ` + ${plan} Plan` : ""}`,
+                quantity: "1",
+                basePriceMoney: {
+                  amount: amountInCents,
+                  currency: "CAD",
+                },
+              },
+            ],
+          },
+        },
+        redirectUrl: `https://www.trackrepost.com/payment-success?credits=${credits}&userId=${userId}`,
+        note,
+      }
+    );
+
+    if (!result.checkout?.checkoutPageUrl) {
+      return res.status(500).json({ error: "Failed to create checkout URL." });
+    }
+
+    res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
+  } catch (error) {
+    console.error("❌ Checkout handler error:", error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error?.message || "Unknown error",
+    });
+  }
+}
 
 
 
