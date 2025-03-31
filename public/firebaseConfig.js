@@ -1,4 +1,4 @@
-// ✅ Firebase Configuration
+// public/firebaseConfig.js
 export const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
@@ -9,26 +9,12 @@ export const firebaseConfig = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// ✅ Square Credentials
+// ✅ Square Credentials (can still be global)
 window.SQUARE_APP_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
 window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
 
-// ✅ Ensure Firebase is Initialized Only Once
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase Initialized Successfully!");
-} else {
-    console.log("⚠️ Firebase Already Initialized.");
-}
-
-// ✅ Declare Global `auth` and `db` (Avoid Redeclaration Issues)
-window.auth = firebase.auth();
-window.db = firebase.firestore();
-
-// ✅ Debugging Square Details
 console.log("✅ Square App ID:", window.SQUARE_APP_ID);
 console.log("✅ Square Location ID:", window.SQUARE_LOCATION_ID);
-
 
 
 
