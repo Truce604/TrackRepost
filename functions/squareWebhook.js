@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const admin = require("./firebaseAdmin"); // ✅ Use shared initialized instance
+const admin = require("./firebaseAdmin"); // shared initialized admin instance
 const crypto = require("crypto");
 const getRawBody = require("raw-body");
 
@@ -24,7 +24,7 @@ exports.squareWebhook = functions
       return res.status(400).send("Invalid request body");
     }
 
-    // ✅ Verify signature
+    // ✅ Verify webhook signature
     const hmac = crypto.createHmac("sha1", webhookSecret);
     hmac.update(rawBody);
     const expectedSignature = hmac.digest("base64");
@@ -57,7 +57,10 @@ exports.squareWebhook = functions
           const userRef = db.collection("users").doc(userId);
           await userRef.update({
             credits: admin.firestore.FieldValue.increment(credits),
-            ...(plan && { plan, planActivatedAt: admin.firestore.Timestamp.now() })
+            ...(plan && {
+              plan,
+              planActivatedAt: admin.firestore.Timestamp.now()
+            })
           });
 
           console.log(`✅ Added ${credits} credits to user ${userId}${plan ? ` with plan ${plan}` : ""}`);
@@ -73,3 +76,4 @@ exports.squareWebhook = functions
 
     res.status(200).send("Event ignored");
   });
+
