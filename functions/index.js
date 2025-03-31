@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
+// Assign 30 credits to new users
 exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const userRef = db.collection("users").doc(user.uid);
   await userRef.set({
@@ -13,6 +14,6 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   });
 });
 
+// Square payment webhook
 exports.squareWebhook = require("./squareWebhook").squareWebhook;
-
 
