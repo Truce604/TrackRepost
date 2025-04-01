@@ -37,7 +37,6 @@ export default async function handler(req, res) {
     return res.status(200).send("Test received");
   }
 
-  // 🔐 Real signature check for live events
   try {
     const hmac = crypto.createHmac("sha256", secret);
     hmac.update(rawBody);
@@ -48,7 +47,8 @@ export default async function handler(req, res) {
       return res.status(403).send("Invalid signature");
     }
 
-    if (event.type === "payment.updated") {
+    // ✅ This is the correct key to check
+    if (event.event_type === "payment.updated") {
       const payment = event.data.object.payment;
       const note = payment.note || "";
 
@@ -77,6 +77,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal Server Error");
   }
 }
+
 
 
 
