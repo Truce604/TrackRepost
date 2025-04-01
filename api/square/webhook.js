@@ -21,16 +21,16 @@ export default async function handler(req, res) {
 
   const rawBody = (await buffer(req)).toString("utf8");
   const receivedSignature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  // Log for debugging
   console.log("📦 Raw body received");
   console.log("🧪 rawBody length:", rawBody.length);
-  console.log("🧪 rawBody preview:", rawBody.slice(0, 200));
+  console.log("🧪 rawBody preview:", rawBody.slice(0, 300));
   console.log("📩 Received:", receivedSignature);
+  console.log("🔑 Loaded Env Key:", signatureKey);
 
   const expectedSignature = crypto
-    .createHmac("sha256", secret)
+    .createHmac("sha256", signatureKey)
     .update(rawBody)
     .digest("base64");
 
@@ -46,57 +46,46 @@ export default async function handler(req, res) {
     event = JSON.parse(rawBody);
     console.log("📨 Event parsed:", event.type || event.event_type);
   } catch (err) {
-    console.error("❌ Failed to parse body:", err);
+    console.error("❌ JSON parse error:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  // Optional: bypass signature check for test events
   if (event.event_type === "TEST_NOTIFICATION") {
-    console.log("✅ Test notification bypassed signature check");
-    return res.status(200).send("Test OK");
+    console.log("✅ Test notification from Square");
+    return res.status(200).send("Test received");
   }
 
-  if (event.type !== "payment.updated") {
-    console.log("ℹ️ Ignored event type:", event.type);
-    return res.status(200).send("Ignored");
-  }
+  if (event.type === "payment.updated") {
+    const payment = event.data?.object?.payment;
+    const note = payment?.note || "";
+    console.log("📝 Note:", note);
 
-  const payment = event?.data?.object?.payment;
-  const note = payment?.note || "";
-  console.log("📝 Note:", note);
+    const userIdMatch = note.match(/userId=([\w-]+)/);
+    const creditsMatch = note.match(/(\d+)\sCredits/);
 
-  const userIdMatch = note.match(/userId=([\w-]+)/);
-  const creditsMatch = note.match(/(\d+)\sCredits/);
-  const planMatch = note.match(/Plan=(\w+)/);
+    if (!userIdMatch || !creditsMatch) {
+      console.warn("⚠️ Invalid note format");
+      return res.status(400).send("Invalid note format");
+    }
 
-  if (!userIdMatch || !creditsMatch) {
-    console.warn("⚠️ Invalid note format");
-    return res.status(400).send("Invalid note format");
-  }
+    const userId = userIdMatch[1];
+    const credits = parseInt(creditsMatch[1], 10);
 
-  const userId = userIdMatch[1];
-  const credits = parseInt(creditsMatch[1], 10);
-  const plan = planMatch ? planMatch[1] : null;
-
-  try {
-    await db.collection("users").doc(userId).set(
-      {
+    try {
+      await db.collection("users").doc(userId).set({
         credits: admin.firestore.FieldValue.increment(credits),
-        ...(plan && {
-          plan,
-          planActivatedAt: admin.firestore.Timestamp.now(),
-        }),
-      },
-      { merge: true }
-    );
+      }, { merge: true });
 
-    console.log(`✅ ${credits} credits added to user ${userId}`);
-    if (plan) console.log(`🎟️ Plan activated: ${plan}`);
-    return res.status(200).send("Credits updated");
-  } catch (err) {
-    console.error("❌ Error updating Firestore:", err);
-    return res.status(500).send("Error updating user");
+      console.log(`✅ Added ${credits} credits to user ${userId}`);
+      return res.status(200).send("Credits updated");
+    } catch (err) {
+      console.error("❌ Firestore update error:", err);
+      return res.status(500).send("Firestore update failed");
+    }
   }
+
+  console.log("ℹ️ Event ignored");
+  return res.status(200).send("Ignored");
 }
 
 
