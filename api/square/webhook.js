@@ -16,7 +16,7 @@ const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
 export const config = {
   api: {
-    bodyParser: false, // ❗️ Required to preserve raw body
+    bodyParser: false, // 🔐 required for correct HMAC
   },
 };
 
@@ -25,13 +25,7 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  // ✅ Get raw buffer (do NOT convert to string for HMAC)
   const rawBody = await buffer(req);
-
-  // 🔍 Log debug info
-  console.log("📦 Raw body received");
-  console.log("🧪 rawBody length:", rawBody.length);
-  console.log("🧪 rawBody preview:", JSON.stringify(rawBody.toString("utf8").slice(0, 300)));
 
   // ✅ Signature validation
   const receivedSignature = req.headers["x-square-hmacsha256-signature"];
@@ -40,6 +34,9 @@ export default async function handler(req, res) {
     .update(rawBody)
     .digest("base64");
 
+  console.log("📦 Raw body received");
+  console.log("🧪 rawBody length:", rawBody.length);
+  console.log("🧪 rawBody preview:", JSON.stringify(rawBody.toString("utf8").slice(0, 300)));
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
@@ -48,22 +45,27 @@ export default async function handler(req, res) {
     return res.status(403).send("Invalid signature");
   }
 
-  // ✅ Parse event body
-  let event;
+  let parsed;
   try {
-    event = JSON.parse(rawBody.toString("utf8"));
-    console.log("📨 Event parsed:", event.type);
+    parsed = JSON.parse(rawBody.toString("utf8"));
   } catch (err) {
-    console.error("❌ Failed to parse event JSON:", err);
+    console.error("❌ Failed to parse JSON:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.type !== "payment.updated") {
-    console.log("ℹ️ Ignored event type:", event.type);
-    return res.status(200).send("Ignored");
+  // ✅ Accept test pings
+  if (parsed.event_type === "TEST_NOTIFICATION") {
+    console.log("✅ Test notification from Square received");
+    return res.status(200).send("Test OK");
   }
 
-  const payment = event?.data?.object?.payment;
+  // ✅ Proceed only for real payment events
+  if (parsed.type !== "payment.updated") {
+    console.log("ℹ️ Ignored event type:", parsed.type);
+    return res.status(200).send("Event ignored");
+  }
+
+  const payment = parsed?.data?.object?.payment;
   const note = payment?.note || "";
   console.log("📝 Note:", note);
 
