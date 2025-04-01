@@ -2,10 +2,10 @@ import { buffer } from "micro";
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// ✅ Parse Firebase service account from env
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+// ✅ DEBUG: Check if env variable is loading
+console.log("🧪 RAW ENV:", process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 
-// 🔐 Square signature key
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
 // ✅ Initialize Firebase Admin with service account
