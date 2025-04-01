@@ -5,10 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TrackRepost - Promote Your Music</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="firebaseConfig.js" defer></script>
-  <script type="module" src="js/index.js" defer></script>
+
+  <!-- ✅ Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <!-- ✅ Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
+
+  <!-- ✅ Initialize Firebase -->
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
 </head>
 <body>
   <header>
@@ -33,5 +42,8 @@
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
+
+  <!-- ✅ JS Scripts (no module) -->
+  <script src="/js/index.js" defer></script>
 </body>
 </html>
