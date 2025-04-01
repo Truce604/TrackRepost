@@ -31,7 +31,28 @@ export default async function handler(req, res) {
   const rawBodyString = rawBody.toString("utf8");
   console.log("📦 Raw body received");
 
-  // 🧪 Parse payload
+  // ✅ Create HMAC digest
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(rawBodyString);
+  const expectedSignature = hmac.digest("base64");
+
+  try {
+    const valid = crypto.timingSafeEqual(
+      Buffer.from(expectedSignature),
+      Buffer.from(signature)
+    );
+
+    if (!valid) {
+      console.warn("⚠️ Signature mismatch");
+      console.log("🔐 Expected:", expectedSignature);
+      console.log("📩 Received:", signature);
+      return res.status(403).send("Invalid signature");
+    }
+  } catch (err) {
+    console.error("❌ Signature comparison error:", err);
+    return res.status(403).send("Invalid signature format");
+  }
+
   let event;
   try {
     event = JSON.parse(rawBodyString);
@@ -41,28 +62,11 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid JSON");
   }
 
-  // 🔐 Verify HMAC signature
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(rawBodyString);
-  const expectedSignature = hmac.digest("base64");
-
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
-
-  if (!isValid) {
-    console.warn("⚠️ Signature mismatch");
-    return res.status(403).send("Invalid signature");
-  }
-
-  // ✅ Accept test ping
   if (event.event_type === "TEST_NOTIFICATION") {
     console.log("✅ Test notification from Square");
     return res.status(200).send("Test received");
   }
 
-  // ✅ Process payment
   if (event.type === "payment.updated") {
     const payment = event.data?.object?.payment;
     const note = payment?.note || "";
