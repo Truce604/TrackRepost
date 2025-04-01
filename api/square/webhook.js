@@ -2,8 +2,13 @@ import { buffer } from "micro";
 import crypto from "crypto";
 import admin from "firebase-admin";
 
+// 🔐 Pull the signature key from env
 const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+// 🔧 Log it to confirm Vercel is using the correct one
+console.log("🧪 Signature key from env:", signatureKey);
+
+// 🔥 Initialize Firebase Admin if not already
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -28,6 +33,7 @@ export default async function handler(req, res) {
     .digest("base64");
 
   console.log("📦 Raw body received");
+  console.log("📄 Raw body string:", rawBody);
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
@@ -41,7 +47,7 @@ export default async function handler(req, res) {
     event = JSON.parse(rawBody);
     console.log("📨 Event parsed:", event.type);
   } catch (err) {
-    console.error("❌ Failed to parse event:", err);
+    console.error("❌ Failed to parse event JSON:", err);
     return res.status(400).send("Invalid JSON");
   }
 
@@ -52,6 +58,7 @@ export default async function handler(req, res) {
 
   const payment = event?.data?.object?.payment;
   const note = payment?.note || "";
+
   console.log("📝 Note:", note);
 
   const userIdMatch = note.match(/userId=([\w-]+)/);
@@ -72,11 +79,11 @@ export default async function handler(req, res) {
       credits: admin.firestore.FieldValue.increment(credits),
     }, { merge: true });
 
-    console.log("✅ Credits updated");
+    console.log("✅ Credits updated successfully");
     return res.status(200).send("Success");
   } catch (err) {
-    console.error("❌ Error updating credits:", err);
-    return res.status(500).send("Error updating credits");
+    console.error("❌ Error updating Firestore credits:", err);
+    return res.status(500).send("Internal error");
   }
 }
 
