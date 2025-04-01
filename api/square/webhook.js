@@ -1,6 +1,8 @@
-import crypto from "crypto";
 import { buffer } from "micro";
+import crypto from "crypto";
 import admin from "firebase-admin";
+
+const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -15,89 +17,69 @@ export const config = {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    console.log("❌ Invalid method:", req.method);
     return res.status(405).send("Method Not Allowed");
   }
 
-  const signature = req.headers["x-square-hmacsha256-signature"];
-  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const rawBody = (await buffer(req)).toString("utf8");
+  const receivedSignature = req.headers["x-square-hmacsha256-signature"];
+  const expectedSignature = crypto
+    .createHmac("sha256", signatureKey)
+    .update(rawBody)
+    .digest("base64");
 
-  if (!signature || !secret) {
-    console.warn("⚠️ Missing signature or secret");
-    return res.status(400).send("Missing signature or secret");
-  }
-
-  const rawBody = await buffer(req);
-  const rawBodyString = rawBody.toString("utf8");
   console.log("📦 Raw body received");
+  console.log("📩 Received:", receivedSignature);
+  console.log("🔐 Expected:", expectedSignature);
 
-  // ✅ Create HMAC digest
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(rawBodyString);
-  const expectedSignature = hmac.digest("base64");
-
-  try {
-    const valid = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature),
-      Buffer.from(signature)
-    );
-
-    if (!valid) {
-      console.warn("⚠️ Signature mismatch");
-      console.log("🔐 Expected:", expectedSignature);
-      console.log("📩 Received:", signature);
-      return res.status(403).send("Invalid signature");
-    }
-  } catch (err) {
-    console.error("❌ Signature comparison error:", err);
-    return res.status(403).send("Invalid signature format");
+  if (receivedSignature !== expectedSignature) {
+    console.warn("⚠️ Signature mismatch");
+    return res.status(403).send("Invalid signature");
   }
 
   let event;
   try {
-    event = JSON.parse(rawBodyString);
-    console.log("📨 Event parsed:", event.type || event.event_type);
+    event = JSON.parse(rawBody);
+    console.log("📨 Event parsed:", event.type);
   } catch (err) {
-    console.error("❌ Failed to parse body:", err);
+    console.error("❌ Failed to parse event:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.event_type === "TEST_NOTIFICATION") {
-    console.log("✅ Test notification from Square");
-    return res.status(200).send("Test received");
+  if (event.type !== "payment.updated") {
+    console.log("ℹ️ Ignored event type:", event.type);
+    return res.status(200).send("Ignored");
   }
 
-  if (event.type === "payment.updated") {
-    const payment = event.data?.object?.payment;
-    const note = payment?.note || "";
-    console.log("📝 Note:", note);
+  const payment = event?.data?.object?.payment;
+  const note = payment?.note || "";
+  console.log("📝 Note:", note);
 
-    const userIdMatch = note.match(/userId=([\w-]+)/);
-    const creditsMatch = note.match(/(\d+)\sCredits/);
+  const userIdMatch = note.match(/userId=([\w-]+)/);
+  const creditsMatch = note.match(/(\d+)\sCredits/);
 
-    if (!userIdMatch || !creditsMatch) {
-      console.warn("⚠️ Invalid note format. Skipping update.");
-      return res.status(400).send("Missing data in note");
-    }
+  if (!userIdMatch || !creditsMatch) {
+    console.warn("⚠️ Note format invalid");
+    return res.status(400).send("Invalid note format");
+  }
 
-    const userId = userIdMatch[1];
-    const credits = parseInt(creditsMatch[1], 10);
+  const userId = userIdMatch[1];
+  const credits = parseInt(creditsMatch[1], 10);
 
-    console.log(`🎯 Adding ${credits} credits to user ${userId}`);
+  console.log(`💰 Crediting ${credits} credits to user ${userId}`);
 
+  try {
     await db.collection("users").doc(userId).set({
       credits: admin.firestore.FieldValue.increment(credits),
     }, { merge: true });
 
-    console.log("✅ Credits updated successfully");
-    return res.status(200).send("Credits updated");
+    console.log("✅ Credits updated");
+    return res.status(200).send("Success");
+  } catch (err) {
+    console.error("❌ Error updating credits:", err);
+    return res.status(500).send("Error updating credits");
   }
-
-  console.log("ℹ️ Event type ignored:", event.type);
-  return res.status(200).send("Event ignored");
 }
 
-    
 
 
 
