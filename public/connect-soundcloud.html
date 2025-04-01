@@ -6,16 +6,18 @@
   <title>Connect SoundCloud - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+  <!-- ✅ Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase Config -->
-  <script src="firebaseConfig.js"></script>
+  <!-- ✅ Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
 
-  <!-- SoundCloud Connect Logic -->
-  <script type="module" src="js/connect-soundcloud.js" defer></script>
+  <!-- ✅ Initialize Firebase -->
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
 </head>
 <body>
   <header>
@@ -42,11 +44,13 @@
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- Site Navigation -->
+  <!-- ✅ JS Scripts (no module) -->
   <div id="site-header"></div>
-  <script type="module" src="js/header.js" defer></script>
+  <script src="/js/connect-soundcloud.js" defer></script>
+  <script src="/js/header.js" defer></script>
 </body>
 </html>
+
 
 
 
