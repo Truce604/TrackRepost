@@ -2,15 +2,17 @@ import { buffer } from "micro";
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// 🔐 Pull the signature key from env
+// ✅ Parse Firebase service account from env
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+// 🔐 Square signature key
 const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-// 🔧 Log it to confirm Vercel is using the correct one
-console.log("🧪 Signature key from env:", signatureKey);
-
-// 🔥 Initialize Firebase Admin if not already
+// ✅ Initialize Firebase Admin with service account
 if (!admin.apps.length) {
-  admin.initializeApp();
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
 }
 const db = admin.firestore();
 
@@ -33,7 +35,6 @@ export default async function handler(req, res) {
     .digest("base64");
 
   console.log("📦 Raw body received");
-  console.log("📄 Raw body string:", rawBody);
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
