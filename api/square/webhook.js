@@ -2,13 +2,8 @@ import { buffer } from "micro";
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// ✅ DEBUG: Check if env variable is loading
-console.log("🧪 RAW ENV:", process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
+// ✅ Firebase Admin init
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-// ✅ Initialize Firebase Admin with service account
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -16,9 +11,12 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+// ✅ Square Webhook Signature Key
+const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // ❗️ Required to preserve rawBody for HMAC
   },
 };
 
@@ -28,13 +26,18 @@ export default async function handler(req, res) {
   }
 
   const rawBody = (await buffer(req)).toString("utf8");
+
+  // ✅ Log debug details
+  console.log("📦 Raw body received");
+  console.log("🧪 rawBody length:", rawBody.length);
+  console.log("🧪 rawBody preview:", JSON.stringify(rawBody.slice(0, 300)));
+
   const receivedSignature = req.headers["x-square-hmacsha256-signature"];
   const expectedSignature = crypto
     .createHmac("sha256", signatureKey)
     .update(rawBody)
     .digest("base64");
 
-  console.log("📦 Raw body received");
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
@@ -59,7 +62,6 @@ export default async function handler(req, res) {
 
   const payment = event?.data?.object?.payment;
   const note = payment?.note || "";
-
   console.log("📝 Note:", note);
 
   const userIdMatch = note.match(/userId=([\w-]+)/);
@@ -87,6 +89,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal error");
   }
 }
+
 
 
 
