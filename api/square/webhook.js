@@ -16,7 +16,7 @@ const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
 export const config = {
   api: {
-    bodyParser: false, // ❗️ Required to preserve rawBody for HMAC
+    bodyParser: false, // ❗️ Required to preserve raw body
   },
 };
 
@@ -25,13 +25,15 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
   }
 
-  const rawBody = (await buffer(req)).toString("utf8");
+  // ✅ Get raw buffer (do NOT convert to string for HMAC)
+  const rawBody = await buffer(req);
 
-  // ✅ Log debug details
+  // 🔍 Log debug info
   console.log("📦 Raw body received");
   console.log("🧪 rawBody length:", rawBody.length);
-  console.log("🧪 rawBody preview:", JSON.stringify(rawBody.slice(0, 300)));
+  console.log("🧪 rawBody preview:", JSON.stringify(rawBody.toString("utf8").slice(0, 300)));
 
+  // ✅ Signature validation
   const receivedSignature = req.headers["x-square-hmacsha256-signature"];
   const expectedSignature = crypto
     .createHmac("sha256", signatureKey)
@@ -46,9 +48,10 @@ export default async function handler(req, res) {
     return res.status(403).send("Invalid signature");
   }
 
+  // ✅ Parse event body
   let event;
   try {
-    event = JSON.parse(rawBody);
+    event = JSON.parse(rawBody.toString("utf8"));
     console.log("📨 Event parsed:", event.type);
   } catch (err) {
     console.error("❌ Failed to parse event JSON:", err);
@@ -89,6 +92,7 @@ export default async function handler(req, res) {
     return res.status(500).send("Internal error");
   }
 }
+
 
 
 
