@@ -1,20 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Your Repost History - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+<!-- ✅ Firebase SDKs (compat versions) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ Firebase SDKs (compat versions) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<!-- ✅ Firebase Config -->
+<script src="/js/firebaseConfig.js"></script>
 
-  <!-- ✅ Firebase Config -->
-  <script src="/js/firebaseConfig.js"></script>
+<!-- ✅ Initialize Firebase -->
+<script>
+  firebase.initializeApp(window.firebaseConfig);
+</script>
 
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </
+<!-- ✅ Reposts Page Script -->
+<script src="/js/reposts.js" defer></script>
