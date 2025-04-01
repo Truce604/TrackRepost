@@ -1,4 +1,3 @@
-// /api/square/webhook.js
 import { buffer } from "micro";
 import crypto from "crypto";
 import admin from "firebase-admin";
@@ -21,19 +20,14 @@ export default async function handler(req, res) {
 
   const rawBody = (await buffer(req)).toString("utf8");
   const receivedSignature = req.headers["x-square-hmacsha256-signature"];
-  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-  console.log("📦 Raw body received");
-  console.log("🧪 rawBody length:", rawBody.length);
-  console.log("🧪 rawBody preview:", rawBody.slice(0, 300));
-  console.log("📩 Received:", receivedSignature);
-  console.log("🔑 Loaded Env Key:", signatureKey);
+  const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
   const expectedSignature = crypto
-    .createHmac("sha256", signatureKey)
+    .createHmac("sha256", secret)
     .update(rawBody)
     .digest("base64");
 
+  console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
   if (receivedSignature !== expectedSignature) {
@@ -44,19 +38,14 @@ export default async function handler(req, res) {
   let event;
   try {
     event = JSON.parse(rawBody);
-    console.log("📨 Event parsed:", event.type || event.event_type);
+    console.log("📨 Event Type:", event.type || event.event_type);
   } catch (err) {
-    console.error("❌ JSON parse error:", err);
+    console.error("❌ JSON Parse Error:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.event_type === "TEST_NOTIFICATION") {
-    console.log("✅ Test notification from Square");
-    return res.status(200).send("Test received");
-  }
-
   if (event.type === "payment.updated") {
-    const payment = event.data?.object?.payment;
+    const payment = event?.data?.object?.payment;
     const note = payment?.note || "";
     console.log("📝 Note:", note);
 
@@ -64,7 +53,7 @@ export default async function handler(req, res) {
     const creditsMatch = note.match(/(\d+)\sCredits/);
 
     if (!userIdMatch || !creditsMatch) {
-      console.warn("⚠️ Invalid note format");
+      console.warn("⚠️ Invalid Note Format");
       return res.status(400).send("Invalid note format");
     }
 
@@ -76,16 +65,15 @@ export default async function handler(req, res) {
         credits: admin.firestore.FieldValue.increment(credits),
       }, { merge: true });
 
-      console.log(`✅ Added ${credits} credits to user ${userId}`);
-      return res.status(200).send("Credits updated");
+      console.log(`✅ Credited ${credits} to user ${userId}`);
+      return res.status(200).send("Success");
     } catch (err) {
-      console.error("❌ Firestore update error:", err);
-      return res.status(500).send("Firestore update failed");
+      console.error("❌ Firestore Error:", err);
+      return res.status(500).send("Database error");
     }
   }
 
-  console.log("ℹ️ Event ignored");
-  return res.status(200).send("Ignored");
+  res.status(200).send("Ignored");
 }
 
 
