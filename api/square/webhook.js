@@ -1,14 +1,14 @@
-// api/square/webhook.js
-import { buffer } from 'micro';
+import getRawBody from 'raw-body';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // This is required to preserve the raw body for signature verification
   },
 };
 
+// 🔥 Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)),
@@ -17,47 +17,48 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-
-  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-
-  if (!webhookSecret) {
-    console.error("❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
-    return res.status(500).send("Webhook secret not set");
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
 
-  const rawBodyBuffer = await buffer(req);
-  const rawBody = rawBodyBuffer.toString('utf8');
+  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  if (!webhookSecret) {
+    console.error("❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
+    return res.status(500).send("Missing webhook secret");
+  }
+
+  // ✅ Read raw body exactly as received
+  const rawBody = (await getRawBody(req)).toString('utf8');
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
 
+  // ✅ Calculate HMAC
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(rawBody)
     .digest('base64');
 
-  const signatureMatch = expectedSignature === receivedSignature;
+  const signatureMatch = receivedSignature === expectedSignature;
 
-  console.log("🔍 Loaded webhookSecret:", webhookSecret ? "✅ Loaded" : "❌ Missing");
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
-  console.log("🧪 Matches:", signatureMatch);
+  console.log("🧪 Match:", signatureMatch);
 
   if (!signatureMatch) {
     console.warn("⚠️ Signature mismatch");
     return res.status(403).send("Invalid signature");
   }
 
-  // Parse event
+  // ✅ Parse and handle webhook event
   let event;
   try {
     event = JSON.parse(rawBody);
   } catch (err) {
-    console.error("❌ Failed to parse event:", err);
+    console.error("❌ JSON parse error:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.type !== "payment.updated") {
-    console.log("ℹ️ Ignored event type:", event.type);
+  if (event.type !== 'payment.updated') {
+    console.log("ℹ️ Event ignored:", event.type);
     return res.status(200).send("Ignored");
   }
 
@@ -83,11 +84,11 @@ export default async function handler(req, res) {
       }),
     }, { merge: true });
 
-    console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` (plan: ${plan})` : ''}`);
-    return res.status(200).send("Success");
+    console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` with plan: ${plan}` : ''}`);
+    return res.status(200).send("Credits updated");
   } catch (err) {
     console.error("❌ Firestore error:", err);
-    return res.status(500).send("Firestore update failed");
+    return res.status(500).send("Firestore error");
   }
 }
 
