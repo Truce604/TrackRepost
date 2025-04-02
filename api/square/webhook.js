@@ -1,3 +1,4 @@
+// api/square/webhook.js
 import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
@@ -8,10 +9,12 @@ export const config = {
   },
 };
 
-// Initialize Firebase
+// ✅ Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)),
+    credential: admin.credential.cert(
+      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
+    ),
   });
 }
 const db = admin.firestore();
@@ -23,42 +26,36 @@ export default async function handler(req, res) {
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
   const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  // Try to parse the body first
-  let parsedEvent = {};
+  console.log('📩 Received Signature:', receivedSignature);
+  console.log('🔐 Webhook Secret Loaded:', !!webhookSecret);
+
+  const expectedSignature = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(rawBody)
+    .digest('base64');
+
+  const match = receivedSignature === expectedSignature;
+  console.log('🧪 Signature Match:', match);
+
+  if (!match) {
+    return res.status(403).send('Invalid signature');
+  }
+
+  let event;
   try {
-    parsedEvent = JSON.parse(rawBody);
+    event = JSON.parse(rawBody);
   } catch (err) {
-    console.error('❌ Failed to parse JSON:', err);
+    console.error('❌ Failed to parse event:', err);
     return res.status(400).send('Invalid JSON');
   }
 
-  const isTestEvent = parsedEvent?.merchant_id === '6SSW7HV8K2ST5' || parsedEvent?.event_id === '6a8f5f28-54a1-4eb0-a98a-3111513fd4fc';
-
-  if (!isTestEvent) {
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(rawBody)
-      .digest('base64');
-
-    console.log('📩 Received Signature:', receivedSignature);
-    console.log('🔐 Expected Signature:', expectedSignature);
-    console.log('🧪 Match:', receivedSignature === expectedSignature);
-    console.log('🧪 rawBody preview:', rawBody.slice(0, 200));
-
-    if (receivedSignature !== expectedSignature) {
-      return res.status(403).send('Invalid signature');
-    }
-  } else {
-    console.log('✅ Bypassing signature for known test event');
-  }
-
-  const event = parsedEvent;
   if (event.type === 'payment.updated') {
     const note = event?.data?.object?.payment?.note || '';
-    const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
+    console.log('📝 Note:', note);
 
+    const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
     if (!match) {
-      console.warn('⚠️ Invalid note format:', note);
+      console.warn('⚠️ Invalid note format');
       return res.status(400).send('Invalid note format');
     }
 
@@ -67,8 +64,7 @@ export default async function handler(req, res) {
     const plan = match[3] || null;
 
     try {
-      const userRef = db.collection('users').doc(userId);
-      await userRef.set(
+      await db.collection('users').doc(userId).set(
         {
           credits: admin.firestore.FieldValue.increment(credits),
           ...(plan && {
@@ -79,11 +75,11 @@ export default async function handler(req, res) {
         { merge: true }
       );
 
-      console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` (Plan: ${plan})` : ''}`);
+      console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` (plan: ${plan})` : ''}`);
       return res.status(200).send('Success');
     } catch (err) {
-      console.error('❌ Firestore update error:', err);
-      return res.status(500).send('Error updating user');
+      console.error('❌ Firestore error:', err);
+      return res.status(500).send('Firestore update failed');
     }
   }
 
