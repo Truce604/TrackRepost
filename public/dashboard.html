@@ -25,6 +25,9 @@
       margin: 20px auto 10px;
       display: block;
     }
+    .user-info {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +70,67 @@
   <!-- ✅ Scripts -->
   <script src="/js/login.js" defer></script>
   <script src="/js/dashboard.js" defer></script>
+
+  <script>
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+    const creditBalance = document.getElementById('creditBalance');
+    
+    const auth = firebase.auth();
+
+    // Sign in with Google
+    loginBtn.addEventListener('click', async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        const result = await auth.signInWithPopup(provider);
+        const user = result.user;
+        console.log('User signed in:', user);
+        userInfo.innerHTML = `Hello, ${user.displayName}`;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        fetchUserCredits(user.uid);
+      } catch (error) {
+        console.error('Error during sign-in:', error);
+      }
+    });
+
+    // Sign out
+    logoutBtn.addEventListener('click', async () => {
+      await auth.signOut();
+      console.log('User signed out');
+      userInfo.innerHTML = '';
+      loginBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+      creditBalance.textContent = 'Loading...';
+    });
+
+    // Fetch user credits from Firestore
+    async function fetchUserCredits(userId) {
+      const db = firebase.firestore();
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        creditBalance.textContent = `Credits: ${userData.credits || 0}`;
+      }
+    }
+
+    // Handle auth state change
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        userInfo.innerHTML = `Hello, ${user.displayName}`;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        fetchUserCredits(user.uid);
+      } else {
+        userInfo.innerHTML = '';
+        loginBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+        creditBalance.textContent = 'Loading...';
+      }
+    });
+  </script>
 </body>
 </html>
 
