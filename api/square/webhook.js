@@ -1,14 +1,14 @@
+// api/square/webhook.js
 import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false, // Required to read raw body
+    bodyParser: false,
   },
 };
 
-// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)),
@@ -23,12 +23,14 @@ export default async function handler(req, res) {
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
   const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+  // 🔍 Log to verify ENV
+  console.log('🔍 Loaded webhookSecret:', webhookSecret ? '✅ Loaded' : '❌ Missing');
+
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(rawBody)
     .digest('base64');
 
-  // 🔒 Signature check
   if (receivedSignature !== expectedSignature) {
     console.warn('⚠️ Signature mismatch');
     console.log('📩 Received:', receivedSignature);
@@ -36,7 +38,6 @@ export default async function handler(req, res) {
     return res.status(403).send('Invalid signature');
   }
 
-  // ✅ Parse event
   let event;
   try {
     event = JSON.parse(rawBody);
@@ -45,7 +46,6 @@ export default async function handler(req, res) {
     return res.status(400).send('Invalid JSON');
   }
 
-  // ✅ Handle payment.updated
   if (event.type === 'payment.updated') {
     const note = event?.data?.object?.payment?.note || '';
     const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
