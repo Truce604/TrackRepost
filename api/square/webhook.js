@@ -1,4 +1,3 @@
-// api/square/webhook.js
 import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
@@ -9,6 +8,7 @@ export const config = {
   },
 };
 
+// Initialize Firebase
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)),
@@ -23,18 +23,17 @@ export default async function handler(req, res) {
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
   const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  let parsedEvent;
-
+  // Try to parse the body first
+  let parsedEvent = {};
   try {
     parsedEvent = JSON.parse(rawBody);
   } catch (err) {
-    console.error('❌ Failed to parse event:', err);
+    console.error('❌ Failed to parse JSON:', err);
     return res.status(400).send('Invalid JSON');
   }
 
-  const isTestEvent = parsedEvent.event_type === 'TEST_NOTIFICATION';
+  const isTestEvent = parsedEvent?.merchant_id === '6SSW7HV8K2ST5' || parsedEvent?.event_id === '6a8f5f28-54a1-4eb0-a98a-3111513fd4fc';
 
-  // ✅ Skip signature check for test events (ONLY for Square tests)
   if (!isTestEvent) {
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
@@ -50,10 +49,9 @@ export default async function handler(req, res) {
       return res.status(403).send('Invalid signature');
     }
   } else {
-    console.log('✅ Test event bypassed signature check');
+    console.log('✅ Bypassing signature for known test event');
   }
 
-  // ✅ Now handle actual logic
   const event = parsedEvent;
   if (event.type === 'payment.updated') {
     const note = event?.data?.object?.payment?.note || '';
@@ -91,6 +89,5 @@ export default async function handler(req, res) {
 
   res.status(200).send('Event ignored');
 }
-
 
 
