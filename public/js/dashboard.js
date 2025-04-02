@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   const creditDisplay = document.getElementById("creditBalance");
   const campaignContainer = document.getElementById("campaigns");
@@ -17,13 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() : {};
     const credits = userData.credits || 0;
-    const isPro = userData.isPro || false;
+    const plan = userData.plan || (userData.isPro ? "PRO PLAN" : "FREE PLAN");
 
     userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
     creditDisplay.textContent = `${credits} credits`;
 
-    planBadge.innerHTML = isPro
-      ? `<span class="badge pro">PRO PLAN</span>`
+    // 💎 Plan badge now reflects actual plan name
+    planBadge.innerHTML = userData.isPro
+      ? `<span class="badge pro">${plan.toUpperCase()}</span>`
       : `<span class="badge free">FREE PLAN</span>`;
 
     try {
@@ -37,7 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
         campaignContainer.innerHTML = "";
         snapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Campaign:", data);
 
           const div = document.createElement("div");
           div.className = "campaign-card";
@@ -64,3 +63,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
