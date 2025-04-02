@@ -1,14 +1,18 @@
-import getRawBody from 'raw-body';
+// /api/square/webhook.js
+import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false, // This is required to preserve the raw body for signature verification
+    bodyParser: false,
   },
 };
 
-// 🔥 Initialize Firebase Admin
+// ✅ TEMP: Hardcode your real signature key here to rule out env var issues
+const webhookSecret = "Z3kJNJNMH7IVJkF5tMXQpw";
+
+// ✅ Firebase Admin Initialization
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)),
@@ -17,57 +21,49 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
-  }
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-  if (!webhookSecret) {
-    console.error("❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
-    return res.status(500).send("Missing webhook secret");
-  }
-
-  // ✅ Read raw body exactly as received
-  const rawBody = (await getRawBody(req)).toString('utf8');
+  const rawBody = (await buffer(req)).toString('utf8');
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
 
-  // ✅ Calculate HMAC
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(rawBody)
     .digest('base64');
 
-  const signatureMatch = receivedSignature === expectedSignature;
+  // ✅ Debug logs
+  console.log("📩 Received Signature:", receivedSignature);
+  console.log("🔐 Expected Signature:", expectedSignature);
+  console.log("🧪 Match:", receivedSignature === expectedSignature);
+  console.log("🧪 rawBody preview:", rawBody.slice(0, 300));
 
-  console.log("📩 Received:", receivedSignature);
-  console.log("🔐 Expected:", expectedSignature);
-  console.log("🧪 Match:", signatureMatch);
-
-  if (!signatureMatch) {
+  if (receivedSignature !== expectedSignature) {
     console.warn("⚠️ Signature mismatch");
     return res.status(403).send("Invalid signature");
   }
 
-  // ✅ Parse and handle webhook event
   let event;
   try {
     event = JSON.parse(rawBody);
   } catch (err) {
-    console.error("❌ JSON parse error:", err);
+    console.error("❌ Failed to parse event:", err);
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.type !== 'payment.updated') {
-    console.log("ℹ️ Event ignored:", event.type);
-    return res.status(200).send("Ignored");
+  if (event.type !== "payment.updated") {
+    console.log("ℹ️ Ignored event type:", event.type);
+    return res.status(200).send("Event ignored");
   }
 
-  const note = event?.data?.object?.payment?.note || '';
-  const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
+  const payment = event?.data?.object?.payment;
+  const note = payment?.note || "";
+  console.log("📝 Note:", note);
 
+  // ✅ Skip if note doesn't match expected format (for test events)
+  const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
   if (!match) {
-    console.warn("⚠️ Invalid note format:", note);
-    return res.status(400).send("Invalid note");
+    console.warn("⚠️ Invalid or test note format");
+    return res.status(400).send("Invalid note format");
   }
 
   const credits = parseInt(match[1], 10);
@@ -75,20 +71,20 @@ export default async function handler(req, res) {
   const plan = match[3] || null;
 
   try {
-    const userRef = db.collection('users').doc(userId);
-    await userRef.set({
+    await db.collection('users').doc(userId).set({
       credits: admin.firestore.FieldValue.increment(credits),
       ...(plan && {
         plan,
-        planActivatedAt: admin.firestore.Timestamp.now(),
-      }),
+        planActivatedAt: admin.firestore.Timestamp.now()
+      })
     }, { merge: true });
 
-    console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` with plan: ${plan}` : ''}`);
-    return res.status(200).send("Credits updated");
+    console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` with plan ${plan}` : ""}`);
+    return res.status(200).send("Success");
   } catch (err) {
     console.error("❌ Firestore error:", err);
-    return res.status(500).send("Firestore error");
+    return res.status(500).send("Failed to update credits");
   }
 }
+
 
