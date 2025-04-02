@@ -1,7 +1,5 @@
-// /public/firebaseConfig.js
-
-// ✅ Make Firebase config globally available
-window.firebaseConfig = {
+// ✅ Firebase config (exported for modules)
+export const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
     projectId: "trackrepost-921f8", 
