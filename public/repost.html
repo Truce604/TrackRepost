@@ -1,15 +1,48 @@
-<!-- ✅ Firebase SDKs (compat versions) -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Repost Tracks - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-<!-- ✅ Firebase Config -->
-<script src="/js/firebaseConfig.js"></script>
+  <!-- ✅ Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-<!-- ✅ Initialize Firebase -->
-<script>
-  firebase.initializeApp(window.firebaseConfig);
-</script>
+  <!-- ✅ Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
 
-<!-- ✅ Reposts Page Script -->
-<script src="/js/reposts.js" defer></script>
+  <!-- ✅ Initialize Firebase -->
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
+
+  <style>
+    .logo-header {
+      max-width: 240px;
+      margin: 20px auto 10px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
+  </header>
+
+  <main class="container">
+    <h2>🔁 Available Tracks to Repost</h2>
+    <div id="repost-container">Loading campaigns...</div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
+
+  <!-- ✅ Reposts Page Script -->
+  <script src="/js/reposts.js" defer></script>
+</body>
+</html>
+
