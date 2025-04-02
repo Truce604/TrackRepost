@@ -13,38 +13,100 @@
     firebase.initializeApp(window.firebaseConfig);
   </script>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #ff5500;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    h1 {
+      font-size: 36px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
     .track-container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 20px;
+      margin: 20px 0;
     }
+
     .track-item {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 20px;
       margin: 10px 0;
       width: 80%;
-      background-color: #f9f9f9;
+      background-color: white;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
     }
+
     iframe {
-      max-width: 100%;
+      width: 100%;
       height: 166px;
+      border-radius: 10px;
     }
+
     .track-actions {
       display: flex;
       flex-direction: column;
       align-items: center;
       margin-top: 10px;
     }
+
     .track-actions label {
       margin: 5px;
+      font-size: 16px;
+      color: #555;
     }
+
     .credits-info {
       font-weight: bold;
-      color: green;
+      color: #4caf50;
       margin-top: 10px;
+      font-size: 18px;
+    }
+
+    .status-message {
+      color: #f44336;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #ff5500;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #e04d00;
+    }
+
+    footer {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -77,7 +139,7 @@
       trackElement.classList.add('track-item');
 
       trackElement.innerHTML = `
-        <h2>${trackData.genre} - ${trackData.artist}</h2>
+        <h2>${trackData.genre} – ${trackData.artist}</h2>
         <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackData.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true" frameborder="no" scrolling="no"></iframe>
         <div class="track-actions">
           <label><input type="checkbox" id="like-${trackData.id}" checked /> 💖 Like this track (+1 credit)</label>
@@ -87,6 +149,7 @@
           <button onclick="repostTrack('${trackData.id}', '${trackData.trackUrl}')">✅ Repost & Earn Credits</button>
         </div>
         <div class="credits-info" id="credits-${trackData.id}">Credits: ${trackData.credits}</div>
+        <div id="status-${trackData.id}" class="status-message"></div>
       `;
 
       trackListContainer.appendChild(trackElement);
@@ -94,8 +157,9 @@
 
     async function repostTrack(trackId, trackUrl) {
       const user = firebase.auth().currentUser;
+      const status = document.getElementById(`status-${trackId}`);
       if (!user) {
-        alert("❌ You must be logged in to repost.");
+        status.textContent = "❌ You must be logged in to repost.";
         return;
       }
 
@@ -114,7 +178,7 @@
       const userData = userSnap.data();
 
       if (userData.credits < credits) {
-        alert("❌ You don't have enough credits to repost.");
+        status.textContent = "❌ You don't have enough credits to repost.";
         return;
       }
 
@@ -124,6 +188,8 @@
       });
 
       const campaignRef = db.collection('campaigns').doc(trackId);
+      const campaignSnap = await campaignRef.get();
+      const campaignData = campaignSnap.data();
       await campaignRef.update({
         credits: campaignData.credits - credits
       });
@@ -136,7 +202,7 @@
         commentText
       });
 
-      alert(`✅ Reposted! You earned ${credits} credits.`);
+      status.textContent = `✅ Reposted! You earned ${credits} credits.`;
     }
 
     loadCampaigns();
