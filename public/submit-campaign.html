@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Connect SoundCloud - TrackRepost</title>
+  <title>Submit a Campaign - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Firebase SDKs (compat versions) -->
+  <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -18,28 +18,47 @@
   <script>
     firebase.initializeApp(window.firebaseConfig);
   </script>
+
+  <style>
+    .logo-header {
+      max-width: 240px;
+      margin: 0 auto 10px;
+      display: block;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>🎧 Connect Your SoundCloud</h1>
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
   </header>
 
   <main class="container">
-    <p>To earn credits and promote your music, connect your SoundCloud account.</p>
-    <p>This lets us verify your followers and repost on your behalf.</p>
+    <h2>🚀 Submit Your Track for Reposts</h2>
+    <form id="campaign-form" class="campaign-form">
+      <label for="trackUrl">SoundCloud Track URL:</label>
+      <input type="url" id="trackUrl" required />
 
-    <button id="connectBtn">🔗 Connect SoundCloud</button>
+      <label for="genre">Genre:</label>
+      <input type="text" id="genre" required />
+
+      <label for="credits">Credits to Spend:</label>
+      <input type="number" id="credits" min="1" required />
+
+      <button type="submit">🎯 Launch Campaign</button>
+    </form>
+    <div id="status" class="status-message"></div>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ JS Scripts (no module) -->
-  <script src="/js/connect-soundcloud.js" defer></script>
+  <!-- ✅ JS Scripts -->
+  <script src="/js/submit-campaign.js" defer></script>
   <script src="/js/header.js" defer></script>
 </body>
 </html>
+
 
 
 
