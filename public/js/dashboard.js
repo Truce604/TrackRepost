@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       firebase.auth().signOut().then(() => {
-        window.location.href = "index.html";
+        window.location.href = "index.html";  // Redirect back to the homepage after logout
       });
     });
   }
