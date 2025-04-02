@@ -1,133 +1,41 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  increment,
-  query,
-  where,
-  getDocs,
-  Timestamp
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Repost Action - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
-  authDomain: "trackrepost-921f8.firebaseapp.com", 
-  projectId: "trackrepost-921f8", 
-  storageBucket: "trackrepost-921f8.appspot.com", 
-  messagingSenderId: "967836604288", 
-  appId: "1:967836604288:web:3782d50de7384c9201d365", 
-  measurementId: "G-G65Q3HC3R8" 
-};
+  <!-- ✅ Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+  <!-- ✅ Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
 
-async function alreadyReposted(userId, campaignId) {
-  const q = query(
-    collection(db, "reposts"),
-    where("userId", "==", userId),
-    where("campaignId", "==", campaignId)
-  );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
-}
+  <!-- ✅ Initialize Firebase -->
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
+</head>
+<body>
+  <header>
+    <img src="/assets/logo.png" alt="TrackRepost Logo" style="height: 50px; margin-top: 10px;" />
+    <h1>🚀 Repost & Earn Credits</h1>
+  </header>
 
-async function repostLimitReached(userId) {
-  const twelveHoursAgo = Timestamp.fromDate(new Date(Date.now() - 12 * 60 * 60 * 1000));
-  const q = query(
-    collection(db, "reposts"),
-    where("userId", "==", userId),
-    where("timestamp", ">=", twelveHoursAgo),
-    where("prompted", "==", false)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.size >= 10;
-}
+  <main class="container" id="repost-action-container">
+    <p>Loading campaign...</p>
+  </main>
 
-async function logRepost({ userId, campaignId, trackUrl, prompted }) {
-  await addDoc(collection(db, "reposts"), {
-    userId,
-    campaignId,
-    trackUrl,
-    prompted,
-    timestamp: Timestamp.now()
-  });
-}
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
+  <!-- ✅ Repost Action Logic -->
+  <script src="/js/repost-action.js" type="module"></script>
+</body>
+</html>
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const campaignId = urlParams.get("id");
-  const trackUrl = urlParams.get("track");
 
-  if (!campaignId || !trackUrl) return;
-
-  if (await alreadyReposted(user.uid, campaignId)) {
-    alert("❌ You already reposted this track.");
-    return;
-  }
-
-  if (await repostLimitReached(user.uid)) {
-    alert("❌ You’ve reached the repost limit (10 every 12 hours).");
-    return;
-  }
-
-  // Fetch follower count
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  const followerCount = userDoc.exists() ? (userDoc.data().soundcloud?.followers || 0) : 0;
-  const earnedCredits = Math.floor(followerCount / 100);
-
-  if (earnedCredits === 0) {
-    alert("❌ You need at least 100 followers to earn credits from reposting.");
-    return;
-  }
-
-  // Fetch campaign and deduct credits from owner
-  const campaignRef = doc(db, "campaigns", campaignId);
-  const campaignSnap = await getDoc(campaignRef);
-
-  if (!campaignSnap.exists()) {
-    alert("❌ Campaign not found.");
-    return;
-  }
-
-  const campaign = campaignSnap.data();
-  const campaignOwner = campaign.userId;
-
-  if (campaign.credits < earnedCredits) {
-    alert("❌ Campaign does not have enough credits left.");
-    return;
-  }
-
-  // Deduct from campaign owner
-  await updateDoc(campaignRef, {
-    credits: campaign.credits - earnedCredits
-  });
-
-  // Award to reposting user
-  const userRef = doc(db, "users", user.uid);
-  await updateDoc(userRef, {
-    credits: increment(earnedCredits)
-  });
-
-  // Log repost
-  await logRepost({
-    userId: user.uid,
-    campaignId,
-    trackUrl,
-    prompted: false
-  });
-
-  alert(`✅ Repost logged! You earned ${earnedCredits} credits.`);
-  window.location.href = "/dashboard.html";
-});
