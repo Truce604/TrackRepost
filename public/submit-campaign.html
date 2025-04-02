@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,19 +12,87 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ Firebase Config -->
+  <!-- ✅ Firebase Config (global + ES module export) -->
   <script src="/js/firebaseConfig.js"></script>
 
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
-
+  <!-- ✅ Custom styling -->
   <style>
     .logo-header {
       max-width: 240px;
       margin: 0 auto 10px;
       display: block;
+    }
+
+    .campaign-form {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    .campaign-form label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #f0f0f0;
+    }
+
+    .campaign-form input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: none;
+      background-color: #2b2b2b;
+      color: #fff;
+    }
+
+    .campaign-form button {
+      margin-top: 20px;
+      background-color: #ff8800;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .status-message {
+      text-align: center;
+      margin-top: 15px;
+      color: #ffa500;
+      font-weight: bold;
+    }
+
+    .credit-banner {
+      text-align: center;
+      color: #fff;
+      font-size: 18px;
+      margin: 15px 0;
+    }
+
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+
+    header {
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #aaa;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -33,18 +102,19 @@
   </header>
 
   <main class="container">
-    <h2>🚀 Submit Your Track for Reposts</h2>
-    <p id="current-credits">Loading credits...</p>
+    <div class="credit-banner" id="current-credits">Loading credits...</div>
+
+    <h2 style="text-align: center;">🚀 Submit Your Track for Reposts</h2>
 
     <form id="campaign-form" class="campaign-form">
       <label for="trackUrl">SoundCloud Track URL:</label>
-      <input type="url" id="trackUrl" name="trackUrl" required />
+      <input type="url" id="trackUrl" required placeholder="https://soundcloud.com/artist/track"/>
 
       <label for="genre">Genre:</label>
-      <input type="text" id="genre" name="genre" required />
+      <input type="text" id="genre" required placeholder="Auto-detects if possible"/>
 
       <label for="credits">Credits to Spend:</label>
-      <input type="number" id="credits" name="credits" min="1" required />
+      <input type="number" id="credits" min="1" required placeholder="How many credits to use?"/>
 
       <button type="submit">🎯 Launch Campaign</button>
     </form>
@@ -56,8 +126,7 @@
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ JS Scripts -->
-  <script src="/js/submit-campaign.js" type="module"></script>
-  <script src="/js/header.js" defer></script>
+  <!-- ✅ Submit logic as ES module -->
+  <script type="module" src="/js/submit-campaign.js"></script>
 </body>
 </html>
