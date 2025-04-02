@@ -2,47 +2,146 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Tracks - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repost Campaigns - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- ✅ Firebase SDKs (compat versions) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
-
-  <!-- ✅ Initialize Firebase -->
   <script>
     firebase.initializeApp(window.firebaseConfig);
   </script>
-
   <style>
-    .logo-header {
-      max-width: 240px;
-      margin: 20px auto 10px;
-      display: block;
+    .track-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px;
+    }
+    .track-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      width: 80%;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    iframe {
+      max-width: 100%;
+      height: 166px;
+    }
+    .track-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .track-actions label {
+      margin: 5px;
+    }
+    .credits-info {
+      font-weight: bold;
+      color: green;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
+    <h1>🎶 Available Tracks to Repost</h1>
   </header>
-
   <main class="container">
-    <h2>🔁 Available Tracks to Repost</h2>
-    <div id="repost-container">Loading campaigns...</div>
+    <div id="track-list"></div>
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost. All rights reserved.</p>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ Reposts Page Script -->
-  <script src="/js/reposts.js" defer></script>
+  <script>
+    const db = firebase.firestore();
+    const trackListContainer = document.getElementById('track-list');
+
+    async function loadCampaigns() {
+      const campaignsSnap = await db.collection('campaigns').get();
+      campaignsSnap.forEach(doc => {
+        const trackData = doc.data();
+        buildTrackUI(trackData);
+      });
+    }
+
+    function buildTrackUI(trackData) {
+      const trackElement = document.createElement('div');
+      trackElement.classList.add('track-item');
+
+      trackElement.innerHTML = `
+        <h2>${trackData.genre} - ${trackData.artist}</h2>
+        <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackData.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true" frameborder="no" scrolling="no"></iframe>
+        <div class="track-actions">
+          <label><input type="checkbox" id="like-${trackData.id}" checked /> 💖 Like this track (+1 credit)</label>
+          <label><input type="checkbox" id="follow-${trackData.id}" /> 👣 Follow the artist (+2 credits)</label>
+          <label><input type="checkbox" id="comment-${trackData.id}" /> 💬 Leave a comment (+2 credits)</label>
+          <textarea id="comment-text-${trackData.id}" placeholder="Enter your comment here..." style="width: 100%; height: 50px;"></textarea>
+          <button onclick="repostTrack('${trackData.id}', '${trackData.trackUrl}')">✅ Repost & Earn Credits</button>
+        </div>
+        <div class="credits-info" id="credits-${trackData.id}">Credits: ${trackData.credits}</div>
+      `;
+
+      trackListContainer.appendChild(trackElement);
+    }
+
+    async function repostTrack(trackId, trackUrl) {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        alert("❌ You must be logged in to repost.");
+        return;
+      }
+
+      const like = document.getElementById(`like-${trackId}`).checked;
+      const follow = document.getElementById(`follow-${trackId}`).checked;
+      const comment = document.getElementById(`comment-${trackId}`).checked;
+      const commentText = document.getElementById(`comment-text-${trackId}`).value;
+
+      let credits = 0;
+      if (like) credits += 1;
+      if (follow) credits += 2;
+      if (comment) credits += 2;
+
+      const userRef = db.collection('users').doc(user.uid);
+      const userSnap = await userRef.get();
+      const userData = userSnap.data();
+
+      if (userData.credits < credits) {
+        alert("❌ You don't have enough credits to repost.");
+        return;
+      }
+
+      // Deduct credits from user and add repost to campaign
+      await userRef.update({
+        credits: userData.credits - credits
+      });
+
+      const campaignRef = db.collection('campaigns').doc(trackId);
+      await campaignRef.update({
+        credits: campaignData.credits - credits
+      });
+
+      await db.collection('reposts').add({
+        userId: user.uid,
+        trackUrl,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        creditsEarned: credits,
+        commentText
+      });
+
+      alert(`✅ Reposted! You earned ${credits} credits.`);
+    }
+
+    loadCampaigns();
+  </script>
 </body>
 </html>
+
 
