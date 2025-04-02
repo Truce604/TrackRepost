@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      form.querySelector("button").disabled = true;
       status.textContent = "Checking repost limits...";
 
       firebase.auth().onAuthStateChanged(async (user) => {
@@ -52,8 +53,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const userRef = db.collection("users").doc(user.uid);
         const userSnap = await userRef.get();
         const userData = userSnap.exists ? userSnap.data() : {};
-        const followers = userData.followers || 0;
+        const followers = userData.soundcloud?.followers || 0;
         const baseReward = Math.floor(followers / 100);
+
+        if (baseReward === 0) {
+          status.textContent = "❌ You need at least 100 followers to earn from reposting.";
+          return;
+        }
 
         const like = document.getElementById("like").checked;
         const follow = document.getElementById("follow").checked;
@@ -63,14 +69,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let totalReward = baseReward;
         if (like) totalReward += 1;
         if (follow) totalReward += 2;
-        if (comment) totalReward += 2;
+        if (comment && commentText.trim()) totalReward += 2;
 
         if (data.credits < totalReward) {
           status.textContent = `❌ Not enough campaign credits to pay you (${totalReward} needed).`;
           return;
         }
 
-        // ⏳ Repost limits (10 regular reposts every 12-hour block)
         const now = new Date();
         const resetHour = now.getHours() < 12 ? 0 : 12;
         const windowStart = new Date(now);
@@ -88,7 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        // 💾 Save repost
         await repostRef.set({
           userId: user.uid,
           campaignId,
