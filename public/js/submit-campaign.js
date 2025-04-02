@@ -11,7 +11,8 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebaseConfig.js";
@@ -36,6 +37,32 @@ const autoDetectGenre = async (url) => {
   const lower = url.toLowerCase();
   const match = genres.find(g => lower.includes(g.toLowerCase()));
   return match || "Pop";
+};
+
+const fetchSoundCloudMetadata = async (trackUrl) => {
+  try {
+    const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(trackUrl)}`);
+    const data = await res.json();
+
+    const img = data.thumbnail_url;
+    const title = data.title;
+    const html = data.html;
+    const artistMatch = html.match(/soundcloud.com\/([^/?"]+)/i);
+    const artist = artistMatch ? artistMatch[1] : "Unknown";
+
+    return {
+      artworkUrl: img,
+      title,
+      artist
+    };
+  } catch (err) {
+    console.error(⚠️ Failed to fetch SoundCloud metadata:", err);
+    return {
+      artworkUrl: "",
+      title: "Unknown Title",
+      artist: "Unknown Artist"
+    };
+  }
 };
 
 form.trackUrl.addEventListener("change", async () => {
@@ -89,16 +116,21 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     try {
+      const meta = await fetchSoundCloudMetadata(trackUrl);
+
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
       await setDoc(campaignRef, {
         userId: user.uid,
         trackUrl,
         genre,
         credits,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        artworkUrl: meta.artworkUrl,
+        title: meta.title,
+        artist: meta.artist
       });
 
-      await userRef.update({
+      await updateDoc(userRef, {
         credits: currentCredits - credits
       });
 
@@ -111,7 +143,6 @@ onAuthStateChanged(auth, async (user) => {
     }
   });
 });
-
 
 
 
