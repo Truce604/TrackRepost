@@ -56,7 +56,7 @@ const fetchSoundCloudMetadata = async (trackUrl) => {
       artist
     };
   } catch (err) {
-    console.error(⚠️ Failed to fetch SoundCloud metadata:", err);
+    console.error("⚠️ Failed to fetch SoundCloud metadata:", err);
     return {
       artworkUrl: "",
       title: "Unknown Title",
@@ -100,10 +100,16 @@ onAuthStateChanged(auth, async (user) => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     statusBox.textContent = "Submitting...";
+    console.log("🟡 Submit triggered");
 
     const trackUrl = form.trackUrl.value.trim();
     const genre = genreInput.value.trim();
     const credits = parseInt(form.credits.value);
+
+    console.log("URL:", trackUrl);
+    console.log("Genre:", genre);
+    console.log("Credits:", credits);
+    console.log("User ID:", user.uid);
 
     if (!trackUrl || !genre || isNaN(credits) || credits < 1) {
       statusBox.textContent = "❌ All fields are required and credits must be 1 or more.";
@@ -119,6 +125,8 @@ onAuthStateChanged(auth, async (user) => {
       const meta = await fetchSoundCloudMetadata(trackUrl);
 
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
+      console.log("✅ Reached setDoc, submitting to Firestore...");
+
       await setDoc(campaignRef, {
         userId: user.uid,
         trackUrl,
@@ -138,7 +146,7 @@ onAuthStateChanged(auth, async (user) => {
       form.reset();
       genreInput.value = "";
     } catch (err) {
-      console.error("Error submitting campaign:", err);
+      console.error("❌ Firestore submission failed:", err);
       statusBox.textContent = "❌ Failed to submit campaign.";
     }
   });
