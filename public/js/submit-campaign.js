@@ -77,8 +77,13 @@ onAuthStateChanged(auth, async (user) => {
     e.preventDefault();
     statusBox.textContent = "Submitting...";
 
-    const trackUrl = form.trackUrl.value;
-    const genre = genreInput.value;
+    const trackUrl = form.trackUrl.value.trim();
+    const genre = genreInput.value.trim();
+
+    if (!trackUrl) {
+      statusBox.textContent = "❌ Track URL is required.";
+      return;
+    }
 
     try {
       const campaignRef = doc(db, "campaigns", `${user.uid}_${Date.now()}`);
@@ -94,11 +99,12 @@ onAuthStateChanged(auth, async (user) => {
       form.reset();
       genreInput.value = "";
     } catch (err) {
-      console.error(err);
+      console.error("Error submitting campaign:", err);
       statusBox.textContent = "❌ Failed to submit campaign.";
     }
   });
 });
+
 
 
 
