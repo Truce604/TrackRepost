@@ -18,45 +18,59 @@
   <script>
     firebase.initializeApp(window.firebaseConfig);
   </script>
+
+  <style>
+    .logo-header {
+      max-width: 240px;
+      margin: 20px auto 10px;
+      display: block;
+    }
+    .credit-tier {
+      border: 1px solid #555;
+      padding: 16px;
+      margin: 12px 0;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .credit-tier h3 {
+      margin: 8px 0;
+    }
+    .credit-tier button {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>💰 Buy Credits</h1>
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
   </header>
 
   <main class="container">
-    <div id="creditBalance" class="credit-display">Loading your balance...</div>
+    <h2>💳 Buy Credits</h2>
 
-    <h2>Choose Your Plan</h2>
-
-    <div class="plan-card">
-      <h3>500 Credits</h3>
-      <p>$24.99</p>
-      <button class="buy-btn" data-credits="500" data-price="2499">Buy Now</button>
+    <div class="credit-tier">
+      <h3>500 Credits – $24.99</h3>
+      <button onclick="buyCredits(500, 2499)">Buy</button>
     </div>
 
-    <div class="plan-card">
-      <h3>1000 Credits</h3>
-      <p>$34.99</p>
-      <button class="buy-btn" data-credits="1000" data-price="3499">Buy Now</button>
+    <div class="credit-tier">
+      <h3>1000 Credits – $34.99</h3>
+      <button onclick="buyCredits(1000, 3499)">Buy</button>
     </div>
 
-    <div class="plan-card">
-      <h3>2500 Credits + 1 Month Artist Plan</h3>
-      <p>$79.99</p>
-      <button class="buy-btn" data-credits="2500" data-price="7999" data-plan="artist">Buy Now</button>
+    <div class="credit-tier">
+      <h3>2500 Credits + Artist Plan – $79.99</h3>
+      <button onclick="buyCredits(2500, 7999, 'Artist')">Buy</button>
     </div>
 
-    <div class="plan-card">
-      <h3>5000 Credits + 1 Month Network Plan</h3>
-      <p>$139.99</p>
-      <button class="buy-btn" data-credits="5000" data-price="13999" data-plan="network">Buy Now</button>
+    <div class="credit-tier">
+      <h3>5000 Credits + Network Plan – $139.99</h3>
+      <button onclick="buyCredits(5000, 13999, 'Network')">Buy</button>
     </div>
 
-    <div class="plan-card">
-      <h3>25000 Credits + 1 Month Promoter Plan</h3>
-      <p>$549.99</p>
-      <button class="buy-btn" data-credits="25000" data-price="54999" data-plan="promoter">Buy Now</button>
+    <div class="credit-tier">
+      <h3>25000 Credits + Promoter Plan – $549.99</h3>
+      <button onclick="buyCredits(25000, 54999, 'Promoter')">Buy</button>
     </div>
 
     <div id="status" class="status-message"></div>
@@ -66,7 +80,8 @@
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ Credit Purchase Script -->
-  <script src="/js/credits.js" defer></script>
+  <!-- ✅ Credit Logic -->
+  <script src="/js/credit.js" defer></script>
 </body>
 </html>
+
