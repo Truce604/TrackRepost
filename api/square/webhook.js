@@ -27,6 +27,8 @@ export default async function handler(req, res) {
     .update(rawBody)
     .digest("base64");
 
+  console.log("📦 Raw body received");
+  console.log("🧪 rawBody length:", rawBody.length);
   console.log("📩 Received:", receivedSignature);
   console.log("🔐 Expected:", expectedSignature);
 
@@ -44,7 +46,8 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid JSON");
   }
 
-  if (event.type === "payment.updated") {
+  // ✅ Process payment.updated only
+  if ((event.type || event.event_type) === "payment.updated") {
     const payment = event?.data?.object?.payment;
     const note = payment?.note || "";
     console.log("📝 Note:", note);
