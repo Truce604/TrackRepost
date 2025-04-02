@@ -20,90 +20,68 @@
       margin: 0;
       padding: 0;
     }
-
     header {
-      background-color: #2a2a2a; /* Darker, subtle background */
+      background-color: #2a2a2a;
       color: white;
       text-align: center;
       padding: 20px 0;
     }
-
     h1 {
       font-size: 36px;
       margin: 0;
     }
-
     .container {
       padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
-
-    .track-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 20px 0;
-    }
-
     .track-item {
       border: 1px solid #ddd;
       padding: 20px;
       margin: 10px 0;
-      width: 80%;
       background-color: white;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      text-align: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     }
-
     iframe {
       width: 100%;
       height: 166px;
       border-radius: 10px;
     }
-
     .track-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       margin-top: 10px;
     }
-
     .track-actions label {
-      margin: 5px;
-      font-size: 16px;
-      color: #555;
+      display: block;
+      margin: 5px 0;
+      font-size: 15px;
     }
-
-    .credits-info {
-      font-weight: bold;
-      color: #4caf50;
-      margin-top: 10px;
-      font-size: 18px;
+    textarea {
+      width: 100%;
+      height: 50px;
+      border-radius: 5px;
+      margin-top: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
     }
-
     .status-message {
-      color: #f44336;
+      margin-top: 10px;
       font-weight: bold;
-      margin-top: 20px;
+      color: #f44336;
     }
-
     button {
-      background-color: #4caf50; /* Changed to a more calming green */
+      background-color: #4caf50;
       color: white;
       padding: 10px 20px;
+      margin-top: 10px;
       border: none;
       border-radius: 5px;
-      cursor: pointer;
       font-size: 16px;
-      margin-top: 10px;
+      cursor: pointer;
     }
-
     button:hover {
-      background-color: #45a049; /* Slightly darker green */
+      background-color: #45a049;
     }
-
     footer {
       background-color: #333;
       color: white;
@@ -117,8 +95,9 @@
   <header>
     <h1>🎶 Available Tracks to Repost</h1>
   </header>
+
   <main class="container">
-    <div id="track-list"></div>
+    <div id="track-list">Loading campaigns...</div>
   </main>
 
   <footer>
@@ -127,91 +106,110 @@
 
   <script>
     const db = firebase.firestore();
-    const trackListContainer = document.getElementById('track-list');
+    const trackList = document.getElementById("track-list");
 
-    async function loadCampaigns() {
-      const campaignsSnap = await db.collection('campaigns').get();
-      campaignsSnap.forEach(doc => {
-        const trackData = doc.data();
-        buildTrackUI(trackData);
-      });
-    }
-
-    function buildTrackUI(trackData) {
-      const trackElement = document.createElement('div');
-      trackElement.classList.add('track-item');
-
-      trackElement.innerHTML = `
-        <h2>${trackData.genre} – ${trackData.artist}</h2>
-        <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackData.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true" frameborder="no" scrolling="no"></iframe>
-        <div class="track-actions">
-          <label><input type="checkbox" id="like-${trackData.id}" checked /> 💖 Like this track (+1 credit)</label>
-          <label><input type="checkbox" id="follow-${trackData.id}" /> 👣 Follow the artist (+2 credits)</label>
-          <label><input type="checkbox" id="comment-${trackData.id}" /> 💬 Leave a comment (+2 credits)</label>
-          <textarea id="comment-text-${trackData.id}" placeholder="Enter your comment here..." style="width: 100%; height: 50px;"></textarea>
-          <button onclick="repostTrack('${trackData.id}', '${trackData.trackUrl}')">✅ Repost & Earn Credits</button>
-        </div>
-        <div class="credits-info" id="credits-${trackData.id}">Credits: ${trackData.credits}</div>
-        <div id="status-${trackData.id}" class="status-message"></div>
-      `;
-
-      trackListContainer.appendChild(trackElement);
-    }
-
-    async function repostTrack(trackId, trackUrl) {
-      const user = firebase.auth().currentUser;
-      const status = document.getElementById(`status-${trackId}`);
+    firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) {
-        status.textContent = "❌ You must be logged in to repost.";
+        trackList.innerHTML = "<p>❌ Please log in to see repostable tracks.</p>";
         return;
       }
 
-      const like = document.getElementById(`like-${trackId}`).checked;
-      const follow = document.getElementById(`follow-${trackId}`).checked;
-      const comment = document.getElementById(`comment-${trackId}`).checked;
-      const commentText = document.getElementById(`comment-text-${trackId}`).value;
-
-      let credits = 0;
-      if (like) credits += 1;
-      if (follow) credits += 2;
-      if (comment) credits += 2;
-
-      const userRef = db.collection('users').doc(user.uid);
+      const userRef = db.collection("users").doc(user.uid);
       const userSnap = await userRef.get();
       const userData = userSnap.data();
-
-      if (userData.credits < credits) {
-        status.textContent = "❌ You don't have enough credits to repost.";
+      const baseReward = Math.floor((userData.soundcloud?.followers || 0) / 100);
+      if (baseReward === 0) {
+        trackList.innerHTML = "<p>⚠️ You need at least 100 SoundCloud followers to earn credits.</p>";
         return;
       }
 
-      // Deduct credits from user and add repost to campaign
-      await userRef.update({
-        credits: userData.credits - credits
-      });
+      const repostedIds = new Set(
+        (await db.collection("reposts").where("userId", "==", user.uid).get()).docs.map(doc => doc.data().campaignId)
+      );
 
-      const campaignRef = db.collection('campaigns').doc(trackId);
-      const campaignSnap = await campaignRef.get();
-      const campaignData = campaignSnap.data();
-      await campaignRef.update({
-        credits: campaignData.credits - credits
-      });
+      const campaignsSnap = await db.collection("campaigns").get();
+      const campaigns = campaignsSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(c => !repostedIds.has(c.id) && c.credits >= baseReward);
 
-      await db.collection('reposts').add({
-        userId: user.uid,
-        trackUrl,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        creditsEarned: credits,
-        commentText
-      });
+      if (campaigns.length === 0) {
+        trackList.innerHTML = "<p>🎉 No eligible campaigns available at the moment.</p>";
+        return;
+      }
 
-      status.textContent = `✅ Reposted! You earned ${credits} credits.`;
-    }
+      trackList.innerHTML = "";
+      for (const c of campaigns) {
+        const el = document.createElement("div");
+        el.className = "track-item";
+        el.innerHTML = `
+          <h3>${c.genre}</h3>
+          <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500" frameborder="no" scrolling="no"></iframe>
+          <div class="track-actions">
+            <label><input type="checkbox" class="like" checked /> 💖 Like (+1 credit)</label>
+            <label><input type="checkbox" class="follow" checked /> 👣 Follow (+2 credits)</label>
+            <label><input type="checkbox" class="comment" /> 💬 Comment (+2 credits)</label>
+            <textarea class="commentText" placeholder="Leave a comment..."></textarea>
+            <button>✅ Repost & Earn</button>
+            <div class="status-message"></div>
+          </div>
+        `;
 
-    loadCampaigns();
+        const like = el.querySelector(".like");
+        const follow = el.querySelector(".follow");
+        const comment = el.querySelector(".comment");
+        const commentText = el.querySelector(".commentText");
+        const status = el.querySelector(".status-message");
+        const button = el.querySelector("button");
+
+        button.addEventListener("click", async () => {
+          let total = baseReward;
+          if (like.checked) total += 1;
+          if (follow.checked) total += 2;
+          if (comment.checked && commentText.value.trim()) total += 2;
+
+          const campaignRef = db.collection("campaigns").doc(c.id);
+          const campaignSnap = await campaignRef.get();
+          const campaignData = campaignSnap.data();
+
+          if (campaignData.credits < total) {
+            status.textContent = "❌ Not enough campaign credits.";
+            return;
+          }
+
+          await db.collection("reposts").doc(`${user.uid}_${c.id}`).set({
+            userId: user.uid,
+            campaignId: c.id,
+            trackUrl: c.trackUrl,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            prompted: false,
+            like: like.checked,
+            follow: follow.checked,
+            comment: comment.checked,
+            commentText: commentText.value
+          });
+
+          await userRef.update({ credits: (userData.credits || 0) + total });
+          await campaignRef.update({ credits: campaignData.credits - total });
+
+          await db.collection("transactions").add({
+            userId: user.uid,
+            type: "earned",
+            amount: total,
+            reason: `Reposted ${c.trackUrl}`,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          status.textContent = `✅ Reposted! You earned ${total} credits.`;
+          button.disabled = true;
+        });
+
+        trackList.appendChild(el);
+      }
+    });
   </script>
 </body>
 </html>
+
 
 
 
