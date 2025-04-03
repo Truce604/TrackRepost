@@ -4,27 +4,106 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Explore Campaigns - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .explore-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 0 20px;
+    }
+
+    .campaign-card {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 15px;
+      color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .campaign-card img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .campaign-card h3 {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+
+    .campaign-card p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .campaign-card a {
+      color: #ff9900;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .campaign-card a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>🔥 Explore Tracks to Repost</h1>
-    <a href="dashboard.html">Back to Dashboard</a>
-  </header>
+  <div id="site-header"></div>
 
-  <main class="container">
-    <div id="explore-campaigns" class="campaign-feed">
+  <main>
+    <h2 style="text-align:center; margin-top: 30px;">🌎 Explore New Campaigns</h2>
+    <div id="explore-campaigns" class="explore-container">
       <p>Loading campaigns...</p>
     </div>
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost</p>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
-  <script src="js/explore-campaigns.js" type="module"></script>
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const container = document.getElementById("explore-campaigns");
+
+    async function loadCampaigns() {
+      const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No campaigns found.</p>";
+        return;
+      }
+
+      container.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const card = document.createElement("div");
+        card.className = "campaign-card";
+        card.innerHTML = `
+          <img src="${data.artworkUrl}" alt="Artwork" />
+          <h3>${data.title}</h3>
+          <p>by ${data.artist}</p>
+          <p><strong>Genre:</strong> ${data.genre}</p>
+          <p><strong>Credits Left:</strong> ${data.credits}</p>
+          <a href="track-details.html?id=${doc.id}">🎧 View Details</a>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    loadCampaigns();
+  </script>
 </body>
 </html>
+
