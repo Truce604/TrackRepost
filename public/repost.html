@@ -2,145 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Repost Campaigns - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- ✅ Firebase config -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-
-  <!-- ✅ Firebase compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #eee;
+      background-color: #0e0e0e;
+      color: white;
       margin: 0;
+      padding: 0;
     }
 
     header {
-      background-color: #1e1e1e;
+      background-color: #111;
       padding: 20px;
       text-align: center;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 26px;
+    header h1 {
+      font-size: 24px;
+      color: #fff;
     }
 
     .container {
-      padding: 20px;
-      max-width: 1000px;
+      max-width: 900px;
       margin: 0 auto;
+      padding: 20px;
     }
 
     .campaign-card {
-      background-color: #222;
-      border: 1px solid #333;
-      border-radius: 10px;
-      padding: 16px;
+      background-color: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
       margin-bottom: 20px;
-      display: flex;
-      flex-direction: row;
-      gap: 16px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
     }
 
-    .artwork {
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      object-fit: cover;
+    .campaign-card img {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
 
-    .campaign-details {
-      flex: 1;
+    .campaign-info {
+      margin-bottom: 10px;
     }
 
-    .campaign-details h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
+    .campaign-info h2 {
+      font-size: 20px;
+      margin: 5px 0;
     }
 
-    .campaign-details p {
-      margin: 4px 0;
-      font-size: 14px;
+    .campaign-info p {
+      margin: 2px 0;
+      color: #ccc;
     }
 
-    .soundcloud-player {
-      margin-top: 10px;
+    iframe {
+      width: 100%;
+      height: 166px;
+      border: none;
+      border-radius: 10px;
+    }
+
+    .repost-button {
+      display: inline-block;
+      background-color: #ff5500;
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .repost-button:hover {
+      background-color: #e14800;
     }
 
     footer {
-      background-color: #1a1a1a;
+      background-color: #111;
       color: #999;
       text-align: center;
-      padding: 20px 0;
-      margin-top: 40px;
+      font-size: 14px;
+      padding: 10px;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🎧 Repost Tracks & Earn Credits</h1>
+    <h1>🔁 Discover Tracks & Repost to Earn</h1>
   </header>
 
-  <main class="container">
-    <div id="campaign-feed">
-      <p>Loading campaigns...</p>
-    </div>
+  <main class="container" id="campaign-feed">
+    <p>Loading campaigns...</p>
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ Repost Feed Script -->
   <script>
-    firebase.initializeApp(window.firebaseConfig);
     const db = firebase.firestore();
-    const feed = document.getElementById("campaign-feed");
+    const container = document.getElementById("campaign-feed");
 
     async function loadCampaigns() {
-      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
-      if (snap.empty) {
-        feed.innerHTML = "<p>No campaigns available.</p>";
-        return;
-      }
+      try {
+        const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
 
-      feed.innerHTML = "";
-      snap.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "campaign-card";
+        if (snap.empty) {
+          container.innerHTML = "<p>No campaigns available yet.</p>";
+          return;
+        }
 
-        div.innerHTML = `
-          <img src="${data.artworkUrl || '/assets/default-art.png'}" class="artwork" alt="Artwork" />
-          <div class="campaign-details">
-            <h3>${data.title || "Untitled Track"}</h3>
-            <p>👤 ${data.artist || "Unknown Artist"}</p>
-            <p>🎵 Genre: ${data.genre}</p>
-            <p>🔥 Credits Left: ${data.credits}</p>
-            <div class="soundcloud-player">
-              <iframe width="100%" height="120" scrolling="no" frameborder="no"
-                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true&buying=false&sharing=false&download=false&show_artwork=false">
-              </iframe>
+        container.innerHTML = ""; // clear
+
+        snap.forEach(doc => {
+          const data = doc.data();
+          const card = document.createElement("div");
+          card.className = "campaign-card";
+
+          card.innerHTML = `
+            <img src="${data.artworkUrl || '/assets/default-art.png'}" alt="Artwork" />
+            <div class="campaign-info">
+              <h2>${data.title || "Untitled"}</h2>
+              <p>👤 ${data.artist || "Unknown Artist"}</p>
+              <p>🎵 Genre: ${data.genre}</p>
+              <p>💰 ${data.credits} credits remaining</p>
             </div>
-          </div>
-        `;
+            <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
+            <a href="repost-action.html?id=${doc.id}" class="repost-button">Repost & Earn</a>
+          `;
 
-        feed.appendChild(div);
-      });
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error loading campaigns:", err);
+        container.innerHTML = "<p>❌ Failed to load campaigns.</p>";
+      }
     }
 
     loadCampaigns();
   </script>
 </body>
 </html>
+
 
 
 
