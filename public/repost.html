@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Feed - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore Campaigns - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Firebase -->
@@ -11,147 +11,110 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
     body {
-      margin: 0;
       background: #111;
       color: #eee;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    header {
-      text-align: center;
-      padding: 20px;
-      background-color: #1e1e1e;
-      border-bottom: 1px solid #333;
-    }
-
-    header img {
-      height: 60px;
-      margin-bottom: 10px;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin: 0;
+      font-family: sans-serif;
     }
 
     .container {
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 0 15px;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
     }
 
     .campaign {
       background: #1a1a1a;
-      border-radius: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .campaign h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .campaign p {
+      margin: 6px 0;
     }
 
     .campaign iframe {
       width: 100%;
       height: 166px;
-      border: none;
+      margin-top: 15px;
       border-radius: 10px;
-      margin-bottom: 10px;
     }
 
-    .campaign .info {
-      margin-top: 10px;
-    }
-
-    .campaign .info h2 {
-      font-size: 20px;
-      margin: 5px 0;
-      color: #ffd700;
-    }
-
-    .campaign .info p {
-      margin: 5px 0;
-      font-size: 14px;
-      color: #aaa;
-    }
-
-    .campaign a.button {
-      display: inline-block;
+    .campaign .repost-btn {
       margin-top: 12px;
-      background: #ff9900;
-      color: black;
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 10px 20px;
       font-weight: bold;
-      text-decoration: none;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
 
-    footer {
-      background: #1e1e1e;
-      text-align: center;
-      color: #888;
-      font-size: 13px;
-      padding: 20px;
-      margin-top: 60px;
+    .campaign .repost-btn:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
-  <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" />
-    <h1>🔥 Repost Tracks & Earn Credits</h1>
-  </header>
+  <div id="site-header"></div>
 
-  <main class="container" id="campaignList">
-    <p>Loading campaigns...</p>
+  <main class="container">
+    <h1>🔥 Repost & Earn Credits</h1>
+    <div id="campaignList">
+      <p>Loading campaigns...</p>
+    </div>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
+  <!-- Header & Repost Script -->
+  <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
-    const auth = firebase.auth();
     const campaignList = document.getElementById("campaignList");
 
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        campaignList.innerHTML = "<p>❌ You must be signed in to see campaigns.</p>";
-        return;
-      }
-
-      const campaignsSnap = await db.collection("campaigns").get();
-      if (campaignsSnap.empty) {
-        campaignList.innerHTML = "<p>No campaigns available.</p>";
+    async function loadCampaigns() {
+      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+      if (snap.empty) {
+        campaignList.innerHTML = "<p>No campaigns found.</p>";
         return;
       }
 
       campaignList.innerHTML = "";
+      snap.forEach(doc => {
+        const c = doc.data();
+        const id = doc.id;
 
-      campaignsSnap.forEach((doc) => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.classList.add("campaign");
-
-        div.innerHTML = `
-          <iframe scrolling="no" frameborder="no" 
-            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true">
-          </iframe>
-
-          <div class="info">
-            <h2>${data.title}</h2>
-            <p>by ${data.artist} • ${data.genre} • ${data.credits} credits left</p>
-            <a class="button" href="/repost-action.html?id=${doc.id}">✅ Repost & Earn</a>
-          </div>
+        const el = document.createElement("div");
+        el.className = "campaign";
+        el.innerHTML = `
+          <h3>${c.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
+          <p><strong>Genre:</strong> ${c.genre}</p>
+          <p><strong>Credits Available:</strong> ${c.credits}</p>
+          <iframe scrolling="no" frameborder="no" allow="autoplay"
+            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
+          <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
+            ✅ Repost This Track
+          </button>
         `;
-
-        campaignList.appendChild(div);
+        campaignList.appendChild(el);
       });
-    });
+    }
+
+    loadCampaigns();
   </script>
 </body>
 </html>
