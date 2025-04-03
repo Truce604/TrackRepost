@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Leaderboard - TrackRepost</title>
+  <title>🏆 Leaderboard - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -15,65 +15,61 @@
 
   <style>
     .leaderboard-container {
-      max-width: 800px;
+      max-width: 700px;
       margin: 40px auto;
+      background: #1e1e1e;
       padding: 20px;
-      background: #1a1a1a;
-      color: white;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      color: white;
     }
 
-    .leaderboard-container h2 {
+    h2 {
       text-align: center;
-      color: #ffd700;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
-    .leaderboard-row {
-      display: flex;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #333;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
     }
 
-    .leaderboard-row:last-child {
-      border-bottom: none;
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #444;
     }
 
-    .leaderboard-rank {
-      width: 30px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #ffd700;
+    th {
+      background-color: #333;
     }
 
-    .leaderboard-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      margin-right: 10px;
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
     }
 
-    .leaderboard-name {
-      flex-grow: 1;
-      font-weight: bold;
-    }
-
-    .leaderboard-credits {
-      font-size: 16px;
-      color: #4caf50;
+    tr:hover {
+      background-color: #333;
     }
   </style>
 </head>
 <body>
   <div id="site-header"></div>
 
-  <main>
-    <div class="leaderboard-container" id="leaderboard">
-      <h2>🏆 Top 10 Earners This Month</h2>
-      <p>Loading leaderboard...</p>
-    </div>
+  <main class="leaderboard-container">
+    <h2>🏆 Top Reposters - This Month</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Reposts</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
   </main>
 
   <footer>
@@ -83,53 +79,47 @@
   <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
-    const container = document.getElementById("leaderboard");
+    const body = document.getElementById("leaderboard-body");
 
-    async function loadLeaderboard() {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      const txSnap = await db.collection("transactions")
-        .where("type", "==", "earned")
-        .where("timestamp", ">=", startOfMonth)
-        .get();
+    db.collection("reposts")
+      .where("timestamp", ">", firebase.firestore.Timestamp.fromDate(startOfMonth))
+      .get()
+      .then(snapshot => {
+        const counts = {};
+        snapshot.docs.forEach(doc => {
+          const uid = doc.data().userId;
+          counts[uid] = (counts[uid] || 0) + 1;
+        });
 
-      const leaderboard = {};
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 25);
 
-      txSnap.forEach(doc => {
-        const tx = doc.data();
-        if (!leaderboard[tx.userId]) leaderboard[tx.userId] = 0;
-        leaderboard[tx.userId] += tx.amount;
+        if (sorted.length === 0) {
+          body.innerHTML = `<tr><td colspan="3">No reposts yet this month.</td></tr>`;
+          return;
+        }
+
+        body.innerHTML = "";
+        sorted.forEach(([uid, count], i) => {
+          db.collection("users").doc(uid).get().then(userDoc => {
+            const user = userDoc.data() || {};
+            const display = user.displayName || "Anonymous";
+            const row = `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${display}</td>
+                <td>${count}</td>
+              </tr>
+            `;
+            body.insertAdjacentHTML("beforeend", row);
+          });
+        });
       });
-
-      const sorted = Object.entries(leaderboard)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-
-      const userSnaps = await Promise.all(
-        sorted.map(([uid]) => db.collection("users").doc(uid).get())
-      );
-
-      container.innerHTML = `<h2>🏆 Top 10 Earners This Month</h2>`;
-
-      sorted.forEach(([uid, earned], index) => {
-        const userData = userSnaps[index].data();
-        const displayName = userData?.displayName || "Anonymous";
-        const avatar = userData?.soundcloud?.avatar || "/assets/default-avatar.png";
-
-        const row = document.createElement("div");
-        row.className = "leaderboard-row";
-        row.innerHTML = `
-          <div class="leaderboard-rank">#${index + 1}</div>
-          <img src="${avatar}" alt="Avatar" class="leaderboard-avatar" />
-          <div class="leaderboard-name">${displayName}</div>
-          <div class="leaderboard-credits">+${earned} credits</div>
-        `;
-        container.appendChild(row);
-      });
-    }
-
-    loadLeaderboard();
   </script>
 </body>
 </html>
