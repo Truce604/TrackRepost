@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `<span class="badge pro">${plan.toUpperCase()} PLAN</span>`
       : `<span class="badge free">FREE PLAN</span>`;
 
-    // Load user campaigns
+    // Load campaigns
     const q = db.collection("campaigns").where("userId", "==", user.uid);
     const snapshot = await q.get();
 
@@ -39,33 +39,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
       snapshot.forEach(doc => {
         const data = doc.data();
-        const campaignDiv = document.createElement("div");
-        campaignDiv.className = "campaign-card";
-        campaignDiv.style = `
+        const div = document.createElement("div");
+
+        div.style = `
           border: 1px solid #333;
           background-color: #1e1e1e;
           border-radius: 10px;
           padding: 16px;
           margin-bottom: 20px;
           color: #fff;
+          max-width: 650px;
+          display: flex;
+          gap: 16px;
+          align-items: center;
+          height: 120px;
+          overflow: hidden;
         `;
 
-        campaignDiv.innerHTML = `
-          <div style="display:flex; gap:16px; align-items: center;">
-            <img src="${data.artworkUrl}" alt="Artwork" style="width:100px; height:100px; border-radius:8px; object-fit:cover;" />
-            <div>
-              <h3 style="margin:0;">${data.title || "Untitled"}</h3>
-              <p style="margin:4px 0;">👤 <strong>${data.artist || "Unknown Artist"}</strong></p>
-              <p style="margin:4px 0;">🎵 Genre: ${data.genre}</p>
-              <p style="margin:4px 0;">🔥 Credits Remaining: <strong>${data.credits}</strong></p>
-              <p style="margin:4px 0;">
-                <a href="${data.trackUrl}" target="_blank" style="color:#ff8800;">▶️ Listen on SoundCloud</a>
-              </p>
-            </div>
+        div.innerHTML = `
+          <img src="${data.artworkUrl || '/assets/default-art.png'}" alt="Artwork" style="width:100px; height:100px; border-radius:8px; object-fit:cover;" />
+          <div style="flex:1; overflow:hidden;">
+            <h3 style="margin:0; font-size:16px;">${data.title || "Untitled"}</h3>
+            <p style="margin:4px 0; font-size:14px;">👤 <strong>${data.artist || "Unknown Artist"}</strong></p>
+            <p style="margin:4px 0; font-size:14px;">🎵 ${data.genre}</p>
+            <p style="margin:4px 0; font-size:14px;">🔥 ${data.credits} Credits</p>
+            <a href="${data.trackUrl}" target="_blank" style="color:#ff8800; font-size:14px;">▶️ Listen on SoundCloud</a>
           </div>
         `;
 
-        campaignContainer.appendChild(campaignDiv);
+        campaignContainer.appendChild(div);
       });
     }
   });
@@ -78,5 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
 
