@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Repost & Earn – TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Repost Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-  
-  <!-- Firebase SDKs -->
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -14,108 +14,86 @@
   <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0e0e0e;
+    .repost-box {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #1c1c1c;
       color: #fff;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      text-align: center;
-      padding: 20px;
-    }
-
-    header img {
-      height: 60px;
-    }
-
-    main.container {
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
-      background: #1a1a1a;
       border-radius: 12px;
     }
 
-    h2 {
-      margin-top: 10px;
-      font-size: 24px;
+    .repost-box h2 {
+      margin-bottom: 10px;
     }
 
-    img {
+    iframe {
       width: 100%;
+      height: 166px;
+      margin: 15px 0;
       border-radius: 10px;
-      margin-bottom: 15px;
     }
 
-    form.campaign-form {
-      margin-top: 15px;
-    }
-
-    label {
+    .repost-options label {
       display: block;
       margin: 10px 0;
     }
 
-    input[type="text"] {
+    .repost-options textarea {
       width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      margin-top: 5px;
+      height: 60px;
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 6px;
+      font-size: 14px;
     }
 
-    button {
-      margin-top: 15px;
-      width: 100%;
-      padding: 12px;
-      background-color: #ff5500;
-      color: white;
-      border: none;
-      border-radius: 6px;
+    .submit-btn {
+      margin-top: 20px;
+      padding: 12px 20px;
       font-size: 16px;
+      font-weight: bold;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      border-radius: 8px;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #e44b00;
+    .submit-btn:hover {
+      background-color: #43a047;
     }
 
     .status-message {
-      margin-top: 15px;
+      margin-top: 20px;
       font-weight: bold;
-      color: #00ffae;
-      text-align: center;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 13px;
-      padding: 15px;
-      background: #111;
-      color: #999;
-      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" />
-    <h1>🔥 Repost This Track & Earn</h1>
-  </header>
+  <div id="site-header"></div>
 
-  <main class="container" id="repost-action-container">
-    <p>Loading campaign...</p>
-  </main>
+  <div class="repost-box">
+    <h2>🔁 Repost This Track & Earn Credits</h2>
+    <div id="track-info">Loading...</div>
+    <form id="repost-form" class="repost-options" style="display: none;">
+      <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label>
+      <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label>
+      <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label>
+      <textarea id="commentText" placeholder="Optional comment..."></textarea>
+      <button type="submit" class="submit-btn">✅ Complete Repost</button>
+    </form>
+    <div id="status" class="status-message"></div>
+  </div>
 
   <footer>
-    <p>© 2025 TrackRepost. All rights reserved.</p>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
+  <script type="module" src="/js/header.js"></script>
   <script src="/js/repost-action.js"></script>
 </body>
 </html>
+
 
 
