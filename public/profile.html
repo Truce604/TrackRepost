@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Profile - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .profile-card {
+      background: #1a1a1a;
+      color: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      margin: 40px auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+
+    .profile-card h2 {
+      color: #ffd700;
+      margin-bottom: 10px;
+    }
+
+    .profile-item {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .sc-section {
+      margin-top: 30px;
+      border-top: 1px solid #333;
+      padding-top: 20px;
+    }
+
+    .sc-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="profile-card" id="profile-info">
+      <p>Loading profile...</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const container = document.getElementById("profile-info");
+
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        container.innerHTML = `<p>Please log in to view your profile.</p>`;
+        return;
+      }
+
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const data = userDoc.exists ? userDoc.data() : {};
+
+      const credits = data.credits || 0;
+      const isPro = data.isPro ? "Pro Plan ✅" : "Free Plan";
+      const soundcloud = data.soundcloud || {};
+
+      container.innerHTML = `
+        <h2>👤 Your Profile</h2>
+        <div class="profile-item"><strong>Name:</strong> ${user.displayName || "Anonymous"}</div>
+        <div class="profile-item"><strong>Email:</strong> ${user.email}</div>
+        <div class="profile-item"><strong>Plan:</strong> ${isPro}</div>
+        <div class="profile-item"><strong>Credits:</strong> ${credits}</div>
+
+        ${soundcloud.handle ? `
+          <div class="sc-section">
+            <h3>🎵 SoundCloud Info</h3>
+            ${soundcloud.avatar ? `<img src="${soundcloud.avatar}" class="sc-avatar" />` : ""}
+            <div class="profile-item"><strong>Handle:</strong> ${soundcloud.handle}</div>
+            <div class="profile-item"><strong>Followers:</strong> ${soundcloud.followers || 0}</div>
+            <div class="profile-item"><strong>Bio:</strong> ${soundcloud.bio || "—"}</div>
+            <div class="profile-item"><a href="${soundcloud.url}" target="_blank" style="color:#ffd700;">View on SoundCloud</a></div>
+          </div>
+        ` : `<div class="profile-item">🔗 No SoundCloud linked yet.</div>`}
+      `;
+    });
+  </script>
+</body>
+</html>
