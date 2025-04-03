@@ -1,4 +1,5 @@
-const config = {
+// ✅ Global Firebase config (no "export"!)
+window.firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
     projectId: "trackrepost-921f8", 
@@ -8,13 +9,12 @@ const config = {
     measurementId: "G-G65Q3HC3R8" 
 };
 
-// Make it available globally for <script> usage
-window.firebaseConfig = config;
+// ✅ Initialize Firebase (compat)
+firebase.initializeApp(window.firebaseConfig);
+
+// ✅ Global Square values
 window.SQUARE_APP_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
 window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
-
-// Also export for module import
-export const firebaseConfig = config;
 
 console.log("✅ Firebase config loaded");
 console.log("✅ Square App ID:", window.SQUARE_APP_ID);
