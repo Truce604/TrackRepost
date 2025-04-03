@@ -11,7 +11,9 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  updateDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ✅ Firebase Config
@@ -42,15 +44,15 @@ const autoDetectGenre = async (url) => {
   return match || "Pop";
 };
 
-// ✅ Parse SoundCloud metadata from URL
+// ✅ Extract SoundCloud details
 const parseSoundCloud = (url) => {
   const parts = url.split("/").filter(Boolean);
   const artist = parts.length >= 4 ? parts[3].split("?")[0] : "Unknown";
   const titleRaw = parts.length >= 5 ? parts[4].split("?")[0].replace(/-/g, " ") : "Untitled";
   const title = decodeURIComponent(titleRaw).replace(/_/g, " ").trim();
 
-  const artworkUrl = `https://i1.sndcdn.com/artworks-000000000000-0-t500x500.jpg`; // fallback
-  return { artist, title, artworkUrl }; // You can replace this with dynamic art if you ever want scraping
+  const artworkUrl = `https://i1.sndcdn.com/artworks-000000000000-0-t500x500.jpg`; // Fallback
+  return { artist, title, artworkUrl };
 };
 
 trackUrlInput.addEventListener("change", async () => {
@@ -72,7 +74,7 @@ onAuthStateChanged(auth, async (user) => {
   const currentCredits = userData.credits || 0;
   creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
 
-  // Limit for free users
+  // 🔐 Campaign limit for free users
   const q = query(collection(db, "campaigns"), where("userId", "==", user.uid));
   const campaignSnap = await getDocs(q);
   if (!isPro && campaignSnap.size >= 1) {
@@ -114,31 +116,33 @@ onAuthStateChanged(auth, async (user) => {
 
     try {
       console.log("🟡 Submitting Campaign:", campaignData);
+
+      // ⬆️ Submit campaign
       await setDoc(doc(db, "campaigns", campaignId), campaignData);
 
-      await setDoc(userRef, {
-        ...userData,
+      // ⬇️ Subtract credits
+      await updateDoc(userRef, {
         credits: currentCredits - credits
       });
 
+      // 💰 Log transaction
       await setDoc(doc(db, "transactions", `${user.uid}_${Date.now()}`), {
         userId: user.uid,
         type: "spent",
         amount: credits,
         reason: `Launched campaign: ${title}`,
-        timestamp: new Date()
+        timestamp: serverTimestamp()
       });
 
       statusBox.textContent = "✅ Campaign submitted successfully!";
       form.reset();
       genreInput.value = "";
+
     } catch (err) {
       console.error("❌ Firestore submission failed:", err);
       statusBox.textContent = "❌ Error submitting campaign.";
     }
   });
-});
-
 });
 
 
