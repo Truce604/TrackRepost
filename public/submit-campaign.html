@@ -5,38 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Submit a Campaign - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Load Firebase config (defines window.firebaseConfig) -->
+  <script src="/js/firebaseConfig.js"></script>
+
+  <!-- ✅ Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
 </head>
 <body>
   <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" style="max-width: 200px; margin: 20px auto; display: block;" />
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" style="max-width: 220px; margin: 20px auto; display: block;" />
   </header>
 
-  <main class="container">
-    <div id="current-credits" style="text-align:center; margin-bottom: 10px; font-weight:bold;">Loading credits...</div>
+  <main class="container" style="max-width: 500px; margin: 0 auto; padding: 20px;">
+    <div id="current-credits" style="text-align: center; font-weight: bold; margin-bottom: 15px;">
+      Loading credits...
+    </div>
 
-    <form id="campaign-form" class="campaign-form" style="max-width:500px; margin:0 auto;">
+    <h2 style="text-align: center;">🚀 Submit Your Track</h2>
+
+    <form id="campaign-form" class="campaign-form">
       <label for="trackUrl">SoundCloud Track URL:</label>
       <input type="url" id="trackUrl" required placeholder="https://soundcloud.com/your-track" />
 
       <label for="genre">Genre:</label>
-      <input type="text" id="genre" required />
+      <input type="text" id="genre" required placeholder="Auto detected or custom" />
 
       <label for="credits">Credits to Spend:</label>
-      <input type="number" id="credits" required min="1" />
+      <input type="number" id="credits" min="1" required placeholder="Minimum 1" />
 
-      <button type="submit">🎯 Submit Campaign</button>
+      <button type="submit" style="margin-top: 20px;">🎯 Launch Campaign</button>
     </form>
 
-    <div id="status" class="status-message" style="text-align:center; margin-top:15px;"></div>
+    <div id="status" class="status-message" style="text-align: center; margin-top: 20px; font-weight: bold;"></div>
   </main>
 
   <footer>
-    <p style="text-align:center;">© 2025 TrackRepost. All Rights Reserved.</p>
+    <p style="text-align: center; padding: 20px;">© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ DO NOT include firebaseConfig.js here -->
-  <!-- ✅ Only load submit-campaign.js as a module -->
+  <!-- ✅ Main script (must be last, and a module) -->
   <script type="module" src="/js/submit-campaign.js"></script>
 </body>
 </html>
+
 
