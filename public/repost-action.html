@@ -2,27 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Action - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repost & Earn – TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- ✅ Firebase SDKs -->
+  
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
 
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    main.container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: #1a1a1a;
+      border-radius: 12px;
+    }
+
+    h2 {
+      margin-top: 10px;
+      font-size: 24px;
+    }
+
+    img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    form.campaign-form {
+      margin-top: 15px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 12px;
+      background-color: #ff5500;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e44b00;
+    }
+
+    .status-message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #00ffae;
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      padding: 15px;
+      background: #111;
+      color: #999;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <img src="/assets/logo.png" alt="TrackRepost Logo" style="height: 50px; margin-top: 10px;" />
-    <h1>🚀 Repost & Earn Credits</h1>
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" />
+    <h1>🔥 Repost This Track & Earn</h1>
   </header>
 
   <main class="container" id="repost-action-container">
@@ -30,11 +111,10 @@
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ Repost Action Logic -->
-  <script src="/js/repost-action.js" type="module"></script>
+  <script src="/js/repost-action.js"></script>
 </body>
 </html>
 
