@@ -22,10 +22,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return match || "Pop";
   };
 
+  // ✅ Fixed artist/title parsing
   const parseSoundCloud = (url) => {
     const parts = url.split("/").filter(Boolean);
-    const artist = parts.length >= 4 ? parts[3].split("?")[0] : "Unknown";
-    const titleRaw = parts.length >= 5 ? parts[4].split("?")[0].replace(/-/g, " ") : "Untitled";
+    const artist = parts.length >= 3 ? parts[2].split("?")[0] : "Unknown";
+    const titleRaw = parts.length >= 4 ? parts[3].split("?")[0].replace(/-/g, " ") : "Untitled";
     const title = decodeURIComponent(titleRaw).replace(/_/g, " ").trim();
     const artworkUrl = "https://i1.sndcdn.com/artworks-000000000000-0-t500x500.jpg";
     return { artist, title, artworkUrl };
