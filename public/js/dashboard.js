@@ -17,14 +17,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const userData = userSnap.exists ? userSnap.data() : {};
     const credits = userData.credits || 0;
     const isPro = userData.isPro || false;
+    const plan = userData.plan || "Free";
 
+    // Display user info
     userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
     creditDisplay.textContent = `${credits} credits`;
 
+    // Plan badge
     planBadge.innerHTML = isPro
-      ? `<span class="badge pro">PRO PLAN</span>`
+      ? `<span class="badge pro">${plan.toUpperCase()} PLAN</span>`
       : `<span class="badge free">FREE PLAN</span>`;
 
+    // Load user campaigns
     const q = db.collection("campaigns").where("userId", "==", user.uid);
     const snapshot = await q.get();
 
@@ -32,31 +36,36 @@ document.addEventListener("DOMContentLoaded", () => {
       campaignContainer.innerHTML = `<p>No active campaigns yet.</p>`;
     } else {
       campaignContainer.innerHTML = "";
+
       snapshot.forEach(doc => {
         const data = doc.data();
-        const card = document.createElement("div");
-        card.className = "campaign-card";
-        card.style.marginBottom = "20px";
-        card.style.border = "1px solid #ccc";
-        card.style.borderRadius = "10px";
-        card.style.padding = "15px";
-        card.style.backgroundColor = "#fff";
-        card.style.boxShadow = "0 4px 8px rgba(0,0,0,0.05)";
+        const campaignDiv = document.createElement("div");
+        campaignDiv.className = "campaign-card";
+        campaignDiv.style = `
+          border: 1px solid #333;
+          background-color: #1e1e1e;
+          border-radius: 10px;
+          padding: 16px;
+          margin-bottom: 20px;
+          color: #fff;
+        `;
 
-        card.innerHTML = `
-          <div style="display: flex; gap: 15px;">
-            <img src="${data.artworkUrl || '/assets/default-artwork.png'}" alt="Artwork" style="width: 100px; height: 100px; border-radius: 8px;" />
+        campaignDiv.innerHTML = `
+          <div style="display:flex; gap:16px; align-items: center;">
+            <img src="${data.artworkUrl}" alt="Artwork" style="width:100px; height:100px; border-radius:8px; object-fit:cover;" />
             <div>
-              <h3 style="margin: 0 0 5px 0;">${data.title || "Untitled Track"}</h3>
-              <p style="margin: 0; color: #555;"><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
-              <p style="margin: 4px 0;"><strong>Genre:</strong> ${data.genre}</p>
-              <p style="margin: 4px 0;"><strong>Credits Remaining:</strong> ${data.credits}</p>
-              <a href="${data.trackUrl}" target="_blank">🎧 Listen on SoundCloud</a>
+              <h3 style="margin:0;">${data.title || "Untitled"}</h3>
+              <p style="margin:4px 0;">👤 <strong>${data.artist || "Unknown Artist"}</strong></p>
+              <p style="margin:4px 0;">🎵 Genre: ${data.genre}</p>
+              <p style="margin:4px 0;">🔥 Credits Remaining: <strong>${data.credits}</strong></p>
+              <p style="margin:4px 0;">
+                <a href="${data.trackUrl}" target="_blank" style="color:#ff8800;">▶️ Listen on SoundCloud</a>
+              </p>
             </div>
           </div>
         `;
 
-        campaignContainer.appendChild(card);
+        campaignContainer.appendChild(campaignDiv);
       });
     }
   });
@@ -69,4 +78,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
