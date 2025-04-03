@@ -1,9 +1,9 @@
+// ✅ Dashboard Script
 document.addEventListener("DOMContentLoaded", () => {
   const creditDisplay = document.getElementById("creditBalance");
   const campaignContainer = document.getElementById("campaigns");
   const userInfo = document.getElementById("userInfo");
   const planBadge = document.getElementById("planBadge");
-  const logoutBtn = document.getElementById("logout-btn");
 
   firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -17,49 +17,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const userData = userSnap.exists ? userSnap.data() : {};
     const credits = userData.credits || 0;
     const isPro = userData.isPro || false;
+    const plan = userData.plan || "Free";
 
-    userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
-    creditDisplay.textContent = `${credits} credits`;
+    userInfo.innerHTML = `
+      <strong>Welcome, ${user.displayName || "User"}</strong>
+    `;
+    creditDisplay.innerHTML = `<span>${credits} credits</span>`;
+    planBadge.innerHTML = `<span class="badge ${isPro ? "pro" : "free"}">${plan.toUpperCase()} PLAN</span>`;
 
-    planBadge.innerHTML = isPro
-      ? `<span class="badge pro">PRO PLAN</span>`
-      : `<span class="badge free">FREE PLAN</span>`;
-
-    const campaignQuery = db.collection("campaigns").where("userId", "==", user.uid);
-    const campaignSnap = await campaignQuery.get();
+    const campaignSnap = await db.collection("campaigns")
+      .where("userId", "==", user.uid)
+      .orderBy("createdAt", "desc")
+      .get();
 
     if (campaignSnap.empty) {
-      campaignContainer.innerHTML = `<p>You have no active campaigns yet.</p>`;
+      campaignContainer.innerHTML = `<p>No active campaigns yet. <a href="submit-campaign.html">Start one here</a>.</p>`;
     } else {
       campaignContainer.innerHTML = "";
-      campaignSnap.forEach((doc) => {
+      campaignSnap.forEach(doc => {
         const data = doc.data();
-        const div = document.createElement("div");
-        div.classList.add("campaign");
+        const campaignId = doc.id;
 
+        const div = document.createElement("div");
+        div.className = "campaign-card";
         div.innerHTML = `
-          <iframe width="100%" height="166" scrolling="no" frameborder="no"
-            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true">
-          </iframe>
-          <div class="info">
-            <h2>${data.title}</h2>
-            <p>by ${data.artist} • ${data.genre} • ${data.credits} credits left</p>
-            <a class="button" href="/repost-action.html?id=${doc.id}">🔁 View Repost Page</a>
+          <img src="${data.artworkUrl}" alt="Track Art" class="campaign-art" />
+          <div class="campaign-info">
+            <h3>${data.title || "Untitled Track"}</h3>
+            <p><strong>Genre:</strong> ${data.genre}</p>
+            <p><strong>Credits Left:</strong> ${data.credits}</p>
+            <a href="${data.trackUrl}" target="_blank">🔗 Listen on SoundCloud</a><br/>
+            <a href="track-details.html?id=${campaignId}" class="details-link">📊 View Repost Activity</a>
           </div>
         `;
         campaignContainer.appendChild(div);
       });
     }
   });
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "index.html";
-      });
-    });
-  }
 });
+
 
 
 
