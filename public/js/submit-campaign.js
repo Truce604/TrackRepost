@@ -1,5 +1,3 @@
-// /js/submit-campaign.js
-
 firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -9,7 +7,6 @@ const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 
-// ✅ Auto genre detection from URL
 const autoDetectGenre = async (url) => {
   const genres = [
     "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
@@ -22,7 +19,6 @@ const autoDetectGenre = async (url) => {
   return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
 };
 
-// ✅ Get SoundCloud metadata (title, artist, artwork)
 const fetchSoundCloudMetadata = async (trackUrl) => {
   try {
     const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(trackUrl)}`);
@@ -54,13 +50,11 @@ const fetchSoundCloudMetadata = async (trackUrl) => {
   }
 };
 
-// ✅ Detect genre when track URL changes
 form.trackUrl.addEventListener("change", async () => {
   const genre = await autoDetectGenre(form.trackUrl.value);
   genreInput.value = genre;
 });
 
-// ✅ Auth + submission
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     form.style.display = "none";
@@ -76,7 +70,6 @@ auth.onAuthStateChanged(async (user) => {
 
   creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
 
-  // ✅ Limit to 1 campaign if not Pro
   const campaignQuery = db.collection("campaigns").where("userId", "==", user.uid);
   const campaignSnap = await campaignQuery.get();
   if (!isPro && campaignSnap.size >= 1) {
@@ -85,7 +78,6 @@ auth.onAuthStateChanged(async (user) => {
     return;
   }
 
-  // ✅ Submit form
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     statusBox.textContent = "Submitting...";
@@ -107,9 +99,8 @@ auth.onAuthStateChanged(async (user) => {
     try {
       const meta = await fetchSoundCloudMetadata(trackUrl);
       const campaignId = `${user.uid}_${Date.now()}`;
-      const campaignRef = db.collection("campaigns").doc(campaignId);
 
-      await campaignRef.set({
+      const campaignData = {
         userId: user.uid,
         trackUrl,
         genre,
@@ -118,7 +109,16 @@ auth.onAuthStateChanged(async (user) => {
         title: meta.title,
         artist: meta.artist,
         artworkUrl: meta.artworkUrl
+      };
+
+      // 🔎 DEBUG: Log all data before submitting
+      console.log("🟡 Submitting Campaign:");
+      Object.entries(campaignData).forEach(([key, value]) => {
+        console.log(`  ${key} (${typeof value}):`, value);
       });
+
+      const campaignRef = db.collection("campaigns").doc(campaignId);
+      await campaignRef.set(campaignData);
 
       await userRef.update({
         credits: currentCredits - credits
