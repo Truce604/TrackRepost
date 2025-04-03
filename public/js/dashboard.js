@@ -21,33 +21,37 @@ document.addEventListener("DOMContentLoaded", () => {
     userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
     creditDisplay.textContent = `${credits} credits`;
 
-    // Show plan badge
     planBadge.innerHTML = isPro
       ? `<span class="badge pro">PRO PLAN</span>`
       : `<span class="badge free">FREE PLAN</span>`;
 
-    // Load campaigns
-    const q = db.collection("campaigns").where("userId", "==", user.uid);
-    const snapshot = await q.get();
+    const snapshot = await db.collection("campaigns")
+      .where("userId", "==", user.uid)
+      .orderBy("createdAt", "desc")
+      .get();
 
     if (snapshot.empty) {
       campaignContainer.innerHTML = `<p>No active campaigns yet.</p>`;
-    } else {
-      campaignContainer.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "campaign-card";
-        div.innerHTML = `
-          <h3>${data.genre}</h3>
-          <p><strong>${data.title}</strong> by ${data.artist}</p>
-          <img src="${data.artworkUrl}" alt="Artwork" style="max-width: 100%; border-radius: 10px; margin: 10px 0;">
-          <p><a href="track-details.html?id=${doc.id}" class="button">🎧 View Details</a></p>
-          <p>Credits Remaining: ${data.credits}</p>
-        `;
-        campaignContainer.appendChild(div);
-      });
+      return;
     }
+
+    campaignContainer.innerHTML = "";
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const artwork = data.artworkUrl || "/images/placeholder-artwork.jpg";
+
+      const div = document.createElement("div");
+      div.className = "campaign-card";
+      div.innerHTML = `
+        <img src="${artwork}" alt="Artwork" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
+        <h3>${data.title || "Untitled"}</h3>
+        <p>🎧 ${data.artist || "Unknown Artist"}</p>
+        <p>🎵 Genre: ${data.genre}</p>
+        <p>🔥 Credits Remaining: ${data.credits}</p>
+        <a href="repost-action.html?id=${doc.id}" class="button">View Campaign</a>
+      `;
+      campaignContainer.appendChild(div);
+    });
   });
 
   if (logoutBtn) {
@@ -58,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
 
 
