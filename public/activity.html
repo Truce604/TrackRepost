@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activity - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .activity-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #1a1a1a;
+      color: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+
+    .activity-container h2 {
+      text-align: center;
+      color: #ffd700;
+      margin-bottom: 30px;
+    }
+
+    .activity-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      padding: 12px 0;
+    }
+
+    .activity-row:last-child {
+      border-bottom: none;
+    }
+
+    .activity-type {
+      font-weight: bold;
+    }
+
+    .activity-credits.earned {
+      color: #4caf50;
+    }
+
+    .activity-credits.spent {
+      color: #f44336;
+    }
+
+    .low-balance {
+      text-align: center;
+      color: #ff9800;
+      margin-top: 20px;
+    }
+
+    .buy-link {
+      display: inline-block;
+      margin-top: 10px;
+      background: #ff9800;
+      color: black;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <div class="activity-container" id="activity-log">
+      <h2>📊 Your Credit Activity</h2>
+      <p>Loading activity...</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const container = document.getElementById("activity-log");
+
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        container.innerHTML = "<p>Please log in to see your activity.</p>";
+        return;
+      }
+
+      const userRef = db.collection("users").doc(user.uid);
+      const userSnap = await userRef.get();
+      const userData = userSnap.exists ? userSnap.data() : {};
+      const balance = userData.credits || 0;
+
+      const txSnap = await db.collection("transactions")
+        .where("userId", "==", user.uid)
+        .orderBy("timestamp", "desc")
+        .limit(100)
+        .get();
+
+      if (txSnap.empty) {
+        container.innerHTML = "<p>No credit activity yet.</p>";
+        return;
+      }
+
+      container.innerHTML = `<h2>📊 Your Credit Activity</h2>`;
+
+      txSnap.forEach(doc => {
+        const tx = doc.data();
+        const amount = tx.amount || 0;
+        const type = tx.type === "earned" ? "+" : "-";
+        const creditClass = tx.type === "earned" ? "earned" : "spent";
+        const reason = tx.reason || "—";
+        const timestamp = tx.timestamp?.toDate().toLocaleString() || "";
+
+        const row = document.createElement("div");
+        row.className = "activity-row";
+        row.innerHTML = `
+          <div>
+            <div class="activity-type">${type === "+" ? "Earned" : "Spent"} Credits</div>
+            <div>${reason}</div>
+            <div style="font-size: 13px; color: #999;">${timestamp}</div>
+          </div>
+          <div class="activity-credits ${creditClass}">${type}${amount}</div>
+        `;
+        container.appendChild(row);
+      });
+
+      // Show buy link if balance is low
+      if (balance < 100) {
+        const lowDiv = document.createElement("div");
+        lowDiv.className = "low-balance";
+        lowDiv.innerHTML = `
+          <p>⚠️ Your credit balance is low (${balance} credits).</p>
+          <a href="buy-credits.html" class="buy-link">Buy More Credits</a>
+        `;
+        container.appendChild(lowDiv);
+      }
+    });
+  </script>
+</body>
+</html>
