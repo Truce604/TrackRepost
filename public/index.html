@@ -3,47 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TrackRepost - Promote Your Music</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>TrackRepost - Grow on SoundCloud</title>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Firebase SDKs (compat versions) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
 
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+  <style>
+    .hero {
+      background: linear-gradient(145deg, #0e0e0e, #1a1a1a);
+      padding: 80px 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .hero-inner h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .hero-inner p {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #ccc;
+    }
+
+    .button {
+      background: #ff9900;
+      color: black;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background: #e68300;
+    }
+
+    footer {
+      background-color: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>🎵 TrackRepost</h1>
+  <div id="site-header"></div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>🚀 Promote Your Track. Earn Credits. Grow Fast.</h1>
+      <p>TrackRepost helps artists get reposts on SoundCloud in exchange for credits.</p>
+      <a href="explore.html" class="button">🌎 Explore Campaigns</a>
+      <a href="submit-campaign.html" class="button" style="margin-left: 10px;">🎯 Submit Your Track</a>
+    </div>
   </header>
-
-  <main class="container">
-    <h2>Boost your SoundCloud plays</h2>
-    <p>Submit your track and get real reposts from real users. Earn credits by helping others.</p>
-
-    <div id="auth-section">
-      <p>Loading...</p>
-    </div>
-
-    <div class="homepage-buttons">
-      <a href="submit-campaign.html"><button>🚀 Submit Campaign</button></a>
-      <a href="repost.html"><button>🔁 Earn Credits</button></a>
-      <a href="dashboard.html"><button>📊 Dashboard</button></a>
-    </div>
-  </main>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ JS Scripts (no module) -->
-  <script src="/js/index.js" defer></script>
+  <script type="module" src="/js/header.js"></script>
 </body>
 </html>
+
