@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const campaignContainer = document.getElementById("campaigns");
   const userInfo = document.getElementById("userInfo");
   const planBadge = document.getElementById("planBadge");
+  const transactionTable = document.getElementById("transactions");
   const logoutBtn = document.getElementById("logout-btn");
 
   firebase.auth().onAuthStateChanged(async (user) => {
@@ -17,61 +18,72 @@ document.addEventListener("DOMContentLoaded", () => {
     const userData = userSnap.exists ? userSnap.data() : {};
     const credits = userData.credits || 0;
     const isPro = userData.isPro || false;
-    const plan = userData.plan || "Free";
 
-    // Display user info
     userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
-    creditDisplay.textContent = `${credits} credits`;
+    creditDisplay.textContent = `You have ${credits} credits.`;
 
-    // Plan badge
     planBadge.innerHTML = isPro
-      ? `<span class="badge pro">${plan.toUpperCase()} PLAN</span>`
+      ? `<span class="badge pro">PRO PLAN</span>`
       : `<span class="badge free">FREE PLAN</span>`;
 
-    // Load campaigns
-    const q = db.collection("campaigns").where("userId", "==", user.uid);
-    const snapshot = await q.get();
+    // 🔄 Load user's campaigns
+    const campaignSnap = await db.collection("campaigns")
+      .where("userId", "==", user.uid)
+      .orderBy("createdAt", "desc")
+      .get();
 
-    if (snapshot.empty) {
-      campaignContainer.innerHTML = `<p>No active campaigns yet.</p>`;
+    if (campaignSnap.empty) {
+      campaignContainer.innerHTML = `<p>You have no active campaigns yet.</p>`;
     } else {
       campaignContainer.innerHTML = "";
-
-      snapshot.forEach(doc => {
+      campaignSnap.forEach(doc => {
         const data = doc.data();
         const div = document.createElement("div");
-
-        div.style = `
-          border: 1px solid #333;
-          background-color: #1e1e1e;
-          border-radius: 10px;
-          padding: 16px;
-          margin-bottom: 20px;
-          color: #fff;
-          max-width: 650px;
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          height: 120px;
-          overflow: hidden;
-        `;
+        div.className = "campaign-card";
 
         div.innerHTML = `
-          <img src="${data.artworkUrl || '/assets/default-art.png'}" alt="Artwork" style="width:100px; height:100px; border-radius:8px; object-fit:cover;" />
-          <div style="flex:1; overflow:hidden;">
-            <h3 style="margin:0; font-size:16px;">${data.title || "Untitled"}</h3>
-            <p style="margin:4px 0; font-size:14px;">👤 <strong>${data.artist || "Unknown Artist"}</strong></p>
-            <p style="margin:4px 0; font-size:14px;">🎵 ${data.genre}</p>
-            <p style="margin:4px 0; font-size:14px;">🔥 ${data.credits} Credits</p>
-            <a href="${data.trackUrl}" target="_blank" style="color:#ff8800; font-size:14px;">▶️ Listen on SoundCloud</a>
-          </div>
+          <h3>${data.title || "Untitled Track"}</h3>
+          <p>🎵 Genre: ${data.genre}</p>
+          <p>👤 Artist: ${data.artist}</p>
+          <p>💰 Credits Remaining: ${data.credits}</p>
+          <img src="${data.artworkUrl}" alt="Artwork" style="width: 200px; border-radius: 10px; margin: 10px 0;" />
+          <iframe width="100%" height="166" scrolling="no" frameborder="no"
+            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true">
+          </iframe>
         `;
-
         campaignContainer.appendChild(div);
+      });
+    }
+
+    // 📊 Load transaction history
+    const transactionsSnap = await db.collection("transactions")
+      .where("userId", "==", user.uid)
+      .orderBy("timestamp", "desc")
+      .limit(20)
+      .get();
+
+    transactionTable.innerHTML = "";
+
+    if (transactionsSnap.empty) {
+      transactionTable.innerHTML = "<tr><td colspan='4'>No transactions yet.</td></tr>";
+    } else {
+      transactionsSnap.forEach(doc => {
+        const tx = doc.data();
+        const row = document.createElement("tr");
+        const date = tx.timestamp?.toDate().toLocaleString() || "Unknown";
+
+        row.innerHTML = `
+          <td>${tx.type || "N/A"}</td>
+          <td>${tx.amount || 0}</td>
+          <td>${tx.reason || "-"}</td>
+          <td>${date}</td>
+        `;
+        transactionTable.appendChild(row);
       });
     }
   });
 
+  // 🔓 Logout handler
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       firebase.auth().signOut().then(() => {
