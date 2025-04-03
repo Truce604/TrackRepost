@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,127 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Submit a Campaign - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- ✅ Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Firebase Config (global + ES module export) -->
-  <script src="/js/firebaseConfig.js"></script>
-
-  <!-- ✅ Custom styling -->
-  <style>
-    .logo-header {
-      max-width: 240px;
-      margin: 0 auto 10px;
-      display: block;
-    }
-
-    .campaign-form {
-      background-color: #1e1e1e;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 500px;
-      margin: 0 auto;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
-    }
-
-    .campaign-form label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-      color: #f0f0f0;
-    }
-
-    .campaign-form input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      border-radius: 6px;
-      border: none;
-      background-color: #2b2b2b;
-      color: #fff;
-    }
-
-    .campaign-form button {
-      margin-top: 20px;
-      background-color: #ff8800;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    .status-message {
-      text-align: center;
-      margin-top: 15px;
-      color: #ffa500;
-      font-weight: bold;
-    }
-
-    .credit-banner {
-      text-align: center;
-      color: #fff;
-      font-size: 18px;
-      margin: 15px 0;
-    }
-
-    body {
-      background-color: #121212;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 0;
-      margin: 0;
-    }
-
-    header {
-      padding: 20px 0;
-      text-align: center;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: #aaa;
-      font-size: 14px;
-    }
-  </style>
 </head>
 <body>
   <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
+    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" style="max-width: 200px; margin: 20px auto; display: block;" />
   </header>
 
   <main class="container">
-    <div class="credit-banner" id="current-credits">Loading credits...</div>
+    <div id="current-credits" style="text-align:center; margin-bottom: 10px; font-weight:bold;">Loading credits...</div>
 
-    <h2 style="text-align: center;">🚀 Submit Your Track for Reposts</h2>
-
-    <form id="campaign-form" class="campaign-form">
+    <form id="campaign-form" class="campaign-form" style="max-width:500px; margin:0 auto;">
       <label for="trackUrl">SoundCloud Track URL:</label>
-      <input type="url" id="trackUrl" required placeholder="https://soundcloud.com/artist/track"/>
+      <input type="url" id="trackUrl" required placeholder="https://soundcloud.com/your-track" />
 
       <label for="genre">Genre:</label>
-      <input type="text" id="genre" required placeholder="Auto-detects if possible"/>
+      <input type="text" id="genre" required />
 
       <label for="credits">Credits to Spend:</label>
-      <input type="number" id="credits" min="1" required placeholder="How many credits to use?"/>
+      <input type="number" id="credits" required min="1" />
 
-      <button type="submit">🎯 Launch Campaign</button>
+      <button type="submit">🎯 Submit Campaign</button>
     </form>
 
-    <div id="status" class="status-message"></div>
+    <div id="status" class="status-message" style="text-align:center; margin-top:15px;"></div>
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    <p style="text-align:center;">© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ Submit logic as ES module -->
+  <!-- ✅ DO NOT include firebaseConfig.js here -->
+  <!-- ✅ Only load submit-campaign.js as a module -->
   <script type="module" src="/js/submit-campaign.js"></script>
 </body>
 </html>
+
