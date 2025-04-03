@@ -90,9 +90,15 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       try {
+        console.log("🚀 Step 1: Submitting campaign...");
         await db.collection("campaigns").doc(campaignId).set(campaignData);
-        await userRef.update({ credits: currentCredits - credits });
+        console.log("✅ Step 1: Campaign added");
 
+        console.log("🚀 Step 2: Updating user credits...");
+        await userRef.update({ credits: currentCredits - credits });
+        console.log("✅ Step 2: Credits updated");
+
+        console.log("🚀 Step 3: Logging transaction...");
         await db.collection("transactions").add({
           userId: user.uid,
           type: "spent",
@@ -100,13 +106,14 @@ document.addEventListener("DOMContentLoaded", () => {
           reason: `Launched campaign: ${title}`,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+        console.log("✅ Step 3: Transaction logged");
 
         statusBox.textContent = "✅ Campaign submitted successfully!";
         form.reset();
         genreInput.value = "";
 
       } catch (err) {
-        console.error("❌ Firestore submission failed:", err);
+        console.error("❌ Error submitting campaign step:", err);
         statusBox.textContent = "❌ Error submitting campaign.";
       }
     });
