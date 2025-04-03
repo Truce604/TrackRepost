@@ -1,120 +1,107 @@
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("repost-action-container");
+  const urlParams = new URLSearchParams(window.location.search);
+  const campaignId = urlParams.get("id");
+
+  if (!campaignId) {
+    container.innerHTML = "<p>❌ Missing campaign ID.</p>";
+    return;
+  }
+
   const db = firebase.firestore();
 
-  firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) {
-      container.innerHTML = "<p>❌ Please log in to see campaigns.</p>";
-      return;
-    }
+  const buildUI = (data) => {
+    container.innerHTML = `
+      <h2>${data.title || "Untitled Track"}</h2>
+      <p>👤 ${data.artist || "Unknown Artist"} | 🎵 ${data.genre}</p>
+      <p>🔥 ${data.credits} credits remaining</p>
+      <img src="${data.artworkUrl || '/assets/default-art.png'}" alt="Artwork" style="width: 200px; border-radius: 10px;" />
 
-    const userRef = db.collection("users").doc(user.uid);
-    const userSnap = await userRef.get();
-    const userData = userSnap.exists ? userSnap.data() : {};
-    const followers = userData.soundcloud?.followers || 0;
-    const baseReward = Math.floor(followers / 100);
+      <iframe width="100%" height="166" scrolling="no" frameborder="no"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true">
+      </iframe>
 
-    if (baseReward === 0) {
-      container.innerHTML = "<p>⚠️ You need at least 100 SoundCloud followers to earn credits.</p>";
-      return;
-    }
+      <form id="repost-options" class="campaign-form">
+        <label><input type="checkbox" id="like" checked /> 💖 Like (+1 credit)</label><br>
+        <label><input type="checkbox" id="follow" checked /> 👣 Follow (+2 credits)</label><br>
+        <label><input type="checkbox" id="comment" /> 💬 Comment (+2 credits)</label><br>
+        <input type="text" id="commentText" placeholder="Leave a comment..." />
+        <button type="submit">✅ Repost & Earn</button>
+      </form>
 
-    const repostSnap = await db.collection("reposts")
-      .where("userId", "==", user.uid)
-      .get();
+      <div id="status" class="status-message"></div>
+    `;
 
-    const alreadyReposted = new Set(repostSnap.docs.map(doc => doc.data().campaignId));
+    const form = document.getElementById("repost-options");
+    const status = document.getElementById("status");
 
-    const campaignSnap = await db.collection("campaigns").get();
-    const campaigns = campaignSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(c => !alreadyReposted.has(c.id) && c.credits >= baseReward);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      form.querySelector("button").disabled = true;
+      status.textContent = "⏳ Checking eligibility...";
 
-    if (campaigns.length === 0) {
-      container.innerHTML = "<p>🎉 No repostable campaigns at this time. Check back soon!</p>";
-      return;
-    }
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          status.textContent = "❌ You must be signed in.";
+          return;
+        }
 
-    container.innerHTML = "";
-    campaigns.forEach(data => {
-      const card = document.createElement("div");
-      card.className = "campaign-card";
-      card.style.marginBottom = "30px";
-      card.style.border = "1px solid #ddd";
-      card.style.borderRadius = "12px";
-      card.style.padding = "15px";
-      card.style.backgroundColor = "#fff";
-      card.style.boxShadow = "0 2px 10px rgba(0,0,0,0.05)";
+        const repostRef = db.collection("reposts").doc(`${user.uid}_${campaignId}`);
+        const repostSnap = await repostRef.get();
 
-      card.innerHTML = `
-        <div style="display: flex; gap: 20px;">
-          <img src="${data.artworkUrl || '/assets/default-artwork.png'}" alt="Artwork" style="width: 100px; height: 100px; border-radius: 8px;" />
-          <div style="flex: 1;">
-            <h3 style="margin: 0;">${data.title || "Untitled Track"}</h3>
-            <p style="margin: 2px 0; color: #555;"><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
-            <p style="margin: 2px 0;"><strong>Genre:</strong> ${data.genre}</p>
-            <p style="margin: 2px 0;"><strong>Credits Remaining:</strong> ${data.credits}</p>
-            <iframe width="100%" height="100" scrolling="no" frameborder="no"
-              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true">
-            </iframe>
-            <form class="repost-form" style="margin-top: 10px;">
-              <label><input type="checkbox" class="like" checked /> 💖 Like this track (+1 credit)</label><br>
-              <label><input type="checkbox" class="follow" checked /> 👣 Follow the artist (+2 credits)</label><br>
-              <label><input type="checkbox" class="comment" /> 💬 Leave a comment (+2 credits)</label><br>
-              <input type="text" class="commentText" placeholder="Enter your comment here..." style="width: 100%; margin-top: 5px;" />
-              <button type="submit" style="margin-top: 10px;">✅ Complete Repost & Earn</button>
-              <div class="status-message" style="margin-top: 8px; font-weight: bold;"></div>
-            </form>
-          </div>
-        </div>
-      `;
+        if (repostSnap.exists) {
+          status.textContent = "⚠️ You've already reposted this track.";
+          return;
+        }
 
-      const form = card.querySelector(".repost-form");
-      const status = form.querySelector(".status-message");
+        const userRef = db.collection("users").doc(user.uid);
+        const userSnap = await userRef.get();
+        const userData = userSnap.exists ? userSnap.data() : {};
+        const followers = userData.soundcloud?.followers || 0;
+        const baseReward = Math.floor(followers / 100);
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        form.querySelector("button").disabled = true;
-        status.textContent = "Processing...";
+        if (baseReward < 1) {
+          status.textContent = "❌ You need at least 100 SoundCloud followers to earn.";
+          return;
+        }
 
-        const like = form.querySelector(".like").checked;
-        const follow = form.querySelector(".follow").checked;
-        const comment = form.querySelector(".comment").checked;
-        const commentText = form.querySelector(".commentText").value.trim();
+        const like = document.getElementById("like").checked;
+        const follow = document.getElementById("follow").checked;
+        const comment = document.getElementById("comment").checked;
+        const commentText = document.getElementById("commentText").value;
 
         let totalReward = baseReward;
         if (like) totalReward += 1;
         if (follow) totalReward += 2;
-        if (comment && commentText) totalReward += 2;
+        if (comment && commentText.trim()) totalReward += 2;
 
+        if (data.credits < totalReward) {
+          status.textContent = `❌ Not enough credits in campaign (${totalReward} needed).`;
+          return;
+        }
+
+        // Enforce repost limit: max 10 every 12 hours
         const now = new Date();
         const resetHour = now.getHours() < 12 ? 0 : 12;
-        const windowStart = new Date(now);
-        windowStart.setHours(resetHour, 0, 0, 0);
+        const resetTime = new Date();
+        resetTime.setHours(resetHour, 0, 0, 0);
 
         const repostsQuery = db.collection("reposts")
           .where("userId", "==", user.uid)
-          .where("timestamp", ">", windowStart);
+          .where("timestamp", ">", firebase.firestore.Timestamp.fromDate(resetTime));
 
         const repostsSnap = await repostsQuery.get();
         const regularReposts = repostsSnap.docs.filter(doc => !doc.data().prompted);
 
         if (regularReposts.length >= 10) {
-          status.textContent = "⏳ You've hit your 12-hour repost limit. Try again later.";
+          status.textContent = "⏳ You've hit your repost limit for now (10 per 12 hours).";
           return;
         }
 
-        const campaignRef = db.collection("campaigns").doc(data.id);
-        const campaignSnap = await campaignRef.get();
-        const campaign = campaignSnap.data();
-
-        if (campaign.credits < totalReward) {
-          status.textContent = "❌ Not enough credits in campaign.";
-          return;
-        }
-
-        await db.collection("reposts").doc(`${user.uid}_${data.id}`).set({
+        // Log repost
+        await repostRef.set({
           userId: user.uid,
-          campaignId: data.id,
+          campaignId,
           trackUrl: data.trackUrl,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           prompted: false,
@@ -124,14 +111,17 @@ document.addEventListener("DOMContentLoaded", () => {
           commentText
         });
 
-        await db.collection("users").doc(user.uid).update({
+        // Update user credits
+        await userRef.update({
           credits: (userData.credits || 0) + totalReward
         });
 
-        await campaignRef.update({
-          credits: campaign.credits - totalReward
+        // Deduct from campaign
+        await db.collection("campaigns").doc(campaignId).update({
+          credits: data.credits - totalReward
         });
 
+        // Log transaction
         await db.collection("transactions").add({
           userId: user.uid,
           type: "earned",
@@ -140,12 +130,27 @@ document.addEventListener("DOMContentLoaded", () => {
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        status.textContent = `✅ Reposted! You earned ${totalReward} credits.`;
+        status.textContent = `✅ Success! You earned ${totalReward} credits.`;
       });
-
-      container.appendChild(card);
     });
-  });
+  };
+
+  const loadCampaign = async () => {
+    try {
+      const docSnap = await db.collection("campaigns").doc(campaignId).get();
+      if (!docSnap.exists) {
+        container.innerHTML = "<p>❌ Campaign not found.</p>";
+        return;
+      }
+      buildUI(docSnap.data());
+    } catch (err) {
+      console.error("❌ Load failed:", err);
+      container.innerHTML = "<p>❌ Error loading campaign.</p>";
+    }
+  };
+
+  loadCampaign();
 });
+
 
 
