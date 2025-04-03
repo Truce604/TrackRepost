@@ -1,53 +1,40 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+document.addEventListener("DOMContentLoaded", () => {
+  const runningContainer = document.getElementById("runningCampaigns");
 
-import { firebaseConfig } from "./firebaseConfig.js"; // if this throws an error, use inline config
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (!user) {
+      runningContainer.innerHTML = `<p>Please log in to view your running campaigns.</p>`;
+      return;
+    }
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+    const db = firebase.firestore();
+    const snapshot = await db.collection("campaigns")
+      .where("userId", "==", user.uid)
+      .orderBy("createdAt", "desc")
+      .get();
 
-const campaignDetails = document.getElementById("campaign-details");
+    if (snapshot.empty) {
+      runningContainer.innerHTML = `<p>You have no active campaigns.</p>`;
+      return;
+    }
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    campaignDetails.innerHTML = `<p>Please <a href="login.html">log in</a> to view your campaign.</p>`;
-    return;
-  }
+    runningContainer.innerHTML = "";
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const artwork = data.artworkUrl || "/images/placeholder-artwork.jpg";
 
-  const q = query(
-    collection(db, "campaigns"),
-    where("userId", "==", user.uid),
-    orderBy("createdAt", "desc")
-  );
-
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    campaignDetails.innerHTML = `<p>You haven't submitted a campaign yet.</p>`;
-    return;
-  }
-
-  const campaign = snapshot.docs[0].data();
-  const createdDate = new Date(campaign.createdAt).toLocaleString();
-
-  campaignDetails.innerHTML = `
-    <div class="campaign-card">
-      <h3>${campaign.genre}</h3>
-      <p><strong>Track:</strong> <a href="${campaign.trackUrl}" target="_blank">${campaign.trackUrl}</a></p>
-      <p><strong>Credits Remaining:</strong> ${campaign.credits}</p>
-      <p><strong>Created At:</strong> ${createdDate}</p>
-    </div>
-  `;
+      const div = document.createElement("div");
+      div.className = "campaign-card";
+      div.innerHTML = `
+        <img src="${artwork}" alt="Artwork" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
+        <h3>${data.title || "Untitled"}</h3>
+        <p>🎧 ${data.artist || "Unknown Artist"}</p>
+        <p>🎵 Genre: ${data.genre}</p>
+        <p>🔥 Credits Remaining: ${data.credits}</p>
+        <a href="repost-action.html?id=${doc.id}" class="button">View Campaign</a>
+      `;
+      runningContainer.appendChild(div);
+    });
+  });
 });
+
