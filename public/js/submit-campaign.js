@@ -16,9 +16,8 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { firebaseConfig } from "./firebaseConfig.js";
-
-const app = initializeApp(firebaseConfig);
+// ✅ Use global firebaseConfig (loaded from firebaseConfig.js)
+const app = initializeApp(window.firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -27,6 +26,7 @@ const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 
+// ✅ Auto genre detection from URL
 const autoDetectGenre = async (url) => {
   const genres = [
     "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
@@ -36,10 +36,10 @@ const autoDetectGenre = async (url) => {
     "Trance", "Trap", "Triphop", "World"
   ];
   const lower = url.toLowerCase();
-  const match = genres.find(g => lower.includes(g.toLowerCase()));
-  return match || "Pop";
+  return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
 };
 
+// ✅ Pull metadata from SoundCloud oEmbed
 const fetchSoundCloudMetadata = async (trackUrl) => {
   try {
     const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(trackUrl)}`);
@@ -66,11 +66,13 @@ const fetchSoundCloudMetadata = async (trackUrl) => {
   }
 };
 
+// ✅ Auto genre fill when typing track URL
 form.trackUrl.addEventListener("change", async () => {
   const genre = await autoDetectGenre(form.trackUrl.value);
   genreInput.value = genre;
 });
 
+// ✅ Main auth and submit logic
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     form.style.display = "none";
@@ -85,6 +87,7 @@ onAuthStateChanged(auth, async (user) => {
   const currentCredits = userData.credits || 0;
   creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
 
+  // ✅ Limit to 1 active campaign for free users
   const campaignQuery = query(
     collection(db, "campaigns"),
     where("userId", "==", user.uid)
