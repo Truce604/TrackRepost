@@ -1,9 +1,9 @@
-// ✅ Dashboard Script
 document.addEventListener("DOMContentLoaded", () => {
   const creditDisplay = document.getElementById("creditBalance");
   const campaignContainer = document.getElementById("campaigns");
   const userInfo = document.getElementById("userInfo");
   const planBadge = document.getElementById("planBadge");
+  const logoutBtn = document.getElementById("logout-btn");
 
   firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -17,43 +17,46 @@ document.addEventListener("DOMContentLoaded", () => {
     const userData = userSnap.exists ? userSnap.data() : {};
     const credits = userData.credits || 0;
     const isPro = userData.isPro || false;
-    const plan = userData.plan || "Free";
 
-    userInfo.innerHTML = `
-      <strong>Welcome, ${user.displayName || "User"}</strong>
-    `;
-    creditDisplay.innerHTML = `<span>${credits} credits</span>`;
-    planBadge.innerHTML = `<span class="badge ${isPro ? "pro" : "free"}">${plan.toUpperCase()} PLAN</span>`;
+    userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
+    creditDisplay.textContent = `${credits} credits`;
 
-    const campaignSnap = await db.collection("campaigns")
-      .where("userId", "==", user.uid)
-      .orderBy("createdAt", "desc")
-      .get();
+    // Show plan badge
+    planBadge.innerHTML = isPro
+      ? `<span class="badge pro">PRO PLAN</span>`
+      : `<span class="badge free">FREE PLAN</span>`;
 
-    if (campaignSnap.empty) {
-      campaignContainer.innerHTML = `<p>No active campaigns yet. <a href="submit-campaign.html">Start one here</a>.</p>`;
+    // Load campaigns
+    const q = db.collection("campaigns").where("userId", "==", user.uid);
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+      campaignContainer.innerHTML = `<p>No active campaigns yet.</p>`;
     } else {
       campaignContainer.innerHTML = "";
-      campaignSnap.forEach(doc => {
+      snapshot.forEach(doc => {
         const data = doc.data();
-        const campaignId = doc.id;
-
         const div = document.createElement("div");
         div.className = "campaign-card";
         div.innerHTML = `
-          <img src="${data.artworkUrl}" alt="Track Art" class="campaign-art" />
-          <div class="campaign-info">
-            <h3>${data.title || "Untitled Track"}</h3>
-            <p><strong>Genre:</strong> ${data.genre}</p>
-            <p><strong>Credits Left:</strong> ${data.credits}</p>
-            <a href="${data.trackUrl}" target="_blank">🔗 Listen on SoundCloud</a><br/>
-            <a href="track-details.html?id=${campaignId}" class="details-link">📊 View Repost Activity</a>
-          </div>
+          <h3>${data.genre}</h3>
+          <p><strong>${data.title}</strong> by ${data.artist}</p>
+          <img src="${data.artworkUrl}" alt="Artwork" style="max-width: 100%; border-radius: 10px; margin: 10px 0;">
+          <p><a href="track-details.html?id=${doc.id}" class="button">🎧 View Details</a></p>
+          <p>Credits Remaining: ${data.credits}</p>
         `;
         campaignContainer.appendChild(div);
       });
     }
   });
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    });
+  }
 });
 
 
