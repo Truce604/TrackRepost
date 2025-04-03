@@ -1,123 +1,147 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("campaign-form");
-  const statusBox = document.getElementById("status");
-  const creditDisplay = document.getElementById("current-credits");
-  const genreInput = document.getElementById("genre");
-  const trackUrlInput = document.getElementById("trackUrl");
-  const creditsInput = document.getElementById("credits");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+const firebaseConfig = {
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+    authDomain: "trackrepost-921f8.firebaseapp.com", 
+    projectId: "trackrepost-921f8", 
+    storageBucket: "trackrepost-921f8.appspot.com", 
+    messagingSenderId: "967836604288", 
+    appId: "1:967836604288:web:3782d50de7384c9201d365", 
+    measurementId: "G-G65Q3HC3R8" 
+}; };
 
-  const autoDetectGenre = async (url) => {
-    const genres = [
-      "Alternative Rock", "Ambient", "Classical", "Country", "Dance & EDM", "Dancehall",
-      "Deep House", "Disco", "Drum & Bass", "Dubstep", "Electronic", "Folk & Singer-Songwriter",
-      "Hip-hop & Rap", "House", "Indie", "Jazz & Blues", "Latin", "Metal", "Piano",
-      "Pop", "R&B & Soul", "Reggae", "Reggaeton", "Rock", "Soundtrack", "Techno",
-      "Trance", "Trap", "Triphop", "World", "Mash-up", "DJ Tools"
-    ];
-    const lower = url.toLowerCase();
-    const match = genres.find(g => lower.includes(g.toLowerCase()));
-    return match || "Pop";
-  };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  // ✅ Fixed artist/title parsing
-  const parseSoundCloud = (url) => {
-    const parts = url.split("/").filter(Boolean);
-    const artist = parts.length >= 3 ? parts[2].split("?")[0] : "Unknown";
-    const titleRaw = parts.length >= 4 ? parts[3].split("?")[0].replace(/-/g, " ") : "Untitled";
-    const title = decodeURIComponent(titleRaw).replace(/_/g, " ").trim();
-    const artworkUrl = "https://i1.sndcdn.com/artworks-000000000000-0-t500x500.jpg";
-    return { artist, title, artworkUrl };
-  };
+const form = document.getElementById("campaign-form");
+const statusBox = document.getElementById("status");
+const creditDisplay = document.getElementById("current-credits");
+const genreInput = document.getElementById("genre");
+const creditsInput = document.getElementById("credits");
 
-  trackUrlInput.addEventListener("change", async () => {
-    const genre = await autoDetectGenre(trackUrlInput.value);
-    genreInput.value = genre;
-  });
+const autoDetectGenre = async (url) => {
+  const genres = ["Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"];
+  const lower = url.toLowerCase();
+  return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
+};
 
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-      form.style.display = "none";
-      statusBox.textContent = "Please log in to submit a campaign.";
+async function fetchSoundCloudMetadata(url) {
+  try {
+    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    const html = await res.text();
+
+    const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const artistMatch = html.match(/<meta property="soundcloud:creator" content="([^"]+)"/);
+    const artworkMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+
+    return {
+      title: titleMatch?.[1] || "Untitled",
+      artist: artistMatch?.[1] || "Unknown Artist",
+      artworkUrl: artworkMatch?.[1] || ""
+    };
+  } catch (err) {
+    console.error("❌ Failed to fetch SoundCloud metadata", err);
+    return {
+      title: "Untitled",
+      artist: "Unknown Artist",
+      artworkUrl: ""
+    };
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    form.style.display = "none";
+    statusBox.textContent = "Please log in to submit a campaign.";
+    return;
+  }
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+  const userData = userSnap.exists() ? userSnap.data() : {};
+  const currentCredits = userData.credits || 0;
+  const isPro = userData.isPro || false;
+
+  creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
+
+  const existingCampaigns = await getDocs(query(collection(db, "campaigns"), where("userId", "==", user.uid)));
+  if (!isPro && existingCampaigns.size >= 1) {
+    form.style.display = "none";
+    statusBox.innerHTML = `⚠️ Free users can only run 1 campaign. <a href="pro-plan.html">Upgrade to Pro</a> to run more.`;
+    return;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    statusBox.textContent = "Submitting...";
+
+    const trackUrl = form.trackUrl.value.trim();
+    const genre = genreInput.value.trim() || await autoDetectGenre(trackUrl);
+    const credits = parseInt(creditsInput.value.trim(), 10);
+
+    if (!trackUrl || !credits || credits <= 0) {
+      statusBox.textContent = "❌ Track URL and positive credits are required.";
       return;
     }
 
-    const userRef = db.collection("users").doc(user.uid);
-    const userSnap = await userRef.get();
-    const userData = userSnap.exists ? userSnap.data() : {};
-    const isPro = userData.isPro || false;
-    const currentCredits = userData.credits || 0;
-    creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
-
-    const q = db.collection("campaigns").where("userId", "==", user.uid);
-    const campaignSnap = await q.get();
-    if (!isPro && campaignSnap.size >= 1) {
-      form.style.display = "none";
-      statusBox.innerHTML = `⚠️ Free users can only run 1 campaign. <a href="pro-plan.html">Upgrade to Pro</a> to run more.`;
+    if (currentCredits < credits) {
+      statusBox.textContent = "❌ Not enough credits.";
       return;
     }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    const meta = await fetchSoundCloudMetadata(trackUrl);
+    console.log("🎧 Track Meta:", meta);
 
-      const trackUrl = trackUrlInput.value.trim();
-      const genre = genreInput.value.trim();
-      const credits = parseInt(creditsInput.value.trim());
+    const campaignId = `${user.uid}_${Date.now()}`;
+    const campaignRef = doc(db, "campaigns", campaignId);
 
-      if (!trackUrl || !genre || !credits || isNaN(credits)) {
-        statusBox.textContent = "❌ Please fill in all fields correctly.";
-        return;
-      }
-
-      if (currentCredits < credits) {
-        statusBox.textContent = `❌ You only have ${currentCredits} credits, but you're trying to spend ${credits}.`;
-        return;
-      }
-
-      const { title, artist, artworkUrl } = parseSoundCloud(trackUrl);
-      const campaignId = `${user.uid}_${Date.now()}`;
-
-      const campaignData = {
+    try {
+      await setDoc(campaignRef, {
         userId: user.uid,
         trackUrl,
         genre,
         credits,
         createdAt: new Date().toISOString(),
-        title,
-        artist,
-        artworkUrl
-      };
+        title: meta.title,
+        artist: meta.artist,
+        artworkUrl: meta.artworkUrl
+      });
 
-      try {
-        console.log("🚀 Step 1: Submitting campaign...");
-        await db.collection("campaigns").doc(campaignId).set(campaignData);
-        console.log("✅ Step 1: Campaign added");
+      await updateDoc(userRef, {
+        credits: currentCredits - credits
+      });
 
-        console.log("🚀 Step 2: Updating user credits...");
-        await userRef.update({ credits: currentCredits - credits });
-        console.log("✅ Step 2: Credits updated");
+      await db.collection("transactions").add({
+        userId: user.uid,
+        type: "spent",
+        amount: credits,
+        reason: `Campaign for "${meta.title}"`,
+        timestamp: new Date()
+      });
 
-        console.log("🚀 Step 3: Logging transaction...");
-        await db.collection("transactions").add({
-          userId: user.uid,
-          type: "spent",
-          amount: credits,
-          reason: `Launched campaign: ${title}`,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log("✅ Step 3: Transaction logged");
-
-        statusBox.textContent = "✅ Campaign submitted successfully!";
-        form.reset();
-        genreInput.value = "";
-
-      } catch (err) {
-        console.error("❌ Error submitting campaign step:", err);
-        statusBox.textContent = "❌ Error submitting campaign.";
-      }
-    });
+      statusBox.textContent = "✅ Campaign submitted!";
+      form.reset();
+      genreInput.value = "";
+    } catch (err) {
+      console.error("❌ Firestore submission failed:", err);
+      statusBox.textContent = "❌ Error submitting campaign.";
+    }
   });
 });
 
