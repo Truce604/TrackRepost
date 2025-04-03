@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Track Details - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>🎧 Track Details - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css"/>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -14,58 +14,50 @@
   <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
-    .track-container {
-      max-width: 900px;
+    .details-container {
+      max-width: 800px;
       margin: 40px auto;
-      background: #1a1a1a;
+      padding: 20px;
+      background: #1e1e1e;
       color: white;
-      padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
 
-    .reposter {
+    .track-header {
       display: flex;
+      gap: 20px;
       align-items: center;
-      border-bottom: 1px solid #333;
-      padding: 12px 0;
     }
 
-    .reposter img {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      margin-right: 10px;
+    .track-header img {
+      width: 150px;
+      height: 150px;
+      border-radius: 12px;
     }
 
-    .reposter-info {
-      flex-grow: 1;
+    .track-header div {
+      flex: 1;
     }
 
-    .reposter-credit {
-      font-weight: bold;
-      color: #4caf50;
+    iframe {
+      width: 100%;
+      height: 166px;
+      margin-top: 20px;
+      border-radius: 12px;
     }
 
-    .comment-text {
-      color: #ccc;
-      font-size: 14px;
-      margin-top: 4px;
-    }
-
-    .like-follow {
-      font-size: 13px;
-      color: #bbb;
+    .info-line {
+      margin: 10px 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
   <div id="site-header"></div>
 
-  <main>
-    <div class="track-container" id="track-details">
-      <h2>Loading track...</h2>
-    </div>
+  <main class="details-container" id="track-details">
+    <p>Loading...</p>
   </main>
 
   <footer>
@@ -75,104 +67,29 @@
   <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
-    const container = document.getElementById("track-details");
     const params = new URLSearchParams(window.location.search);
     const campaignId = params.get("id");
+    const container = document.getElementById("track-details");
 
-    if (!campaignId) {
-      container.innerHTML = "<p>❌ Missing campaign ID.</p>";
-    }
-
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) {
-        container.innerHTML = "<p>Please log in to view track details.</p>";
+    async function loadDetails() {
+      if (!campaignId) {
+        container.innerHTML = "<p>❌ Missing campaign ID.</p>";
         return;
       }
 
-      const campaignRef = db.collection("campaigns").doc(campaignId);
-      const campaignSnap = await campaignRef.get();
-
-      if (!campaignSnap.exists) {
+      const doc = await db.collection("campaigns").doc(campaignId).get();
+      if (!doc.exists) {
         container.innerHTML = "<p>❌ Campaign not found.</p>";
         return;
       }
 
-      const campaignData = campaignSnap.data();
-      if (campaignData.userId !== user.uid) {
-        container.innerHTML = "<p>🚫 You don't have permission to view this campaign.</p>";
-        return;
-      }
+      const data = doc.data();
 
       container.innerHTML = `
-        <h2>${campaignData.title || "Track Details"}</h2>
-        <iframe width="100%" height="166" scrolling="no" frameborder="no"
-          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&color=%23ff5500&auto_play=false">
-        </iframe>
-        <p><strong>Genre:</strong> ${campaignData.genre}</p>
-        <p><strong>Credits Remaining:</strong> ${campaignData.credits}</p>
-        <hr>
-        <h3>📢 Reposts</h3>
-        <div id="reposters-list">Loading reposts...</div>
-      `;
+        <div class="track-header">
+          <img src="${data.artworkUrl}" alt="Artwork"/>
+          <div>
+            <h2>${data.title}</h2>
+            <p class="info-line"><strong>Artist:</strong> ${data.artist}</p>
+            <p class="info-line"><strong>Genre:</strong> ${data.genre}</p>
 
-      const repostSnap = await db.collection("reposts")
-        .where("campaignId", "==", campaignId)
-        .orderBy("timestamp", "desc")
-        .get();
-
-      const reposterContainer = document.getElementById("reposters-list");
-
-      if (repostSnap.empty) {
-        reposterContainer.innerHTML = "<p>No one has reposted this yet.</p>";
-        return;
-      }
-
-      const userMap = {};
-
-      for (const doc of repostSnap.docs) {
-        const repost = doc.data();
-        const repostUser = repost.userId;
-
-        if (!userMap[repostUser]) {
-          const userSnap = await db.collection("users").doc(repostUser).get();
-          userMap[repostUser] = userSnap.exists ? userSnap.data() : {};
-        }
-
-        const displayName = userMap[repostUser]?.displayName || "User";
-        const avatar = userMap[repostUser]?.soundcloud?.avatar || "/assets/default-avatar.png";
-        const credits = calculateCredits(repost);
-        const timestamp = repost.timestamp?.toDate().toLocaleString() || "";
-        const comment = repost.commentText || "";
-        const likeFollow = [];
-
-        if (repost.like) likeFollow.push("💖 Liked");
-        if (repost.follow) likeFollow.push("👣 Followed");
-
-        const row = document.createElement("div");
-        row.className = "reposter";
-        row.innerHTML = `
-          <img src="${avatar}" alt="Avatar" />
-          <div class="reposter-info">
-            <div><strong>${displayName}</strong> <span class="reposter-credit">+${credits} credits</span></div>
-            <div class="like-follow">${likeFollow.join(" · ")} · ${timestamp}</div>
-            ${comment ? `<div class="comment-text">💬 ${comment}</div>` : ""}
-          </div>
-        `;
-        reposterContainer.appendChild(row);
-      }
-    });
-
-    function calculateCredits(repost) {
-      let base = 0;
-      if (repost.userId && repost.userId !== "") {
-        // Optional: Pull followers count to recalc base reward here if needed
-        base = 1; // Assume minimum of 1
-      }
-      if (repost.like) base += 1;
-      if (repost.follow) base += 2;
-      if (repost.comment && repost.commentText) base += 2;
-      return base;
-    }
-  </script>
-</body>
-</html>
