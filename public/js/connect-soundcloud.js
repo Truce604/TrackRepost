@@ -1,56 +1,71 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("soundcloud-form");
-  const status = document.getElementById("status");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    status.textContent = "🔍 Fetching profile...";
+const firebaseConfig = {
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+    authDomain: "trackrepost-921f8.firebaseapp.com", 
+    projectId: "trackrepost-921f8", 
+    storageBucket: "trackrepost-921f8.appspot.com", 
+    messagingSenderId: "967836604288", 
+    appId: "1:967836604288:web:3782d50de7384c9201d365", 
+    measurementId: "G-G65Q3HC3R8" 
+};
 
-    const profileUrl = form.soundcloudUrl.value.trim();
-    const match = profileUrl.match(/soundcloud\.com\/([^\/\s]+)/);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    if (!match) {
-      status.textContent = "❌ Invalid SoundCloud URL.";
-      return;
-    }
+const form = document.getElementById("soundcloud-form");
+const status = document.getElementById("status");
 
-    const handle = match[1];
-    const profilePage = `https://soundcloud.com/${handle}`;
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  status.textContent = "🔍 Fetching SoundCloud data...";
 
-    try {
-      const response = await fetch(profilePage);
-      const html = await response.text();
+  const url = form.url.value.trim();
+  if (!url.includes("soundcloud.com")) {
+    status.textContent = "❌ Invalid SoundCloud URL.";
+    return;
+  }
 
-      // ✅ Extract profile info
-      const displayNameMatch = html.match(/<title>([^<]+)\s*\| Listen/);
-      const bioMatch = html.match(/<meta name="description" content="([^"]+)"/);
-      const followersMatch = html.match(/([0-9,.]+)\s+followers/i);
+  try {
+    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    const html = await res.text();
 
-      const displayName = displayNameMatch ? displayNameMatch[1].trim() : handle;
-      const bio = bioMatch ? bioMatch[1].trim() : "No bio found";
-      const followers = followersMatch ? parseInt(followersMatch[1].replace(/[,\.]/g, '')) : 0;
+    const handleMatch = url.match(/soundcloud\.com\/([^/?#]+)/);
+    const followersMatch = html.match(/(\d[\d,.]*)\s*followers/i);
+    const handle = handleMatch?.[1] || "unknown";
+    const followersRaw = followersMatch?.[1]?.replace(/,/g, "") || "0";
+    const followers = parseInt(followersRaw, 10);
 
-      firebase.auth().onAuthStateChanged(async (user) => {
-        if (!user) {
-          status.textContent = "❌ You must be logged in.";
-          return;
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        status.textContent = "❌ You must be logged in.";
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        soundcloud: {
+          handle,
+          url,
+          followers
         }
-
-        await firebase.firestore().collection("users").doc(user.uid).set({
-          soundcloud: {
-            handle,
-            url: profileUrl,
-            displayName,
-            bio,
-            followers
-          }
-        }, { merge: true });
-
-        status.textContent = `✅ Connected to @${handle} with ${followers} followers!`;
       });
-    } catch (err) {
-      console.error("Profile fetch error:", err);
-      status.textContent = "❌ Failed to fetch profile data.";
-    }
-  });
+
+      status.textContent = `✅ Connected! @${handle} (${followers} followers)`;
+    });
+  } catch (err) {
+    console.error("SoundCloud scrape failed:", err);
+    status.textContent = "❌ Failed to fetch profile info.";
+  }
 });
+
