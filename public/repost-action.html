@@ -3,111 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Track - TrackRepost</title>
+  <title>Confirm Repost - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
-
   <style>
-    .repost-box {
-      background: #111;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 500px;
-      box-shadow: 0 0 10px #000;
+    body {
+      background-color: #0d0d0d;
+      font-family: Arial, sans-serif;
       color: #fff;
+      text-align: center;
+      padding: 30px;
     }
 
-    .artwork {
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      object-fit: cover;
+    .card {
+      background: #121212;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
 
-    .track-meta {
-      display: flex;
-      align-items: center;
-      gap: 15px;
+    img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 15px;
     }
 
-    .meta-info {
-      flex: 1;
-    }
-
-    .meta-info h2 {
+    h2 {
       margin: 0;
-      font-size: 20px;
+      font-size: 1.3rem;
     }
 
-    .meta-info p {
-      margin: 4px 0;
+    p {
+      font-size: 0.95rem;
+      margin: 6px 0;
       color: #aaa;
     }
 
-    iframe {
-      width: 100%;
-      height: 166px;
-      border-radius: 12px;
-      margin-top: 10px;
-    }
-
-    .repost-form {
-      margin-top: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .repost-form label {
-      font-size: 15px;
-    }
-
-    .repost-form textarea {
-      width: 100%;
-      height: 60px;
-      border-radius: 8px;
-      padding: 8px;
-    }
-
-    button {
-      background-color: #ff5500;
+    .confirm-button {
+      background: #ffa500;
+      color: black;
       border: none;
-      padding: 10px;
+      padding: 10px 20px;
       border-radius: 8px;
-      color: white;
-      font-size: 16px;
+      font-weight: bold;
+      margin-top: 15px;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #e64a00;
-    }
-
-    .status-message {
-      margin-top: 10px;
-      font-weight: bold;
+    .confirm-button:hover {
+      background: #ffc04d;
     }
   </style>
 </head>
 <body>
-  <header id="site-header"></header>
+  <h1>✅ Confirm Your Repost</h1>
+  <div id="repost-card" class="card">
+    <p>Loading track details...</p>
+  </div>
 
-  <main class="repost-box" id="repost-container">
-    <p>Loading campaign...</p>
-  </main>
+  <script>
+    const db = firebase.firestore();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const liked = params.get("like") === "true";
+    const comment = params.get("comment") || "";
 
-  <script src="/js/header.js" defer></script>
-  <script src="/js/repost-action.js" type="module"></script>
+    async function loadCampaign() {
+      try {
+        const doc = await db.collection("campaigns").doc(id).get();
+        if (!doc.exists) {
+          document.getElementById("repost-card").innerHTML = "<p>❌ Campaign not found.</p>";
+          return;
+        }
+
+        const data = doc.data();
+        document.getElementById("repost-card").innerHTML = `
+          <img src="${data.artworkUrl || "/assets/default-art.png"}" alt="Artwork">
+          <h2>${data.title}</h2>
+          <p>👤 ${data.artist}</p>
+          <p>🎧 ${data.genre} | 💳 ${data.credits} credits</p>
+          <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
+          <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
+          <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
+        `;
+      } catch (err) {
+        console.error("Failed to load campaign:", err);
+        document.getElementById("repost-card").innerHTML = "<p>⚠️ Error loading campaign.</p>";
+      }
+    }
+
+    function confirmRepost() {
+      alert("🔁 Repost action submitted (functionality coming next)");
+      // TODO: implement repost logic, credit updates, and Firestore logging
+    }
+
+    loadCampaign();
+  </script>
 </body>
 </html>
-
-
 
 
