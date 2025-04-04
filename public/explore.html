@@ -3,123 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Explore - TrackRepost</title>
+  <title>Explore Campaigns - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
-
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
+    .campaign-card {
+      display: flex;
+      background-color: #1a1a1a;
+      color: #fff;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
 
-    header, footer {
-      text-align: center;
-      padding: 16px;
-      background: #1e1e1e;
+    .artwork {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 16px;
+    }
+
+    .campaign-info {
+      flex: 1;
+    }
+
+    .campaign-info h3 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      color: #ffcc00;
+    }
+
+    .campaign-info p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    .campaign-buttons {
+      margin-top: 10px;
+    }
+
+    .campaign-buttons a {
+      display: inline-block;
+      margin-right: 10px;
+      padding: 6px 12px;
+      background-color: #333;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
     }
 
     .container {
-      max-width: 800px;
+      max-width: 700px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 24px;
     }
 
-    .campaign-card {
-      background: #1e1e1e;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      overflow: hidden;
-      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    body {
+      background: #121212;
+      font-family: sans-serif;
     }
 
-    .campaign-card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      display: block;
-      background: #222;
-    }
-
-    .card-info {
-      padding: 12px 16px;
-    }
-
-    .card-info h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
-    }
-
-    .card-info p {
-      margin: 4px 0;
-      font-size: 14px;
-      color: #ccc;
-    }
-
-    .card-info a {
-      color: #ffcc00;
-      text-decoration: none;
-    }
-
-    .card-info a:hover {
-      text-decoration: underline;
+    h1 {
+      color: #fff;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🔥 Explore Repost Campaigns</h1>
-  </header>
-
-  <main class="container" id="explore-container">
-    <p>Loading campaigns...</p>
-  </main>
-
-  <footer>
-    <p>© 2025 TrackRepost</p>
-  </footer>
+  <div class="container">
+    <h1>🔥 Explore Tracks</h1>
+    <div id="campaign-feed"></div>
+  </div>
 
   <script>
     const db = firebase.firestore();
-    const container = document.getElementById("explore-container");
+    const feed = document.getElementById("campaign-feed");
 
-    async function loadCampaigns() {
-      const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+    function renderCampaign(data, id) {
+      const div = document.createElement("div");
+      div.className = "campaign-card";
 
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No campaigns found.</p>";
-        return;
-      }
-
-      container.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const imageUrl = data.artworkUrl || "/images/default-art.png";
-
-        const card = document.createElement("div");
-        card.className = "campaign-card";
-        card.innerHTML = `
-          <img src="${imageUrl}" alt="Track artwork" onerror="this.onerror=null;this.src='/images/default-art.png';" />
-          <div class="card-info">
-            <h3>${data.title || "Untitled"} by ${data.artist || "Unknown"}</h3>
-            <p>🎵 Genre: ${data.genre}</p>
-            <p>💰 Credits Remaining: ${data.credits}</p>
-            <a href="${data.trackUrl}" target="_blank">🎧 Listen on SoundCloud</a>
+      div.innerHTML = `
+        <img class="artwork" src="${data.artworkUrl}" alt="Artwork" />
+        <div class="campaign-info">
+          <h3>${data.title}</h3>
+          <p>👤 ${data.artist}</p>
+          <p>🎵 ${data.genre}</p>
+          <p>💰 ${data.credits} credits available</p>
+          <div class="campaign-buttons">
+            <a href="${data.trackUrl}" target="_blank">▶️ Listen</a>
+            <a href="repost-action.html?id=${id}">♻️ Repost & Earn</a>
           </div>
-        `;
-        container.appendChild(card);
-      });
+        </div>
+      `;
+
+      feed.appendChild(div);
     }
 
-    loadCampaigns();
+    db.collection("campaigns").orderBy("createdAt", "desc").get().then(snapshot => {
+      snapshot.forEach(doc => renderCampaign(doc.data(), doc.id));
+    });
   </script>
 </body>
 </html>
+
 
 
 
