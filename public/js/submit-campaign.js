@@ -8,14 +8,14 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
   collection,
   query,
   where,
   getDocs,
-  updateDoc
+  addDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ✅ Your Firebase config 
 const firebaseConfig = {
     apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
@@ -36,25 +36,23 @@ const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 const creditsInput = document.getElementById("credits");
 
-// ✅ Genre detector
 const autoDetectGenre = async (url) => {
   const genres = [
-    "Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"
+    "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop",
+    "Electronic", "Drum & Bass", "DJ Tools"
   ];
   const lower = url.toLowerCase();
   return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
 };
 
-// ✅ Fixed SoundCloud metadata fetch
 async function fetchSoundCloudMetadata(url) {
   try {
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
+    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
     const html = await res.text();
 
-    const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"\/?>/i);
-    const artistMatch = html.match(/<meta\s+name="twitter:audio:artist_name"\s+content="([^"]+)"\/?>/i);
-    const artworkMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"\/?>/i);
+    const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const artistMatch = html.match(/<meta name="twitter:audio:artist_name" content="([^"]+)"/);
+    const artworkMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
 
     return {
       title: titleMatch?.[1] || "Untitled",
@@ -86,7 +84,9 @@ onAuthStateChanged(auth, async (user) => {
 
   creditDisplay.textContent = `You currently have ${currentCredits} credits.`;
 
-  const existingCampaigns = await getDocs(query(collection(db, "campaigns"), where("userId", "==", user.uid)));
+  const existingCampaigns = await getDocs(
+    query(collection(db, "campaigns"), where("userId", "==", user.uid))
+  );
   if (!isPro && existingCampaigns.size >= 1) {
     form.style.display = "none";
     statusBox.innerHTML = `⚠️ Free users can only run 1 campaign. <a href="pro-plan.html">Upgrade to Pro</a> to run more.`;
@@ -95,6 +95,7 @@ onAuthStateChanged(auth, async (user) => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.log("🟡 Submit clicked");
     statusBox.textContent = "Submitting...";
 
     const trackUrl = form.trackUrl.value.trim();
@@ -118,7 +119,6 @@ onAuthStateChanged(auth, async (user) => {
     const campaignRef = doc(db, "campaigns", campaignId);
 
     try {
-      // ✅ Step 1: Submit campaign
       console.log("🚀 Step 1: Submitting campaign...");
       await setDoc(campaignRef, {
         userId: user.uid,
@@ -132,16 +132,14 @@ onAuthStateChanged(auth, async (user) => {
       });
       console.log("✅ Step 1: Campaign added");
 
-      // ✅ Step 2: Update credits
       console.log("🚀 Step 2: Updating user credits...");
       await updateDoc(userRef, {
         credits: currentCredits - credits
       });
       console.log("✅ Step 2: Credits updated");
 
-      // ✅ Step 3: Log transaction
       console.log("🚀 Step 3: Logging transaction...");
-      await db.collection("transactions").add({
+      await addDoc(collection(db, "transactions"), {
         userId: user.uid,
         type: "spent",
         amount: credits,
