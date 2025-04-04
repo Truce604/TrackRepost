@@ -23,52 +23,48 @@ const firebaseConfig = {
     messagingSenderId: "967836604288", 
     appId: "1:967836604288:web:3782d50de7384c9201d365", 
     measurementId: "G-G65Q3HC3R8" 
-}; };
+}; 
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ UI elements
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 const creditsInput = document.getElementById("credits");
 
-// ✅ Genre fallback
 const autoDetectGenre = async (url) => {
   const genres = ["Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"];
   const lower = url.toLowerCase();
   return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
 };
 
-// ✅ SoundCloud metadata fetch
 async function fetchSoundCloudMetadata(url) {
   try {
-    const oEmbedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`;
-    const res = await fetch(oEmbedUrl);
-    const data = await res.json();
+    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    const html = await res.text();
 
-    const [artist, title] = data.title.split("–").map(s => s.trim());
-    const artworkUrl = data.thumbnail_url?.replace("-t500x500", "-t500x500") || "";
+    const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const artistMatch = html.match(/<meta property="soundcloud:creator" content="([^"]+)"/);
+    const artworkMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
 
     return {
-      artist: artist || "Unknown Artist",
-      title: title || "Untitled",
-      artworkUrl
+      title: titleMatch?.[1] || "Untitled",
+      artist: artistMatch?.[1] || "Unknown Artist",
+      artworkUrl: artworkMatch?.[1] || ""
     };
   } catch (err) {
-    console.error("❌ Failed to fetch SoundCloud metadata:", err);
+    console.error("❌ Failed to fetch SoundCloud metadata", err);
     return {
-      artist: "Unknown Artist",
       title: "Untitled",
+      artist: "Unknown Artist",
       artworkUrl: ""
     };
   }
 }
 
-// ✅ Auth state + campaign logic
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     form.style.display = "none";
@@ -109,41 +105,35 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    const { artist, title, artworkUrl } = await fetchSoundCloudMetadata(trackUrl);
-    console.log("🎧 Track Meta:", { artist, title, artworkUrl });
+    const meta = await fetchSoundCloudMetadata(trackUrl);
+    console.log("🎧 Track Meta:", meta);
 
     const campaignId = `${user.uid}_${Date.now()}`;
     const campaignRef = doc(db, "campaigns", campaignId);
 
     try {
-      // ✅ Step 1: Create campaign
       await setDoc(campaignRef, {
         userId: user.uid,
         trackUrl,
         genre,
         credits,
         createdAt: new Date().toISOString(),
-        artist,
-        title,
-        artworkUrl
+        title: meta.title,
+        artist: meta.artist,
+        artworkUrl: meta.artworkUrl
       });
-      console.log("✅ Step 1: Campaign added");
 
-      // ✅ Step 2: Deduct user credits
       await updateDoc(userRef, {
         credits: currentCredits - credits
       });
-      console.log("✅ Step 2: Credits updated");
 
-      // ✅ Step 3: Log transaction
       await db.collection("transactions").add({
         userId: user.uid,
         type: "spent",
         amount: credits,
-        reason: `Campaign for "${title}"`,
+        reason: `Campaign for "${meta.title}"`,
         timestamp: new Date()
       });
-      console.log("✅ Step 3: Transaction logged");
 
       statusBox.textContent = "✅ Campaign submitted!";
       form.reset();
@@ -154,7 +144,3 @@ onAuthStateChanged(auth, async (user) => {
     }
   });
 });
-
-
-
-
