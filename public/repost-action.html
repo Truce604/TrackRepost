@@ -1,98 +1,214 @@
-async function confirmRepost() {
-  const userId = currentUser.uid;
-  const campaignId = id;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirm Repost - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
 
-  // Prevent duplicate repost
-  const dupes = await db.collection("reposts")
-    .where("userId", "==", userId)
-    .where("campaignId", "==", campaignId)
-    .get();
-  if (!dupes.empty) {
-    alert("❌ You've already reposted this track.");
-    return;
-  }
+    .card {
+      background: #121212;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
 
-  // Limit to 10 reposts per 12 hours
-  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-  const recent = await db.collection("reposts")
-    .where("userId", "==", userId)
-    .where("timestamp", ">", twelveHoursAgo)
-    .get();
-  if (recent.size >= 10) {
-    alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
-    return;
-  }
+    img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
 
-  // Get user data (including followers)
-  const userRef = db.collection("users").doc(userId);
-  const userSnap = await userRef.get();
-  const userData = userSnap.data();
-  const followers = userData.soundcloud?.followers || 0;
-  const repostCredits = Math.floor(followers / 100); // 100 followers = +1 credit
+    h2 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
 
-  const earnedCredits = repostCredits + (liked ? 1 : 0) + (comment ? 2 : 0);
+    p {
+      font-size: 0.95rem;
+      margin: 6px 0;
+      color: #aaa;
+    }
 
-  if (earnedCredits <= 0) {
-    alert("❌ You must like, comment, or have followers to earn credits.");
-    return;
-  }
+    .confirm-button {
+      background: #ffa500;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 15px;
+      cursor: pointer;
+    }
 
-  const ownerRef = db.collection("users").doc(campaignData.userId);
+    .confirm-button:hover {
+      background: #ffc04d;
+    }
+  </style>
+</head>
+<body>
+  <h1>✅ Confirm Your Repost</h1>
+  <div id="repost-card" class="card">
+    <p>Loading track details...</p>
+  </div>
 
-  const batch = db.batch();
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const liked = params.get("like") === "true";
+    const comment = params.get("comment") || "";
 
-  // Log repost
-  const repostRef = db.collection("reposts").doc();
-  batch.set(repostRef, {
-    userId,
-    campaignId,
-    trackUrl: campaignData.trackUrl,
-    liked,
-    comment,
-    timestamp: new Date(),
-    prompted: false
-  });
+    let currentUser = null;
+    let campaignData = null;
 
-  // Update your credits
-  batch.update(userRef, {
-    credits: firebase.firestore.FieldValue.increment(earnedCredits)
-  });
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById("repost-card").innerHTML = "<p>Please log in to repost.</p>";
+        return;
+      }
 
-  // Deduct from campaign owner
-  batch.update(ownerRef, {
-    credits: firebase.firestore.FieldValue.increment(-earnedCredits)
-  });
+      currentUser = user;
 
-  // Log transaction
-  const logRef = db.collection("transactions").doc();
-  batch.set(logRef, {
-    userId,
-    type: "earned",
-    amount: earnedCredits,
-    reason: `Reposted: ${campaignData.title}`,
-    timestamp: new Date()
-  });
+      try {
+        const campaignSnap = await db.collection("campaigns").doc(id).get();
+        if (!campaignSnap.exists) {
+          document.getElementById("repost-card").innerHTML = "<p>❌ Campaign not found.</p>";
+          return;
+        }
 
-  // 🏅 Count total reposts by user
-  const allReposts = await db.collection("reposts")
-    .where("userId", "==", userId)
-    .get();
-  const totalReposts = allReposts.size + 1;
+        campaignData = campaignSnap.data();
 
-  // 🏅 Assign badge
-  let badge = { name: "Rookie", level: 1, emoji: "🟢" };
-  if (totalReposts >= 100) badge = { name: "Kingpin", level: 4, emoji: "👑" };
-  else if (totalReposts >= 50) badge = { name: "Track Titan", level: 3, emoji: "🔴" };
-  else if (totalReposts >= 10) badge = { name: "Signal Booster", level: 2, emoji: "🔵" };
+        document.getElementById("repost-card").innerHTML = `
+          <img src="${campaignData.artworkUrl || "/assets/default-art.png"}" alt="Artwork">
+          <h2>${campaignData.title}</h2>
+          <p>👤 ${campaignData.artist}</p>
+          <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
+          <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
+          <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
+          <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
+        `;
+      } catch (err) {
+        console.error("Error loading campaign:", err);
+        document.getElementById("repost-card").innerHTML = "<p>⚠️ Error loading campaign info.</p>";
+      }
+    });
 
-  // 🏅 Save badge to user profile
-  batch.update(userRef, { badge });
+    async function confirmRepost() {
+      const userId = currentUser.uid;
+      const campaignId = id;
 
-  // Commit it all
-  await batch.commit();
+      try {
+        // Prevent duplicate repost
+        const dupes = await db.collection("reposts")
+          .where("userId", "==", userId)
+          .where("campaignId", "==", campaignId)
+          .get();
+        if (!dupes.empty) {
+          alert("❌ You've already reposted this track.");
+          return;
+        }
 
-  alert(`✅ Repost complete! You earned ${earnedCredits} credits and your badge has been updated.`);
-  window.location.href = "dashboard.html";
-}
+        // Repost limit check
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        const recent = await db.collection("reposts")
+          .where("userId", "==", userId)
+          .where("timestamp", ">", twelveHoursAgo)
+          .get();
+        if (recent.size >= 10) {
+          alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
+          return;
+        }
+
+        // Get user data + follower credits
+        const userRef = db.collection("users").doc(userId);
+        const userSnap = await userRef.get();
+        const userData = userSnap.data();
+        const followers = userData.soundcloud?.followers || 0;
+        const repostCredits = Math.floor(followers / 100);
+        const earnedCredits = repostCredits + (liked ? 1 : 0) + (comment ? 2 : 0);
+
+        if (earnedCredits <= 0) {
+          alert("❌ You must like, comment, or have followers to earn credits.");
+          return;
+        }
+
+        const ownerRef = db.collection("users").doc(campaignData.userId);
+        const batch = db.batch();
+
+        // Log repost
+        const repostRef = db.collection("reposts").doc();
+        batch.set(repostRef, {
+          userId,
+          campaignId,
+          trackUrl: campaignData.trackUrl,
+          liked,
+          comment,
+          timestamp: new Date(),
+          prompted: false
+        });
+
+        // Update credits
+        batch.update(userRef, {
+          credits: firebase.firestore.FieldValue.increment(earnedCredits)
+        });
+
+        batch.update(ownerRef, {
+          credits: firebase.firestore.FieldValue.increment(-earnedCredits)
+        });
+
+        // Log transaction
+        const logRef = db.collection("transactions").doc();
+        batch.set(logRef, {
+          userId,
+          type: "earned",
+          amount: earnedCredits,
+          reason: `Reposted: ${campaignData.title}`,
+          timestamp: new Date()
+        });
+
+        // 🏅 Count total reposts
+        const allReposts = await db.collection("reposts")
+          .where("userId", "==", userId)
+          .get();
+        const totalReposts = allReposts.size + 1;
+
+        // Assign badge
+        let badge = { name: "Rookie", level: 1, emoji: "🟢" };
+        if (totalReposts >= 100) badge = { name: "Kingpin", level: 4, emoji: "👑" };
+        else if (totalReposts >= 50) badge = { name: "Track Titan", level: 3, emoji: "🔴" };
+        else if (totalReposts >= 10) badge = { name: "Signal Booster", level: 2, emoji: "🔵" };
+
+        batch.update(userRef, { badge });
+
+        await batch.commit();
+
+        alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
+        window.location.href = "dashboard.html";
+
+      } catch (err) {
+        console.error("🔥 Repost failed:", err);
+        alert("❌ Something went wrong while reposting.");
+      }
+    }
+  </script>
+</body>
+</html>
 
 
