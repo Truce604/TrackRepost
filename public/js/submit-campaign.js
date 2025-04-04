@@ -15,8 +15,9 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ✅ Your Firebase config
-apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
+// ✅ Your Firebase config 
+const firebaseConfig = {
+    apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
     projectId: "trackrepost-921f8", 
     storageBucket: "trackrepost-921f8.appspot.com", 
