@@ -5,51 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Connect SoundCloud - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js" type="module"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js" type="module"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js" type="module"></script>
+  <script src="/js/connect-soundcloud.js" type="module"></script>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
 
-  <!-- ✅ Firebase SDKs (compat versions) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    .card {
+      background: #121212;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.6);
+    }
 
-  <!-- ✅ Firebase Config -->
-  <script src="/js/firebaseConfig.js"></script>
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
 
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+    input[type="url"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    button {
+      background-color: #ffa500;
+      color: black;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ffbf33;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 0.95rem;
+      color: #aaa;
+    }
+  </style>
 </head>
 <body>
-  <header>
+  <div class="card">
     <h1>🎧 Connect Your SoundCloud</h1>
-  </header>
-
-  <main class="container">
     <form id="soundcloud-form">
-      <label for="soundcloudUrl">Paste your SoundCloud profile URL:</label>
-      <input
-        type="url"
-        id="soundcloudUrl"
-        name="soundcloudUrl"
-        placeholder="https://soundcloud.com/yourusername"
-        required
-      />
-      <button type="submit">Connect Profile</button>
+      <input type="url" name="url" placeholder="https://soundcloud.com/yourname" required />
+      <button type="submit">Connect</button>
     </form>
-
-    <div id="status" class="status-message"></div>
-  </main>
-
-  <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
-  </footer>
-
-  <!-- ✅ JS Scripts (no module) -->
-  <div id="site-header"></div>
-  <script src="/js/connect-soundcloud.js" defer></script>
-  <script src="/js/header.js" defer></script>
+    <p id="status">Paste your SoundCloud profile URL above.</p>
+  </div>
 </body>
 </html>
+
 
 
 
