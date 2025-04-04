@@ -108,37 +108,46 @@
       const userId = currentUser.uid;
       const campaignId = id;
 
-      // Step 1: Prevent duplicate repost
+      // Prevent duplicate repost
       const dupes = await db.collection("reposts")
         .where("userId", "==", userId)
         .where("campaignId", "==", campaignId)
         .get();
-
       if (!dupes.empty) {
         alert("❌ You've already reposted this track.");
         return;
       }
 
-      // Step 2: Enforce repost limit (10 per 12 hrs)
+      // Limit to 10 reposts per 12 hours
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
       const recent = await db.collection("reposts")
         .where("userId", "==", userId)
         .where("timestamp", ">", twelveHoursAgo)
         .get();
-
       if (recent.size >= 10) {
         alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
         return;
       }
 
-      // Step 3: Credit logic
-      const earnedCredits = (liked ? 1 : 0) + (comment ? 2 : 0);
+      // Get user data (including followers)
       const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
+      const userData = userSnap.data();
+      const followers = userData.soundcloud?.followers || 0;
+      const repostCredits = Math.floor(followers / 100); // 100 followers = +1 credit
+
+      const earnedCredits = repostCredits + (liked ? 1 : 0) + (comment ? 2 : 0);
+
+      if (earnedCredits <= 0) {
+        alert("❌ You must like, comment, or have followers to earn credits.");
+        return;
+      }
+
       const ownerRef = db.collection("users").doc(campaignData.userId);
 
       const batch = db.batch();
 
-      // Add repost log
+      // Log repost
       const repostRef = db.collection("reposts").doc();
       batch.set(repostRef, {
         userId,
@@ -150,7 +159,7 @@
         prompted: false
       });
 
-      // Add earned credits to user
+      // Update your credits
       batch.update(userRef, {
         credits: firebase.firestore.FieldValue.increment(earnedCredits)
       });
@@ -172,7 +181,7 @@
 
       await batch.commit();
 
-      alert(`✅ Repost confirmed! You earned ${earnedCredits} credits.`);
+      alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
       window.location.href = "dashboard.html";
     }
   </script>
