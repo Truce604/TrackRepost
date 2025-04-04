@@ -9,96 +9,117 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
   <style>
-    body {
-      background-color: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .campaign-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
     .campaign-card {
       display: flex;
-      background: #1e1e1e;
-      padding: 12px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       align-items: center;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 12px auto;
+      max-width: 600px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
-    .campaign-image {
-      width: 80px;
-      height: 80px;
-      border-radius: 8px;
+    .campaign-artwork {
+      width: 100px;
+      height: 100px;
       object-fit: cover;
+      border-radius: 8px;
       margin-right: 16px;
+      background-color: #eee;
     }
 
-    .campaign-details {
-      flex-grow: 1;
+    .campaign-info {
+      flex: 1;
     }
 
-    .campaign-details h3 {
-      font-size: 16px;
+    .campaign-info h3 {
       margin: 0;
+      font-size: 1.1rem;
     }
 
-    .campaign-details p {
-      font-size: 14px;
+    .campaign-info p {
       margin: 4px 0;
-      color: #ccc;
+      font-size: 0.9rem;
+      color: #555;
     }
 
-    .repost-button {
-      background: #ff9900;
-      color: black;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
+    .campaign-actions {
+      margin-top: 8px;
+    }
+
+    .campaign-actions a {
+      text-decoration: none;
+      color: #007bff;
       font-weight: bold;
+    }
+
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      padding-bottom: 80px;
+    }
+
+    header {
+      text-align: center;
+      padding: 16px;
+    }
+
+    #explore-container {
+      padding: 16px;
     }
   </style>
 </head>
 <body>
-  <h1>🔥 Explore Campaigns</h1>
-  <div id="campaigns" class="campaign-grid"></div>
+  <header>
+    <h1>🔥 Explore Campaigns</h1>
+  </header>
+
+  <main id="explore-container">
+    <p>Loading...</p>
+  </main>
 
   <script>
     const db = firebase.firestore();
-    const container = document.getElementById("campaigns");
+    const container = document.getElementById("explore-container");
 
     async function loadCampaigns() {
-      const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
       container.innerHTML = "";
 
-      snapshot.forEach(doc => {
+      snap.forEach(doc => {
         const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "campaign-card";
-        div.innerHTML = `
-          <img class="campaign-image" src="${data.artworkUrl || '/assets/default-art.png'}" alt="Artwork" />
-          <div class="campaign-details">
-            <h3>${data.title || 'Untitled'}</h3>
-            <p>By ${data.artist || 'Unknown Artist'}</p>
-            <p>${data.genre || 'Genre'} • ${data.credits} credits</p>
+        const card = document.createElement("div");
+        card.className = "campaign-card";
+
+        const artwork = document.createElement("img");
+        artwork.src = data.artworkUrl || "/assets/default-art.png";
+        artwork.alt = data.title || "Track artwork";
+        artwork.className = "campaign-artwork";
+
+        const info = document.createElement("div");
+        info.className = "campaign-info";
+        info.innerHTML = `
+          <h3>${data.title || "Untitled"}</h3>
+          <p>👤 ${data.artist || "Unknown Artist"}</p>
+          <p>🎵 ${data.genre || "Genre Unknown"}</p>
+          <div class="campaign-actions">
+            <a href="repost-action.html?id=${doc.id}">✅ Repost & Earn</a>
           </div>
-          <button class="repost-button" onclick="location.href='repost-action.html?id=${doc.id}'">Repost</button>
         `;
-        container.appendChild(div);
+
+        card.appendChild(artwork);
+        card.appendChild(info);
+        container.appendChild(card);
       });
+
+      if (snap.empty) {
+        container.innerHTML = "<p>No campaigns yet. Come back later!</p>";
+      }
     }
 
     loadCampaigns();
