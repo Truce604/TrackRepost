@@ -19,6 +19,7 @@
       padding: 10px;
       margin: 12px 0;
       box-shadow: 0 0 4px rgba(0,0,0,0.4);
+      flex-wrap: wrap;
     }
 
     .campaign-card img {
@@ -32,6 +33,7 @@
     .campaign-info {
       flex: 1;
       color: #fff;
+      min-width: 200px;
     }
 
     .campaign-info h3 {
@@ -69,8 +71,22 @@
       text-decoration: none;
       color: black;
       font-weight: bold;
-      margin-top: 5px;
+      margin-top: 8px;
       display: inline-block;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+      margin-top: 6px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      display: block;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -84,6 +100,7 @@
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
+
   <script>
     const db = firebase.firestore();
     const container = document.getElementById("campaign-list");
@@ -108,17 +125,35 @@
 
         const info = document.createElement("div");
         info.className = "campaign-info";
+
+        const commentInputId = `comment-${doc.id}`;
+        const likeCheckboxId = `like-${doc.id}`;
+
         info.innerHTML = `
           <h3>${data.title || "Untitled"}</h3>
           <p>👤 ${data.artist || "Unknown Artist"}</p>
           <p>🎧 ${data.genre || "Unknown Genre"} | 💳 ${data.credits} credits</p>
-          <a class="button" href="repost-action.html?id=${doc.id}">Repost This</a>
+          <label><input type="checkbox" id="${likeCheckboxId}" checked /> 👍 Like this track (+1)</label>
+          <input type="text" id="${commentInputId}" placeholder="Leave a comment (optional)" />
+          <a class="button" href="#" onclick="handleRepost('${doc.id}')">Repost This</a>
         `;
 
         div.appendChild(image);
         div.appendChild(info);
         container.appendChild(div);
       });
+    }
+
+    function handleRepost(id) {
+      const likeChecked = document.getElementById(`like-${id}`).checked;
+      const commentText = document.getElementById(`comment-${id}`).value.trim();
+      const url = new URL("repost-action.html", window.location.origin);
+      url.searchParams.set("id", id);
+      url.searchParams.set("like", likeChecked ? "true" : "false");
+      if (commentText) {
+        url.searchParams.set("comment", commentText);
+      }
+      window.location.href = url.toString();
     }
 
     loadCampaigns();
