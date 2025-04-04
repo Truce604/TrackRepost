@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,59 +6,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Explore - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
-    .track-card {
-      background: #1e1e1e;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
       color: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin: 16px auto;
-      max-width: 600px;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .track-card img {
-      width: 100%;
-      border-radius: 12px;
-    }
-
-    .track-card h3 {
-      margin-top: 12px;
-      font-size: 20px;
-    }
-
-    .track-card p {
-      font-size: 14px;
-      color: #ccc;
-    }
-
-    .track-card a {
-      display: inline-block;
-      margin-top: 10px;
-      color: #f90;
     }
 
     header, footer {
       text-align: center;
-      color: white;
-      background: #121212;
       padding: 16px;
+      background: #1e1e1e;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .campaign-card {
+      background: #1e1e1e;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+
+    .campaign-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .card-info {
+      padding: 12px 16px;
+    }
+
+    .card-info h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .card-info p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .card-info a {
+      color: #ffcc00;
+      text-decoration: none;
+    }
+
+    .card-info a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🎵 Explore Tracks</h1>
+    <h1>🔥 Explore Repost Campaigns</h1>
   </header>
 
-  <main id="explore-container" class="container">
+  <main class="container" id="explore-container">
     <p>Loading campaigns...</p>
   </main>
 
@@ -73,28 +91,27 @@
       const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
 
       if (snapshot.empty) {
-        container.innerHTML = "<p>No campaigns available.</p>";
+        container.innerHTML = "<p>No campaigns found.</p>";
         return;
       }
 
       container.innerHTML = "";
       snapshot.forEach(doc => {
-        const track = doc.data();
+        const data = doc.data();
+        const imageUrl = data.artworkUrl || "/images/default-art.png";
 
-        // 🛠️ Fix for broken artwork
-        const imageUrl = (track.artworkUrl && !track.artworkUrl.includes("0000000000000000"))
-          ? track.artworkUrl
-          : "/images/default-art.png";
-
-        const div = document.createElement("div");
-        div.className = "track-card";
-        div.innerHTML = `
-          <img src="${imageUrl}" alt="Track Artwork" />
-          <h3>${track.title || "Untitled"} by ${track.artist || "Unknown"}</h3>
-          <p>Genre: ${track.genre}</p>
-          <a href="${track.trackUrl}" target="_blank">🔗 Listen on SoundCloud</a>
+        const card = document.createElement("div");
+        card.className = "campaign-card";
+        card.innerHTML = `
+          <img src="${imageUrl}" alt="Track artwork" onerror="this.onerror=null;this.src='/images/default-art.png';" />
+          <div class="card-info">
+            <h3>${data.title || "Untitled"} by ${data.artist || "Unknown"}</h3>
+            <p>🎵 Genre: ${data.genre}</p>
+            <p>💰 Credits Remaining: ${data.credits}</p>
+            <a href="${data.trackUrl}" target="_blank">🎧 Listen on SoundCloud</a>
+          </div>
         `;
-        container.appendChild(div);
+        container.appendChild(card);
       });
     }
 
