@@ -15,8 +15,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ✅ Firebase Config
-const firebaseConfig = {
+// ✅ Your Firebase config
 apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw", 
     authDomain: "trackrepost-921f8.firebaseapp.com", 
     projectId: "trackrepost-921f8", 
@@ -30,29 +29,31 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ Elements
 const form = document.getElementById("campaign-form");
 const statusBox = document.getElementById("status");
 const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 const creditsInput = document.getElementById("credits");
 
-// ✅ Auto Genre Detection
+// ✅ Genre detector
 const autoDetectGenre = async (url) => {
-  const genres = ["Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"];
+  const genres = [
+    "Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"
+  ];
   const lower = url.toLowerCase();
   return genres.find(g => lower.includes(g.toLowerCase())) || "Pop";
 };
 
-// ✅ Scrape SoundCloud Metadata
+// ✅ Fixed SoundCloud metadata fetch
 async function fetchSoundCloudMetadata(url) {
   try {
-    const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-    const html = await response.text();
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    const html = await res.text();
 
-    const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
-    const artistMatch = html.match(/<meta property="soundcloud:creator" content="([^"]+)"/);
-    const artworkMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+    const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"\/?>/i);
+    const artistMatch = html.match(/<meta\s+name="twitter:audio:artist_name"\s+content="([^"]+)"\/?>/i);
+    const artworkMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"\/?>/i);
 
     return {
       title: titleMatch?.[1] || "Untitled",
@@ -60,7 +61,7 @@ async function fetchSoundCloudMetadata(url) {
       artworkUrl: artworkMatch?.[1] || ""
     };
   } catch (err) {
-    console.error("❌ Failed to scrape SoundCloud metadata", err);
+    console.error("❌ Failed to fetch SoundCloud metadata", err);
     return {
       title: "Untitled",
       artist: "Unknown Artist",
@@ -69,7 +70,6 @@ async function fetchSoundCloudMetadata(url) {
   }
 }
 
-// ✅ Auth State Logic
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     form.style.display = "none";
@@ -92,18 +92,16 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // ✅ Handle Submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    statusBox.textContent = "🚀 Submitting...";
-    console.log("🟡 Submit clicked");
+    statusBox.textContent = "Submitting...";
 
     const trackUrl = form.trackUrl.value.trim();
     const genre = genreInput.value.trim() || await autoDetectGenre(trackUrl);
     const credits = parseInt(creditsInput.value.trim(), 10);
 
     if (!trackUrl || !credits || credits <= 0) {
-      statusBox.textContent = "❌ Track URL and credits are required.";
+      statusBox.textContent = "❌ Track URL and positive credits are required.";
       return;
     }
 
@@ -119,6 +117,7 @@ onAuthStateChanged(auth, async (user) => {
     const campaignRef = doc(db, "campaigns", campaignId);
 
     try {
+      // ✅ Step 1: Submit campaign
       console.log("🚀 Step 1: Submitting campaign...");
       await setDoc(campaignRef, {
         userId: user.uid,
@@ -132,12 +131,14 @@ onAuthStateChanged(auth, async (user) => {
       });
       console.log("✅ Step 1: Campaign added");
 
+      // ✅ Step 2: Update credits
       console.log("🚀 Step 2: Updating user credits...");
       await updateDoc(userRef, {
         credits: currentCredits - credits
       });
       console.log("✅ Step 2: Credits updated");
 
+      // ✅ Step 3: Log transaction
       console.log("🚀 Step 3: Logging transaction...");
       await db.collection("transactions").add({
         userId: user.uid,
