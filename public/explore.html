@@ -6,71 +6,71 @@
   <title>Explore Campaigns - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
   <style>
     .campaign-card {
       display: flex;
       align-items: center;
-      background: #fff;
+      background-color: #121212;
       border-radius: 12px;
-      padding: 12px;
-      margin: 12px auto;
-      max-width: 600px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 10px;
+      margin: 12px 0;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
     }
 
-    .campaign-artwork {
+    .campaign-card img {
       width: 100px;
       height: 100px;
+      border-radius: 10px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-right: 16px;
-      background-color: #eee;
+      margin-right: 15px;
     }
 
     .campaign-info {
       flex: 1;
+      color: #fff;
     }
 
     .campaign-info h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
     }
 
     .campaign-info p {
-      margin: 4px 0;
-      font-size: 0.9rem;
-      color: #555;
+      margin: 5px 0;
+      font-size: 0.95rem;
+      color: #aaa;
     }
 
-    .campaign-actions {
-      margin-top: 8px;
-    }
-
-    .campaign-actions a {
-      text-decoration: none;
-      color: #007bff;
-      font-weight: bold;
+    .explore-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
     body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      padding-bottom: 80px;
+      background-color: #0d0d0d;
+      font-family: Arial, sans-serif;
+      color: #fff;
     }
 
-    header {
+    header, footer {
       text-align: center;
-      padding: 16px;
+      padding: 20px;
     }
 
-    #explore-container {
-      padding: 16px;
+    a.button {
+      background: #ffa500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: black;
+      font-weight: bold;
+      margin-top: 5px;
+      display: inline-block;
     }
   </style>
 </head>
@@ -78,54 +78,54 @@
   <header>
     <h1>🔥 Explore Campaigns</h1>
   </header>
-
-  <main id="explore-container">
-    <p>Loading...</p>
+  <main class="explore-container" id="campaign-list">
+    <p>Loading campaigns...</p>
   </main>
-
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
   <script>
     const db = firebase.firestore();
-    const container = document.getElementById("explore-container");
+    const container = document.getElementById("campaign-list");
 
     async function loadCampaigns() {
-      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+      const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
       container.innerHTML = "";
 
-      snap.forEach(doc => {
-        const data = doc.data();
-        const card = document.createElement("div");
-        card.className = "campaign-card";
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No campaigns found.</p>";
+        return;
+      }
 
-        const artwork = document.createElement("img");
-        artwork.src = data.artworkUrl || "/assets/default-art.png";
-        artwork.alt = data.title || "Track artwork";
-        artwork.className = "campaign-artwork";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "campaign-card";
+
+        const image = document.createElement("img");
+        image.src = data.artworkUrl || "/assets/default-art.png";
+        image.alt = "Artwork";
 
         const info = document.createElement("div");
         info.className = "campaign-info";
         info.innerHTML = `
           <h3>${data.title || "Untitled"}</h3>
           <p>👤 ${data.artist || "Unknown Artist"}</p>
-          <p>🎵 ${data.genre || "Genre Unknown"}</p>
-          <div class="campaign-actions">
-            <a href="repost-action.html?id=${doc.id}">✅ Repost & Earn</a>
-          </div>
+          <p>🎧 ${data.genre || "Unknown Genre"} | 💳 ${data.credits} credits</p>
+          <a class="button" href="repost-action.html?id=${doc.id}">Repost This</a>
         `;
 
-        card.appendChild(artwork);
-        card.appendChild(info);
-        container.appendChild(card);
+        div.appendChild(image);
+        div.appendChild(info);
+        container.appendChild(div);
       });
-
-      if (snap.empty) {
-        container.innerHTML = "<p>No campaigns yet. Come back later!</p>";
-      }
     }
 
     loadCampaigns();
   </script>
 </body>
 </html>
+
 
 
 
