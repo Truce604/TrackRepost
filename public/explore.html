@@ -2,123 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Explore Campaigns - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Explore - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
   <style>
-    body {
-      background: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #ffcc00;
-      margin-bottom: 20px;
-    }
-
     .campaign-card {
       display: flex;
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       align-items: center;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      color: white;
     }
 
-    .campaign-card img {
-      width: 100px;
-      height: 100px;
+    .campaign-art {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-right: 15px;
+      margin-right: 16px;
+      flex-shrink: 0;
     }
 
-    .campaign-details {
+    .campaign-info {
       flex-grow: 1;
     }
 
-    .campaign-details h3 {
-      margin: 0 0 5px;
-      font-size: 18px;
-      color: #fff;
+    .campaign-info h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
     }
 
-    .campaign-details p {
+    .campaign-info p {
       margin: 2px 0;
       font-size: 14px;
       color: #ccc;
     }
 
-    .campaign-buttons {
-      margin-top: 8px;
+    body {
+      background: #121212;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
     }
 
-    .campaign-buttons a {
-      display: inline-block;
-      margin-right: 10px;
-      padding: 6px 10px;
-      background: #333;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      font-size: 13px;
-    }
-
-    .campaign-buttons a:hover {
-      background: #555;
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🔥 Explore Tracks</h1>
-    <div id="campaign-feed"></div>
-  </div>
+  <h1>🌍 Explore Repost Campaigns</h1>
+  <div id="campaign-feed"></div>
 
   <script>
     const db = firebase.firestore();
     const feed = document.getElementById("campaign-feed");
 
-    function renderCampaign(data, id) {
-      const card = document.createElement("div");
-      card.className = "campaign-card";
+    async function loadCampaigns() {
+      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
 
-      card.innerHTML = `
-        <img src="${data.artworkUrl}" alt="Artwork" />
-        <div class="campaign-details">
-          <h3>${data.title}</h3>
-          <p>👤 ${data.artist}</p>
-          <p>🎵 ${data.genre}</p>
-          <p>💰 ${data.credits} credits</p>
-          <div class="campaign-buttons">
-            <a href="${data.trackUrl}" target="_blank">▶️ Listen</a>
-            <a href="repost-action.html?id=${id}">♻️ Repost</a>
+      snap.forEach(doc => {
+        const c = doc.data();
+
+        const card = document.createElement("div");
+        card.className = "campaign-card";
+
+        card.innerHTML = `
+          <img src="${c.artworkUrl}" class="campaign-art" onerror="this.src='/assets/default-art.png'" />
+          <div class="campaign-info">
+            <h3>${c.title}</h3>
+            <p>by ${c.artist}</p>
+            <p>${c.genre} • ${c.credits} credits</p>
           </div>
-        </div>
-      `;
+        `;
 
-      feed.appendChild(card);
+        feed.appendChild(card);
+      });
     }
 
-    db.collection("campaigns").orderBy("createdAt", "desc").get().then(snapshot => {
-      snapshot.forEach(doc => renderCampaign(doc.data(), doc.id));
-    });
+    loadCampaigns();
   </script>
 </body>
 </html>
