@@ -3,105 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Your Dashboard - TrackRepost</title>
+  <title>Dashboard - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
-
   <style>
-    .dashboard {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 20px;
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .dashboard-card {
       background-color: #121212;
-      color: white;
-      border-radius: 10px;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
 
-    .campaign-card {
-      display: flex;
-      background: #1f1f1f;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
     }
 
-    .campaign-art {
-      width: 150px;
-      height: 150px;
-      object-fit: cover;
+    .user-email {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 15px;
     }
 
-    .campaign-info {
-      padding: 15px;
-      flex-grow: 1;
-    }
-
-    .campaign-info h3 {
-      margin: 0 0 8px 0;
-      font-size: 20px;
-    }
-
-    .campaign-info p {
-      margin: 5px 0;
-      font-size: 15px;
+    .credits {
+      font-size: 1.2rem;
+      margin: 10px 0;
     }
 
     .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      font-size: 12px;
-      border-radius: 20px;
-      background: #444;
-      color: white;
-      margin-left: 10px;
-    }
-
-    .badge.pro {
-      background: #e91e63;
-    }
-
-    .badge.free {
-      background: #777;
-    }
-
-    .details-link {
-      display: inline-block;
-      margin-top: 8px;
-      color: #4caf50;
+      margin: 10px 0;
+      font-size: 1.1rem;
       font-weight: bold;
+      color: #ffa500;
+    }
+
+    .logout {
+      margin-top: 20px;
+      background: #ffa500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .logout:hover {
+      background: #ffbe40;
     }
   </style>
 </head>
 <body>
-  <div id="site-header"></div>
+  <div class="dashboard-card">
+    <h1>📊 Dashboard</h1>
+    <p class="user-email" id="user-email">Loading...</p>
+    <p class="credits" id="user-credits">Credits: --</p>
+    <p class="badge" id="user-badge">Badge: 🟢 Rookie</p>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
 
-  <main class="dashboard">
-    <h2>📊 Dashboard</h2>
-    <p id="userInfo"></p>
-    <p><strong>Balance:</strong> <span id="creditBalance"></span> <span id="planBadge"></span></p>
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    <h3>🎯 Your Campaigns</h3>
-    <div id="campaigns">
-      <p>Loading your campaigns...</p>
-    </div>
-  </main>
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
 
-  <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
-  </footer>
+      document.getElementById("user-email").textContent = user.email;
 
-  <!-- Scripts -->
-  <script type="module" src="/js/header.js"></script>
-  <script src="/js/dashboard.js"></script>
+      const userRef = db.collection("users").doc(user.uid);
+      const userSnap = await userRef.get();
+      const userData = userSnap.data();
+
+      document.getElementById("user-credits").textContent = `Credits: ${userData.credits || 0}`;
+
+      const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
+      document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    }
+  </script>
 </body>
 </html>
+
 
 
 
