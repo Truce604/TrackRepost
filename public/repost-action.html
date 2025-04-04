@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
   <style>
@@ -68,41 +69,112 @@
 
   <script>
     const db = firebase.firestore();
+    const auth = firebase.auth();
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     const liked = params.get("like") === "true";
     const comment = params.get("comment") || "";
 
-    async function loadCampaign() {
-      try {
-        const doc = await db.collection("campaigns").doc(id).get();
-        if (!doc.exists) {
-          document.getElementById("repost-card").innerHTML = "<p>❌ Campaign not found.</p>";
-          return;
-        }
+    let currentUser = null;
+    let campaignData = null;
 
-        const data = doc.data();
-        document.getElementById("repost-card").innerHTML = `
-          <img src="${data.artworkUrl || "/assets/default-art.png"}" alt="Artwork">
-          <h2>${data.title}</h2>
-          <p>👤 ${data.artist}</p>
-          <p>🎧 ${data.genre} | 💳 ${data.credits} credits</p>
-          <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
-          <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
-          <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
-        `;
-      } catch (err) {
-        console.error("Failed to load campaign:", err);
-        document.getElementById("repost-card").innerHTML = "<p>⚠️ Error loading campaign.</p>";
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        document.getElementById("repost-card").innerHTML = "<p>Please log in to repost.</p>";
+        return;
       }
-    }
 
-    function confirmRepost() {
-      alert("🔁 Repost action submitted (functionality coming next)");
-      // TODO: implement repost logic, credit updates, and Firestore logging
-    }
+      currentUser = user;
+      const doc = await db.collection("campaigns").doc(id).get();
+      if (!doc.exists) {
+        document.getElementById("repost-card").innerHTML = "<p>❌ Campaign not found.</p>";
+        return;
+      }
 
-    loadCampaign();
+      campaignData = doc.data();
+
+      document.getElementById("repost-card").innerHTML = `
+        <img src="${campaignData.artworkUrl || "/assets/default-art.png"}" alt="Artwork">
+        <h2>${campaignData.title}</h2>
+        <p>👤 ${campaignData.artist}</p>
+        <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
+        <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
+        <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
+        <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
+      `;
+    });
+
+    async function confirmRepost() {
+      const userId = currentUser.uid;
+      const campaignId = id;
+
+      // Step 1: Prevent duplicate repost
+      const dupes = await db.collection("reposts")
+        .where("userId", "==", userId)
+        .where("campaignId", "==", campaignId)
+        .get();
+
+      if (!dupes.empty) {
+        alert("❌ You've already reposted this track.");
+        return;
+      }
+
+      // Step 2: Enforce repost limit (10 per 12 hrs)
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      const recent = await db.collection("reposts")
+        .where("userId", "==", userId)
+        .where("timestamp", ">", twelveHoursAgo)
+        .get();
+
+      if (recent.size >= 10) {
+        alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
+        return;
+      }
+
+      // Step 3: Credit logic
+      const earnedCredits = (liked ? 1 : 0) + (comment ? 2 : 0);
+      const userRef = db.collection("users").doc(userId);
+      const ownerRef = db.collection("users").doc(campaignData.userId);
+
+      const batch = db.batch();
+
+      // Add repost log
+      const repostRef = db.collection("reposts").doc();
+      batch.set(repostRef, {
+        userId,
+        campaignId,
+        trackUrl: campaignData.trackUrl,
+        liked,
+        comment,
+        timestamp: new Date(),
+        prompted: false
+      });
+
+      // Add earned credits to user
+      batch.update(userRef, {
+        credits: firebase.firestore.FieldValue.increment(earnedCredits)
+      });
+
+      // Deduct from campaign owner
+      batch.update(ownerRef, {
+        credits: firebase.firestore.FieldValue.increment(-earnedCredits)
+      });
+
+      // Log transaction
+      const logRef = db.collection("transactions").doc();
+      batch.set(logRef, {
+        userId,
+        type: "earned",
+        amount: earnedCredits,
+        reason: `Reposted: ${campaignData.title}`,
+        timestamp: new Date()
+      });
+
+      await batch.commit();
+
+      alert(`✅ Repost confirmed! You earned ${earnedCredits} credits.`);
+      window.location.href = "dashboard.html";
+    }
   </script>
 </body>
 </html>
