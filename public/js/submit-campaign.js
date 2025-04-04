@@ -37,6 +37,17 @@ const creditDisplay = document.getElementById("current-credits");
 const genreInput = document.getElementById("genre");
 const creditsInput = document.getElementById("credits");
 
+// ✅ Extract Artist from URL (Fallback)
+function extractArtistFromUrl(url) {
+  try {
+    const path = new URL(url).pathname;
+    const parts = path.split('/');
+    return parts[1] || "Unknown Artist";
+  } catch (e) {
+    return "Unknown Artist";
+  }
+}
+
 // ✅ Auto Genre Detection
 const autoDetectGenre = async (url) => {
   const genres = ["Drum & Bass", "Hip-hop", "Trap", "Techno", "House", "Mash-up", "Pop", "Electronic"];
@@ -61,7 +72,7 @@ async function fetchSoundCloudMetadata(url) {
       artistMatch1?.[1] ||
       artistMatch2?.[1] ||
       (artistMatch3?.[1]?.includes(" by ") ? artistMatch3[1].split(" by ")[1] : null) ||
-      "Unknown Artist";
+      extractArtistFromUrl(url); // ✅ fallback
     const artworkUrl = artworkMatch?.[1] || "";
 
     return { title, artist, artworkUrl };
@@ -69,7 +80,7 @@ async function fetchSoundCloudMetadata(url) {
     console.error("❌ Failed to fetch SoundCloud metadata", err);
     return {
       title: "Untitled",
-      artist: "Unknown Artist",
+      artist: extractArtistFromUrl(url), // ✅ fallback
       artworkUrl: ""
     };
   }
@@ -161,4 +172,3 @@ onAuthStateChanged(auth, async (user) => {
     }
   });
 });
-
