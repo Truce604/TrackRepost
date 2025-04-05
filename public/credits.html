@@ -1,95 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Buy Credits - TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
+<script>
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  <!-- Firebase Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="/js/firebaseConfig.js"></script>
-</head>
-<body>
-  <header>
-    <h1>💳 Buy Credits</h1>
-  </header>
+  let currentUser = null;
 
-  <main style="text-align:center; padding: 20px;">
-    <p id="creditBalance">Loading credits...</p>
-    <p id="status"></p>
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      document.getElementById("creditBalance").textContent = "Please log in.";
+      return;
+    }
 
-    <button class="buy-btn" data-credits="500">Buy 500 Credits</button><br/><br/>
-    <button class="buy-btn" data-credits="1000">Buy 1000 Credits</button><br/><br/>
-    <button class="buy-btn" data-credits="2500" data-plan="Artist">Buy 2500 + Artist Plan</button><br/><br/>
-    <button class="buy-btn" data-credits="5000" data-plan="Network">Buy 5000 + Network Plan</button><br/><br/>
-    <button class="buy-btn" data-credits="25000" data-plan="Promoter">Buy 25,000 + Promoter Plan</button>
-  </main>
+    currentUser = user;
 
-  <footer style="text-align:center; padding: 20px;">
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
-  </footer>
+    const userRef = db.collection("users").doc(user.uid);
+    const snap = await userRef.get();
+    const userData = snap.data();
 
-  <!-- Credit logic -->
-  <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    document.getElementById("creditBalance").textContent =
+      `You currently have ${userData.credits || 0} credits.`;
+  });
 
-    let currentUser = null;
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        document.getElementById("creditBalance").textContent = "Please log in.";
+  document.querySelectorAll(".buy-btn").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!currentUser) {
+        alert("Please log in to buy credits.");
         return;
       }
 
-      currentUser = user;
+      const credits = parseInt(button.dataset.credits, 10);
+      const plan = button.dataset.plan || null;
+      const userId = currentUser.uid;
 
-      const userRef = db.collection("users").doc(user.uid);
-      const snap = await userRef.get();
-      const userData = snap.data();
+      document.getElementById("status").textContent = "Redirecting to payment...";
 
-      document.getElementById("creditBalance").textContent =
-        `You currently have ${userData.credits || 0} credits.`;
-    });
+      // ✅ Log the payload to console
+      console.log("Sending checkout payload:", { credits, userId, plan });
 
-    document.querySelectorAll(".buy-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        if (!currentUser) {
-          alert("Please log in to buy credits.");
-          return;
+      try {
+        const response = await fetch("/api/square/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credits, userId, plan }),
+        });
+
+        const { checkoutUrl } = await response.json();
+
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+        } else {
+          document.getElementById("status").textContent = "❌ Failed to create checkout session.";
         }
-
-        const credits = parseInt(button.dataset.credits, 10);
-        const plan = button.dataset.plan || null;
-        const userId = currentUser.uid;
-
-        document.getElementById("status").textContent = "Redirecting to payment...";
-
-        try {
-          const response = await fetch("/api/square/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credits, userId, plan }),
-          });
-
-          const { checkoutUrl } = await response.json();
-
-          if (checkoutUrl) {
-            window.location.href = checkoutUrl;
-          } else {
-            document.getElementById("status").textContent = "❌ Failed to create checkout session.";
-          }
-        } catch (err) {
-          console.error("❌ Error creating checkout:", err);
-          document.getElementById("status").textContent = "❌ Something went wrong. Please try again.";
-        }
-      });
+      } catch (err) {
+        console.error("❌ Error creating checkout:", err);
+        document.getElementById("status").textContent = "❌ Something went wrong. Please try again.";
+      }
     });
-  </script>
-</body>
-</html>
+  });
+</script>
+
 
 
