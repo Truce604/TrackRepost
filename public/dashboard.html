@@ -10,6 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
+
   <style>
     body {
       background-color: #0d0d0d;
@@ -23,7 +24,7 @@
       background-color: #121212;
       border-radius: 16px;
       padding: 30px;
-      max-width: 500px;
+      max-width: 600px;
       margin: 0 auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
@@ -51,13 +52,6 @@
       color: #ffa500;
     }
 
-    .campaign-status {
-      background: #1e1e1e;
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 10px;
-    }
-
     .logout {
       margin-top: 20px;
       background: #ffa500;
@@ -73,6 +67,29 @@
       background: #ffbe40;
     }
 
+    .campaign-list {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .campaign {
+      background: #1e1e1e;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .campaign h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .campaign p {
+      font-size: 0.9rem;
+      margin: 5px 0;
+      color: #ccc;
+    }
+
     a {
       color: #ffa500;
     }
@@ -85,12 +102,7 @@
     <p class="credits" id="user-credits">Credits: --</p>
     <p class="badge" id="user-badge">Badge: 🟢 Rookie</p>
 
-    <div id="campaign-section" class="campaign-status" style="display: none;">
-      <h3>📢 Active Campaign</h3>
-      <p id="campaign-title"></p>
-      <p id="campaign-credits"></p>
-      <p><a id="campaign-link" href="#" target="_blank">View on SoundCloud</a></p>
-    </div>
+    <div id="campaign-list" class="campaign-list"></div>
 
     <button class="logout" onclick="logout()">Logout</button>
   </div>
@@ -116,19 +128,29 @@
       const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
       document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
 
-      // ✅ Check for active campaign
-      const campaignSnap = await db.collection("campaigns")
+      // ✅ Load all campaigns
+      const campaignList = document.getElementById("campaign-list");
+      const campaignsSnap = await db.collection("campaigns")
         .where("userId", "==", user.uid)
-        .limit(1)
+        .orderBy("createdAt", "desc")
         .get();
 
-      if (!campaignSnap.empty) {
-        const campaign = campaignSnap.docs[0].data();
-        document.getElementById("campaign-section").style.display = "block";
-        document.getElementById("campaign-title").textContent = `🎵 ${campaign.title}`;
-        document.getElementById("campaign-credits").textContent = `💳 ${campaign.credits} credits remaining`;
-        document.getElementById("campaign-link").href = campaign.trackUrl;
+      if (campaignsSnap.empty) {
+        campaignList.innerHTML = "<p>No campaigns found.</p>";
+        return;
       }
+
+      campaignsSnap.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "campaign";
+        div.innerHTML = `
+          <h3>🎵 ${data.title || "Untitled"}</h3>
+          <p>💳 ${data.credits} credits remaining</p>
+          <p><a href="${data.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
+        `;
+        campaignList.appendChild(div);
+      });
     });
 
     function logout() {
@@ -139,6 +161,7 @@
   </script>
 </body>
 </html>
+
 
 
 
