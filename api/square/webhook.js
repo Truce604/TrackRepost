@@ -5,11 +5,11 @@ import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false, // DO NOT REMOVE — ensures raw body is untouched
+    bodyParser: false, // Required: prevents Next/Vercel from altering the body
   },
 };
 
-// Initialize Firebase admin
+// Initialize Firebase
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
@@ -28,23 +28,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get raw body and correct header
     const rawBody = (await buffer(req)).toString('utf8');
     const receivedSignature = req.headers['x-square-signature'];
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // Compute expected signature
+    // 🔐 This MUST match the notification URL in Square's dashboard EXACTLY
+    const notificationUrl = 'https://www.trackrepost.com/api/square/webhook';
+
+    // ✅ Correct HMAC calculation: signature = HMAC_SHA256(secret, notificationUrl + rawBody)
+    const signatureBase = notificationUrl + rawBody;
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
-      .update(rawBody)
+      .update(signatureBase)
       .digest('base64');
 
-    // Debug logs
     console.log('📩 Received Signature:', receivedSignature);
     console.log('🔐 Expected Signature:', expectedSignature);
     console.log('🧪 Signature Match:', receivedSignature === expectedSignature);
 
-    // Check signature match
     if (receivedSignature !== expectedSignature) {
       console.error('❌ Signature mismatch — rejecting request');
       return res.status(403).send('Invalid signature');
@@ -52,15 +53,13 @@ export default async function handler(req, res) {
 
     const event = JSON.parse(rawBody);
 
-    // Only handle payment.updated
     if (event.type === 'payment.updated') {
       const note = event?.data?.object?.payment?.note || '';
       console.log('📝 Payment Note:', note);
 
-      // Match pattern in note: e.g. "500 Credits Purchase for userId=abc123 Plan=Artist"
       const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
       if (!match) {
-        console.warn('⚠️ Note format invalid — skipping');
+        console.warn('⚠️ Invalid note format');
         return res.status(400).send('Invalid note format');
       }
 
@@ -89,6 +88,7 @@ export default async function handler(req, res) {
     return res.status(500).send('Internal Server Error');
   }
 }
+
 
 
 
