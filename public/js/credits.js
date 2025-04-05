@@ -1,74 +1,67 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const creditDisplay = document.getElementById("creditBalance");
-  const statusBox = document.getElementById("status");
+// /js/credits.js
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js";
 
-  firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) {
-      creditDisplay.textContent = "Please log in to view your credits.";
+const auth = getAuth();
+const db = getFirestore();
+
+let currentUser = null;
+
+// ✅ Auth & display current credits
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById("creditBalance").textContent = "Please log in.";
+    return;
+  }
+
+  currentUser = user;
+
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+  const userData = snap.data();
+
+  document.getElementById("creditBalance").textContent =
+    `You currently have ${userData.credits || 0} credits.`;
+});
+
+// ✅ Attach logic to all .buy-btn buttons
+document.querySelectorAll(".buy-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    if (!currentUser) {
+      alert("Please log in to buy credits.");
       return;
     }
 
+    const credits = parseInt(button.dataset.credits, 10);
+    const price = parseInt(button.dataset.price, 10); // not used, but passed in case
+    const plan = button.dataset.plan || null;
+
+    const userId = currentUser.uid;
+
+    document.getElementById("status").textContent = "Redirecting to payment...";
+
     try {
-      const userRef = firebase.firestore().collection("users").doc(user.uid);
-      const userSnap = await userRef.get();
-      const credits = userSnap.exists ? userSnap.data().credits || 0 : 0;
-      creditDisplay.textContent = `You currently have ${credits} credits.`;
+      const response = await fetch("/api/square/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credits,
+          userId,
+          plan,
+        }),
+      });
+
+      const { checkoutUrl } = await response.json();
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        document.getElementById("status").textContent = "❌ Failed to create checkout session.";
+      }
     } catch (err) {
-      creditDisplay.textContent = "Error loading credits.";
-      console.error(err);
+      console.error("❌ Error creating checkout:", err);
+      document.getElementById("status").textContent = "❌ Something went wrong. Please try again.";
     }
   });
-
-  document.querySelectorAll(".buy-btn").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const credits = parseInt(button.dataset.credits);
-      const amount = parseInt(button.dataset.price);
-      const plan = button.dataset.plan || null;
-
-      statusBox.textContent = "Redirecting to payment...";
-
-      try {
-        const user = firebase.auth().currentUser;
-        if (!user) {
-          statusBox.textContent = "❌ You must be logged in.";
-          return;
-        }
-
-        const res = await fetch("/api/square/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.uid,
-            credits,
-            amount,
-            plan
-          })
-        });
-
-        const contentType = res.headers.get("content-type");
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("❌ Checkout error:", errorText);
-          statusBox.textContent = "❌ Payment failed: " + errorText;
-          return;
-        }
-
-        if (contentType && contentType.includes("application/json")) {
-          const data = await res.json();
-          if (data.checkoutUrl) {
-            window.location.href = data.checkoutUrl;
-          } else {
-            statusBox.textContent = "❌ Failed to start payment session.";
-          }
-        } else {
-          const errorText = await res.text();
-          console.error("❌ Non-JSON response:", errorText);
-          statusBox.textContent = "❌ Unexpected server response.";
-        }
-      } catch (err) {
-        console.error("❌ Network error:", err);
-        statusBox.textContent = "❌ Could not connect to payment server.";
-      }
-    });
-  });
 });
+
