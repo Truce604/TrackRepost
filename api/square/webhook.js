@@ -1,15 +1,13 @@
-// api/square/webhook.js
 import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false, // Required for raw body verification
+    bodyParser: false,
   },
 };
 
-// ✅ Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
@@ -26,7 +24,6 @@ export default async function handler(req, res) {
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
   const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  // ✅ Signature Check
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(rawBody)
@@ -39,7 +36,6 @@ export default async function handler(req, res) {
     return res.status(403).send('Invalid signature');
   }
 
-  // ✅ Parse JSON safely
   let event;
   try {
     event = JSON.parse(rawBody);
@@ -48,13 +44,11 @@ export default async function handler(req, res) {
     return res.status(400).send('Invalid JSON');
   }
 
-  // ✅ Only handle payment.updated
   if (event.type === 'payment.updated') {
     const payment = event?.data?.object?.payment;
     const note = payment?.note || '';
 
     const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
-
     if (!match) {
       console.warn('⚠️ Note did not match expected format:', note);
       return res.status(400).send('Invalid note format');
@@ -65,7 +59,13 @@ export default async function handler(req, res) {
     const plan = match[3] || null;
 
     try {
-      await db.collection('users').doc(userId).set(
+      const userRef = db.collection('users').doc(userId);
+      const transactionRef = db.collection('transactions').doc();
+
+      const batch = db.batch();
+
+      batch.set(
+        userRef,
         {
           credits: admin.firestore.FieldValue.increment(credits),
           ...(plan && {
@@ -76,6 +76,16 @@ export default async function handler(req, res) {
         { merge: true }
       );
 
+      batch.set(transactionRef, {
+        userId,
+        type: 'purchased',
+        amount: credits,
+        reason: `Purchased: ${credits} credits${plan ? ` + ${plan} Plan` : ''}`,
+        timestamp: admin.firestore.Timestamp.now(),
+      });
+
+      await batch.commit();
+
       console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` + Plan: ${plan}` : ''}`);
       return res.status(200).send('Success');
     } catch (err) {
@@ -84,9 +94,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // 💤 Ignore non-payment events
   return res.status(200).send('Ignored');
 }
-
-
 
