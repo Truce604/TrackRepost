@@ -5,11 +5,11 @@ import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Required for raw body verification
   },
 };
 
-// ✅ Initialize Firebase Admin if not already initialized
+// ✅ Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
@@ -26,36 +26,37 @@ export default async function handler(req, res) {
   const receivedSignature = req.headers['x-square-hmacsha256-signature'];
   const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-  console.log('📩 Received Signature:', receivedSignature);
-  console.log('🔐 Webhook Secret Loaded:', !!webhookSecret);
-
+  // ✅ Signature Check
   const expectedSignature = crypto
     .createHmac('sha256', webhookSecret)
     .update(rawBody)
     .digest('base64');
 
-  const match = receivedSignature === expectedSignature;
-  console.log('🧪 Signature Match:', match);
+  const signatureValid = receivedSignature === expectedSignature;
 
-  if (!match) {
+  if (!signatureValid) {
+    console.warn('❌ Invalid webhook signature');
     return res.status(403).send('Invalid signature');
   }
 
+  // ✅ Parse JSON safely
   let event;
   try {
     event = JSON.parse(rawBody);
   } catch (err) {
-    console.error('❌ Failed to parse event:', err);
+    console.error('❌ Failed to parse webhook body:', err);
     return res.status(400).send('Invalid JSON');
   }
 
+  // ✅ Only handle payment.updated
   if (event.type === 'payment.updated') {
-    const note = event?.data?.object?.payment?.note || '';
-    console.log('📝 Note:', note);
+    const payment = event?.data?.object?.payment;
+    const note = payment?.note || '';
 
     const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
+
     if (!match) {
-      console.warn('⚠️ Invalid note format');
+      console.warn('⚠️ Note did not match expected format:', note);
       return res.status(400).send('Invalid note format');
     }
 
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
         { merge: true }
       );
 
-      console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` (plan: ${plan})` : ''}`);
+      console.log(`✅ Credited ${credits} to user ${userId}${plan ? ` + Plan: ${plan}` : ''}`);
       return res.status(200).send('Success');
     } catch (err) {
       console.error('❌ Firestore error:', err);
@@ -83,7 +84,9 @@ export default async function handler(req, res) {
     }
   }
 
-  res.status(200).send('Event ignored');
+  // 💤 Ignore non-payment events
+  return res.status(200).send('Ignored');
 }
+
 
 
