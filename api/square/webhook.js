@@ -5,11 +5,11 @@ import admin from 'firebase-admin';
 
 export const config = {
   api: {
-    bodyParser: false, // Required: prevents Vercel from parsing the body
+    bodyParser: false,
   },
 };
 
-// Initialize Firebase
+// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
@@ -29,13 +29,17 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = (await buffer(req)).toString('utf8');
-    const receivedSignature = req.headers['x-square-signature'];
+
+    // ✅ Accept both live and test signature headers
+    const receivedSignature =
+      req.headers['x-square-signature'] || req.headers['x-square-hmacsha256-signature'];
+
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // 🔑 This must match the notification URL you’ve set in Square exactly
-    const notificationUrl = 'https://trackrepost.com/api/square/webhook'; // ✅ Corrected URL (no "www")
+    // ✅ Must match the exact notification URL configured in Square
+    const notificationUrl = 'https://trackrepost.com/api/square/webhook';
 
-    // Signature = HMAC_SHA256(secret, notificationUrl + rawBody)
+    // ✅ Correct signature calculation
     const signatureBase = notificationUrl + rawBody;
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
@@ -44,7 +48,7 @@ export default async function handler(req, res) {
 
     console.log('📩 Received Signature:', receivedSignature);
     console.log('🔐 Expected Signature:', expectedSignature);
-    console.log('🧾 Signature Base:', signatureBase.slice(0, 300)); // Optional debug
+    console.log('🧾 Signature Base:', signatureBase.slice(0, 300));
     console.log('🧪 Signature Match:', receivedSignature === expectedSignature);
 
     if (receivedSignature !== expectedSignature) {
@@ -89,6 +93,7 @@ export default async function handler(req, res) {
     return res.status(500).send('Internal Server Error');
   }
 }
+
 
 
 
