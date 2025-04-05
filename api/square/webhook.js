@@ -1,4 +1,3 @@
-// /api/square/webhook.js
 import { buffer } from 'micro';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
@@ -9,7 +8,6 @@ export const config = {
   },
 };
 
-// Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(
@@ -30,17 +28,17 @@ export default async function handler(req, res) {
   try {
     const rawBody = (await buffer(req)).toString('utf8');
 
-    // ✅ Accept both live and test signature headers
+    // ✅ Accept both live and test header formats
     const receivedSignature =
-      req.headers['x-square-signature'] || req.headers['x-square-hmacsha256-signature'];
+      req.headers['x-square-signature'] ||
+      req.headers['x-square-hmacsha256-signature'];
 
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    // ✅ Must match the exact notification URL configured in Square
-    const notificationUrl = 'https://trackrepost.com/api/square/webhook';
-
-    // ✅ Correct signature calculation
+    // ✅ MUST MATCH Square webhook config exactly
+    const notificationUrl = 'https://www.trackrepost.com/api/square/webhook';
     const signatureBase = notificationUrl + rawBody;
+
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(signatureBase)
@@ -93,6 +91,7 @@ export default async function handler(req, res) {
     return res.status(500).send('Internal Server Error');
   }
 }
+
 
 
 
