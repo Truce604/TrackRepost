@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = (await buffer(req)).toString('utf8');
-    const receivedSignature = req.headers['x-square-hmacsha256-signature'];
+    const receivedSignature = req.headers['x-square-signature']; // ✅ Corrected
     const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
     const expectedSignature = crypto
@@ -41,6 +41,7 @@ export default async function handler(req, res) {
     console.log('🧪 Match:', receivedSignature === expectedSignature);
 
     if (receivedSignature !== expectedSignature) {
+      console.error('❌ Signature mismatch');
       return res.status(403).send('Invalid signature');
     }
 
