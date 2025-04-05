@@ -1,4 +1,4 @@
-// functions/api/square/checkout.js (or appropriate server route handler)
+// /api/square/checkout.js
 import { Client, Environment } from "square";
 
 const squareClient = new Client({
@@ -12,15 +12,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, credits, userId, plan } = req.body;
+    const { credits, userId, plan } = req.body;
 
-    if (!amount || !credits || !userId) {
+    if (!credits || !userId) {
       return res.status(400).json({ error: "Missing required fields." });
     }
 
-    const amountInCents = parseInt(amount); // Already in cents
-    const idempotencyKey = `checkout-${userId}-${Date.now()}`;
+    // ✅ Map credits to fixed prices (in cents)
+    const priceMap = {
+      500: 2499,
+      1000: 3499,
+      2500: 7999,
+      5000: 13999,
+      25000: 54999,
+    };
 
+    const amountInCents = priceMap[credits];
+
+    if (!amountInCents) {
+      return res.status(400).json({ error: "Invalid credit amount." });
+    }
+
+    const idempotencyKey = `checkout-${userId}-${Date.now()}`;
     const note = `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`;
 
     const { result } = await squareClient.checkoutApi.createCheckout(
@@ -60,8 +73,5 @@ export default async function handler(req, res) {
     });
   }
 }
-
-
-
 
 
