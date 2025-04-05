@@ -6,90 +6,90 @@
   <title>Buy Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
-
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-    }
-
-    .credit-options {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      max-width: 700px;
-      margin: 0 auto 30px auto;
-    }
-
-    .buy-btn {
-      background: #ffa500;
-      color: black;
-      border: none;
-      padding: 14px 26px;
-      border-radius: 10px;
-      font-weight: bold;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-
-    .buy-btn:hover {
-      background: #ffbe40;
-    }
-
-    #creditBalance {
-      font-size: 1.1rem;
-      margin-bottom: 20px;
-      color: #ccc;
-    }
-
-    #status {
-      margin-top: 20px;
-      color: #ff9900;
-      font-size: 0.95rem;
-    }
-
-    footer {
-      margin-top: 50px;
-      color: #888;
-      font-size: 0.9rem;
-    }
-  </style>
 </head>
 <body>
-  <h1>💳 Buy Credits</h1>
-  <p id="creditBalance">Loading credits...</p>
+  <header>
+    <h1>💳 Buy Credits</h1>
+  </header>
 
-  <div class="credit-options">
-    <button class="buy-btn" data-credits="500" data-price="2499">500 credits - $24.99</button>
-    <button class="buy-btn" data-credits="1000" data-price="3499">1000 credits - $34.99</button>
-    <button class="buy-btn" data-credits="2500" data-price="7999" data-plan="Artist">2500 credits + Artist Plan - $79.99</button>
-    <button class="buy-btn" data-credits="5000" data-price="13999" data-plan="Network">5000 credits + Network Plan - $139.99</button>
-    <button class="buy-btn" data-credits="25000" data-price="54999" data-plan="Promoter">25000 credits + Promoter Plan - $549.99</button>
-  </div>
+  <main style="text-align:center; padding: 20px;">
+    <p id="creditBalance">Loading credits...</p>
+    <p id="status"></p>
 
-  <div id="status"></div>
+    <button class="buy-btn" data-credits="500">Buy 500 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="1000">Buy 1000 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="2500" data-plan="Artist">Buy 2500 + Artist Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="5000" data-plan="Network">Buy 5000 + Network Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="25000" data-plan="Promoter">Buy 25,000 + Promoter Plan</button>
+  </main>
 
-  <footer>
+  <footer style="text-align:center; padding: 20px;">
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ Hook into your credits.js logic -->
-  <script type="module" src="/js/credits.js"></script>
+  <!-- Credit logic -->
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById("creditBalance").textContent = "Please log in.";
+        return;
+      }
+
+      currentUser = user;
+
+      const userRef = db.collection("users").doc(user.uid);
+      const snap = await userRef.get();
+      const userData = snap.data();
+
+      document.getElementById("creditBalance").textContent =
+        `You currently have ${userData.credits || 0} credits.`;
+    });
+
+    document.querySelectorAll(".buy-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (!currentUser) {
+          alert("Please log in to buy credits.");
+          return;
+        }
+
+        const credits = parseInt(button.dataset.credits, 10);
+        const plan = button.dataset.plan || null;
+        const userId = currentUser.uid;
+
+        document.getElementById("status").textContent = "Redirecting to payment...";
+
+        try {
+          const response = await fetch("/api/square/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credits, userId, plan }),
+          });
+
+          const { checkoutUrl } = await response.json();
+
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+          } else {
+            document.getElementById("status").textContent = "❌ Failed to create checkout session.";
+          }
+        } catch (err) {
+          console.error("❌ Error creating checkout:", err);
+          document.getElementById("status").textContent = "❌ Something went wrong. Please try again.";
+        }
+      });
+    });
+  </script>
 </body>
 </html>
+
 
