@@ -128,11 +128,10 @@
       const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
       document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
 
-      // ✅ Load all campaigns
+      // ✅ Load all campaigns (NO .orderBy)
       const campaignList = document.getElementById("campaign-list");
       const campaignsSnap = await db.collection("campaigns")
         .where("userId", "==", user.uid)
-        .orderBy("createdAt", "desc")
         .get();
 
       if (campaignsSnap.empty) {
@@ -161,8 +160,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
