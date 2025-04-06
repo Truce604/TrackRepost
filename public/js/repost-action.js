@@ -121,6 +121,20 @@ const injectModalStyles = () => {
       font-weight: bold;
       cursor: pointer;
     }
+    .success-box {
+      margin-top: 20px;
+      background: #222;
+      border: 1px solid #4caf50;
+      padding: 15px;
+      border-radius: 8px;
+      color: #4caf50;
+      font-weight: bold;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   `;
   document.head.appendChild(style);
 };
@@ -258,8 +272,19 @@ const processRepost = async (status) => {
       timestamp: serverTimestamp()
     });
 
-    status.textContent = `✅ Reposted! You earned ${totalReward} credits.`;
-    document.getElementById("repost-form").reset();
+    const allReposts = await getDocs(query(collection(db, "reposts"), where("userId", "==", user.uid)));
+    const total = allReposts.docs.length;
+
+    container.innerHTML = `
+      <div class="success-box">
+        ✅ Repost Complete! You earned ${totalReward} credits.
+        <br/>📊 You’ve reposted ${total} tracks so far.
+      </div>
+    `;
+
+    setTimeout(() => {
+      window.location.href = "explore.html";
+    }, 3000);
   });
 };
 
@@ -276,5 +301,6 @@ const loadCampaign = async () => {
 };
 
 loadCampaign();
+
 
 
