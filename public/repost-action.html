@@ -56,7 +56,13 @@
       cursor: pointer;
     }
 
-    .confirm-button:hover {
+    .confirm-button:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
+    }
+
+    .confirm-button:hover:enabled {
       background: #ffc04d;
     }
   </style>
@@ -77,6 +83,7 @@
 
     let currentUser = null;
     let campaignData = null;
+    let playedFor3Seconds = false;
 
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
@@ -102,11 +109,43 @@
           <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
           <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
           <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
-          <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
+          <div id="player-container">
+            <iframe id="sc-player" width="100%" height="120" scrolling="no" frameborder="no"
+              allow="autoplay"
+              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false">
+            </iframe>
+          </div>
+          <button class="confirm-button" id="repost-btn" disabled onclick="confirmRepost()">Repost Now</button>
+          <p id="play-hint">▶️ Play the track to unlock repost</p>
         `;
       } catch (err) {
         console.error("Error loading campaign:", err);
         document.getElementById("repost-card").innerHTML = "<p>⚠️ Error loading campaign info.</p>";
+      }
+    });
+
+    // SoundCloud player playback check
+    window.addEventListener("message", (event) => {
+      const widgetOrigin = "https://w.soundcloud.com";
+      if (event.origin !== widgetOrigin) return;
+
+      const widget = document.getElementById("sc-player").contentWindow;
+
+      if (event.data === "ready") {
+        widget.postMessage({ method: "addEventListener", value: "play" }, widgetOrigin);
+      }
+
+      if (event.data === "play") {
+        let playTime = 0;
+        const interval = setInterval(() => {
+          playTime++;
+          if (playTime >= 3 && !playedFor3Seconds) {
+            playedFor3Seconds = true;
+            clearInterval(interval);
+            document.getElementById("repost-btn").disabled = false;
+            document.getElementById("play-hint").textContent = "✅ Track played for 3 seconds. You can repost!";
+          }
+        }, 1000);
       }
     });
 
@@ -115,7 +154,6 @@
       const campaignId = id;
 
       try {
-        // Prevent duplicate repost
         const dupes = await db.collection("reposts")
           .where("userId", "==", userId)
           .where("campaignId", "==", campaignId)
@@ -125,7 +163,6 @@
           return;
         }
 
-        // Repost limit check
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
         const recent = await db.collection("reposts")
           .where("userId", "==", userId)
@@ -136,7 +173,6 @@
           return;
         }
 
-        // Get user data + follower credits
         const userRef = db.collection("users").doc(userId);
         const userSnap = await userRef.get();
         const userData = userSnap.data();
@@ -152,7 +188,6 @@
         const ownerRef = db.collection("users").doc(campaignData.userId);
         const batch = db.batch();
 
-        // Log repost
         const repostRef = db.collection("reposts").doc();
         batch.set(repostRef, {
           userId,
@@ -164,7 +199,6 @@
           prompted: false
         });
 
-        // Update credits
         batch.update(userRef, {
           credits: firebase.firestore.FieldValue.increment(earnedCredits)
         });
@@ -173,7 +207,6 @@
           credits: firebase.firestore.FieldValue.increment(-earnedCredits)
         });
 
-        // Log transaction
         const logRef = db.collection("transactions").doc();
         batch.set(logRef, {
           userId,
@@ -183,13 +216,11 @@
           timestamp: new Date()
         });
 
-        // 🏅 Count total reposts
         const allReposts = await db.collection("reposts")
           .where("userId", "==", userId)
           .get();
         const totalReposts = allReposts.size + 1;
 
-        // Assign badge
         let badge = { name: "Rookie", level: 1, emoji: "🟢" };
         if (totalReposts >= 100) badge = { name: "Kingpin", level: 4, emoji: "👑" };
         else if (totalReposts >= 50) badge = { name: "Track Titan", level: 3, emoji: "🔴" };
