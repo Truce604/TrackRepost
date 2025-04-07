@@ -1,23 +1,21 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Explore Campaigns - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boost Tracks - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
-
   <style>
     body {
       background: #111;
       color: #eee;
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
     }
 
     .container {
@@ -27,42 +25,61 @@
     }
 
     .campaign {
+      display: flex;
+      flex-direction: column;
       background: #1a1a1a;
-      margin-bottom: 30px;
-      padding: 20px;
+      margin-bottom: 25px;
+      padding: 16px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
 
+    .campaign .info {
+      display: flex;
+      gap: 16px;
+    }
+
+    .campaign img {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .campaign .details {
+      flex: 1;
+    }
+
     .campaign h3 {
-      margin: 0 0 8px;
-      font-size: 20px;
+      margin: 0;
+      font-size: 1.2rem;
     }
 
     .campaign p {
       margin: 6px 0;
+      font-size: 0.95rem;
     }
 
     .campaign iframe {
       width: 100%;
-      height: 166px;
-      margin-top: 15px;
-      border-radius: 10px;
+      height: 140px;
+      margin-top: 10px;
+      border-radius: 8px;
     }
 
-    .campaign .repost-btn {
+    .campaign button {
       margin-top: 12px;
-      padding: 10px 20px;
+      padding: 10px;
       font-weight: bold;
-      background-color: #4caf50;
-      color: white;
+      background-color: #ffa500;
+      color: black;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
 
-    .campaign .repost-btn:hover {
-      background-color: #45a049;
+    .campaign button:hover {
+      background-color: #ffbe42;
     }
   </style>
 </head>
@@ -70,9 +87,9 @@
   <div id="site-header"></div>
 
   <main class="container">
-    <h1>🔥 Repost & Earn Credits</h1>
+    <h1>🔥 Boost Tracks & Earn Credits</h1>
     <div id="campaignList">
-      <p>Loading campaigns...</p>
+      <p>Loading tracks...</p>
     </div>
   </main>
 
@@ -80,16 +97,23 @@
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- Header & Repost Script -->
   <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
+    const auth = firebase.auth();
     const campaignList = document.getElementById("campaignList");
 
-    async function loadCampaigns() {
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return campaignList.innerHTML = "<p>Please log in to see tracks.</p>";
+
+      const repostedSnap = await db.collection("reposts")
+        .where("userId", "==", user.uid)
+        .get();
+      const alreadyBoosted = new Set(repostedSnap.docs.map(d => d.data().campaignId));
+
       const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
       if (snap.empty) {
-        campaignList.innerHTML = "<p>No campaigns found.</p>";
+        campaignList.innerHTML = "<p>No campaigns available.</p>";
         return;
       }
 
@@ -98,30 +122,31 @@
         const c = doc.data();
         const id = doc.id;
 
+        if (alreadyBoosted.has(id)) return;
+
         const el = document.createElement("div");
         el.className = "campaign";
         el.innerHTML = `
-          <h3>${c.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
-          <p><strong>Genre:</strong> ${c.genre}</p>
-          <p><strong>Credits Available:</strong> ${c.credits}</p>
+          <div class="info">
+            <img src="${c.artworkUrl || '/assets/default-art.png'}" alt="artwork" />
+            <div class="details">
+              <h3>${c.title || "Untitled"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
+              <p>🎧 Genre: ${c.genre}</p>
+              <p>💳 Credits: ${c.credits}</p>
+            </div>
+          </div>
           <iframe scrolling="no" frameborder="no" allow="autoplay"
             src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
-          <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
-            ✅ Repost This Track
+          <button onclick="location.href='repost-action.html?id=${id}'">
+            ✅ Boost & Earn
           </button>
         `;
         campaignList.appendChild(el);
       });
-    }
-
-    loadCampaigns();
+    });
   </script>
 </body>
 </html>
-
-
-
-
 
 
 
