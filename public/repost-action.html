@@ -3,243 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Confirm Repost - TrackRepost</title>
+  <title>Repost Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase Compat (required for config preload) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script>
+    // ✅ Load basic Firebase config for pre-initialization debugging
+    console.log("✅ Firebase config loaded");
+    console.log("✅ Square App ID:", window.firebaseConfig?.squareAppId || "missing");
+    console.log("✅ Square Location ID:", window.firebaseConfig?.squareLocationId || "missing");
+  </script>
+
+  <!-- ✅ SoundCloud Widget SDK -->
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+
+  <!-- ✅ Your modular JS (final repost-action logic) -->
+  <script type="module" src="/js/repost-action.js" defer></script>
+
   <style>
     body {
       background-color: #0d0d0d;
       color: #fff;
       font-family: Arial, sans-serif;
-      text-align: center;
       padding: 30px;
-    }
-
-    .card {
-      background: #121212;
-      border-radius: 16px;
-      padding: 20px;
-      max-width: 400px;
+      max-width: 600px;
       margin: 0 auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
 
-    img {
-      width: 100%;
+    .track-meta {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .track-meta img.artwork {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
       border-radius: 12px;
-      margin-bottom: 15px;
     }
 
-    h2 {
-      margin: 0;
-      font-size: 1.3rem;
+    .meta-info {
+      flex: 1;
     }
 
-    p {
+    .repost-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .repost-form label {
       font-size: 0.95rem;
-      margin: 6px 0;
-      color: #aaa;
     }
 
-    .confirm-button {
-      background: #ffa500;
-      color: black;
-      border: none;
-      padding: 10px 20px;
+    .repost-form textarea {
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #333;
       border-radius: 8px;
+      padding: 8px;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .repost-form button {
+      background: #ffa500;
+      color: #000;
+      border: none;
+      padding: 10px;
       font-weight: bold;
-      margin-top: 15px;
+      border-radius: 8px;
       cursor: pointer;
     }
 
-    .confirm-button:disabled {
+    .repost-form button:disabled {
       background: #444;
       color: #888;
       cursor: not-allowed;
     }
 
-    .confirm-button:hover:enabled {
-      background: #ffc04d;
+    .status-message {
+      margin-top: 15px;
+      font-size: 0.95rem;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>✅ Confirm Your Repost</h1>
-  <div id="repost-card" class="card">
-    <p>Loading track details...</p>
+  <h1>🎧 Repost This Track</h1>
+  <div id="repost-container">
+    <p>Loading campaign...</p>
   </div>
-
-  <script>
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
-    const liked = params.get("like") === "true";
-    const comment = params.get("comment") || "";
-
-    let currentUser = null;
-    let campaignData = null;
-    let playedFor3Seconds = false;
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        document.getElementById("repost-card").innerHTML = "<p>Please log in to repost.</p>";
-        return;
-      }
-
-      currentUser = user;
-
-      try {
-        const campaignSnap = await db.collection("campaigns").doc(id).get();
-        if (!campaignSnap.exists) {
-          document.getElementById("repost-card").innerHTML = "<p>❌ Campaign not found.</p>";
-          return;
-        }
-
-        campaignData = campaignSnap.data();
-
-        document.getElementById("repost-card").innerHTML = `
-          <img src="${campaignData.artworkUrl || "/assets/default-art.png"}" alt="Artwork">
-          <h2>${campaignData.title}</h2>
-          <p>👤 ${campaignData.artist}</p>
-          <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
-          <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
-          <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
-          <div id="player-container">
-            <iframe id="sc-player" width="100%" height="120" scrolling="no" frameborder="no"
-              allow="autoplay"
-              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false">
-            </iframe>
-          </div>
-          <button class="confirm-button" id="repost-btn" disabled onclick="confirmRepost()">Repost Now</button>
-          <p id="play-hint">▶️ Play the track to unlock repost</p>
-        `;
-      } catch (err) {
-        console.error("Error loading campaign:", err);
-        document.getElementById("repost-card").innerHTML = "<p>⚠️ Error loading campaign info.</p>";
-      }
-    });
-
-    // SoundCloud player playback check
-    window.addEventListener("message", (event) => {
-      const widgetOrigin = "https://w.soundcloud.com";
-      if (event.origin !== widgetOrigin) return;
-
-      const widget = document.getElementById("sc-player").contentWindow;
-
-      if (event.data === "ready") {
-        widget.postMessage({ method: "addEventListener", value: "play" }, widgetOrigin);
-      }
-
-      if (event.data === "play") {
-        let playTime = 0;
-        const interval = setInterval(() => {
-          playTime++;
-          if (playTime >= 3 && !playedFor3Seconds) {
-            playedFor3Seconds = true;
-            clearInterval(interval);
-            document.getElementById("repost-btn").disabled = false;
-            document.getElementById("play-hint").textContent = "✅ Track played for 3 seconds. You can repost!";
-          }
-        }, 1000);
-      }
-    });
-
-    async function confirmRepost() {
-      const userId = currentUser.uid;
-      const campaignId = id;
-
-      try {
-        const dupes = await db.collection("reposts")
-          .where("userId", "==", userId)
-          .where("campaignId", "==", campaignId)
-          .get();
-        if (!dupes.empty) {
-          alert("❌ You've already reposted this track.");
-          return;
-        }
-
-        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-        const recent = await db.collection("reposts")
-          .where("userId", "==", userId)
-          .where("timestamp", ">", twelveHoursAgo)
-          .get();
-        if (recent.size >= 10) {
-          alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
-          return;
-        }
-
-        const userRef = db.collection("users").doc(userId);
-        const userSnap = await userRef.get();
-        const userData = userSnap.data();
-        const followers = userData.soundcloud?.followers || 0;
-        const repostCredits = Math.floor(followers / 100);
-        const earnedCredits = repostCredits + (liked ? 1 : 0) + (comment ? 2 : 0);
-
-        if (earnedCredits <= 0) {
-          alert("❌ You must like, comment, or have followers to earn credits.");
-          return;
-        }
-
-        const ownerRef = db.collection("users").doc(campaignData.userId);
-        const batch = db.batch();
-
-        const repostRef = db.collection("reposts").doc();
-        batch.set(repostRef, {
-          userId,
-          campaignId,
-          trackUrl: campaignData.trackUrl,
-          liked,
-          comment,
-          timestamp: new Date(),
-          prompted: false
-        });
-
-        batch.update(userRef, {
-          credits: firebase.firestore.FieldValue.increment(earnedCredits)
-        });
-
-        batch.update(ownerRef, {
-          credits: firebase.firestore.FieldValue.increment(-earnedCredits)
-        });
-
-        const logRef = db.collection("transactions").doc();
-        batch.set(logRef, {
-          userId,
-          type: "earned",
-          amount: earnedCredits,
-          reason: `Reposted: ${campaignData.title}`,
-          timestamp: new Date()
-        });
-
-        const allReposts = await db.collection("reposts")
-          .where("userId", "==", userId)
-          .get();
-        const totalReposts = allReposts.size + 1;
-
-        let badge = { name: "Rookie", level: 1, emoji: "🟢" };
-        if (totalReposts >= 100) badge = { name: "Kingpin", level: 4, emoji: "👑" };
-        else if (totalReposts >= 50) badge = { name: "Track Titan", level: 3, emoji: "🔴" };
-        else if (totalReposts >= 10) badge = { name: "Signal Booster", level: 2, emoji: "🔵" };
-
-        batch.update(userRef, { badge });
-
-        await batch.commit();
-
-        alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
-        window.location.href = "dashboard.html";
-
-      } catch (err) {
-        console.error("🔥 Repost failed:", err);
-        alert("❌ Something went wrong while reposting.");
-      }
-    }
-  </script>
 </body>
 </html>
-
 
