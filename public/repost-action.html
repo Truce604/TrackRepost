@@ -6,19 +6,19 @@
   <title>Repost Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase Compat for config preload -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="/js/firebaseConfig.js"></script>
-  <script>
-    console.log("✅ Firebase config loaded");
-    console.log("✅ Square App ID:", window.firebaseConfig?.squareAppId || "missing");
-    console.log("✅ Square Location ID:", window.firebaseConfig?.squareLocationId || "missing");
-  </script>
-
   <!-- SoundCloud Widget SDK -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- Modular repost logic -->
+  <!-- Firebase Config (Modular Import) -->
+  <script type="module">
+    import { firebaseConfig } from "/js/firebaseConfig.js";
+    console.log("✅ Firebase config loaded");
+    console.log("✅ Square App ID:", firebaseConfig.squareAppId || "missing");
+    console.log("✅ Square Location ID:", firebaseConfig.squareLocationId || "missing");
+    window.firebaseConfig = firebaseConfig;
+  </script>
+
+  <!-- Modular repost logic (must come after config) -->
   <script type="module" src="/js/repost-action.js" defer></script>
 
   <style>
@@ -102,5 +102,3 @@
   </div>
 </body>
 </html>
-
-
