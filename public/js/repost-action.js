@@ -10,7 +10,7 @@ let scWidget = null;
 
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    document.body.innerHTML = "<p>Please log in to repost.</p>";
+    document.body.innerHTML = "<p>Please log in to boost.</p>";
     return;
   }
 
@@ -44,28 +44,24 @@ auth.onAuthStateChanged(async (user) => {
 
         <p id="reward-estimate" style="margin-top:10px;color:#aaa;">Estimated reward: -- credits</p>
 
-        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable repost</button>
+        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable boost</button>
       </div>
     `;
 
-    // Load SoundCloud player API
     const script = document.createElement("script");
     script.src = "https://w.soundcloud.com/player/api.js";
     script.onload = () => {
       const iframe = document.getElementById("sc-player");
       scWidget = SC.Widget(iframe);
-
-      // Enable repost button when track starts
       scWidget.bind(SC.Widget.Events.PLAY, () => {
         const btn = document.getElementById("repost-btn");
         btn.disabled = false;
-        btn.textContent = "✅ Repost Now";
+        btn.textContent = "✅ Boost & Earn";
         btn.onclick = confirmRepost;
       });
     };
     document.body.appendChild(script);
 
-    // Comment toggle
     document.addEventListener("change", (e) => {
       if (e.target.id === "comment") {
         document.getElementById("commentText").style.display = e.target.checked ? "block" : "none";
@@ -74,9 +70,7 @@ auth.onAuthStateChanged(async (user) => {
     });
 
     document.addEventListener("input", (e) => {
-      if (e.target.id === "commentText") {
-        updateEstimatedReward();
-      }
+      if (e.target.id === "commentText") updateEstimatedReward();
     });
 
   } catch (err) {
@@ -107,17 +101,23 @@ async function confirmRepost() {
       .where("campaignId", "==", campaignId)
       .get();
     if (!dupes.empty) {
-      alert("❌ You've already reposted this track.");
+      alert("❌ You've already boosted this track.");
       return;
     }
 
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    const now = new Date();
+    const resetHour = now.getHours() < 12 ? 0 : 12;
+    const windowStart = new Date(now);
+    windowStart.setHours(resetHour, 0, 0, 0);
+
     const recent = await db.collection("reposts")
       .where("userId", "==", userId)
-      .where("timestamp", ">", twelveHoursAgo)
+      .where("timestamp", ">", windowStart)
       .get();
-    if (recent.size >= 10) {
-      alert("🚫 You’ve hit your 10 reposts for this 12-hour window.");
+
+    const count = recent.docs.filter(d => !d.data().prompted).length;
+    if (count >= 10) {
+      alert("🚫 You’ve hit your 10 boosts for this window.");
       return;
     }
 
@@ -142,6 +142,11 @@ async function confirmRepost() {
       return;
     }
 
+    if (campaignData.credits < earnedCredits) {
+      alert("🚫 Not enough campaign credits to reward you right now.");
+      return;
+    }
+
     const campaignRef = db.collection("campaigns").doc(campaignId);
     const repostRef = db.collection("reposts").doc();
     const logRef = db.collection("transactions").doc();
@@ -149,7 +154,6 @@ async function confirmRepost() {
 
     const batch = db.batch();
 
-    console.log("📝 1. Adding to /reposts...");
     batch.set(repostRef, {
       userId,
       campaignId,
@@ -162,33 +166,29 @@ async function confirmRepost() {
       prompted: false
     });
 
-    console.log("💳 2. Updating /users credits...");
     batch.update(userRef, {
       credits: firebase.firestore.FieldValue.increment(earnedCredits)
     });
 
-    console.log("📉 3. Updating /campaigns credits...");
     batch.update(campaignRef, {
       credits: firebase.firestore.FieldValue.increment(-earnedCredits)
     });
 
-    console.log("🧾 4. Writing to /transactions...");
     batch.set(logRef, {
       userId,
       type: "earned",
       amount: earnedCredits,
-      reason: `Reposted: ${campaignData.title}`,
+      reason: `Boosted: ${campaignData.title}`,
       timestamp: new Date()
     });
 
-    console.log("🚀 5. Committing batch...");
     await batch.commit();
 
-    alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
+    alert(`✅ Boost complete! You earned ${earnedCredits} credits.`);
     window.location.href = "dashboard.html";
 
   } catch (err) {
-    console.error("🔥 Repost failed:", err);
-    alert("❌ Something went wrong while reposting.");
+    console.error("🔥 Boost failed:", err);
+    alert("❌ Something went wrong while boosting this track.");
   }
 }
