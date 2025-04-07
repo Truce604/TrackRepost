@@ -4,12 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - TrackRepost</title>
+
+  <!-- ✅ SEO & Meta -->
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="description" content="Check your credits, badges, and campaign status on TrackRepost — the easiest way to grow on SoundCloud.">
+  <meta property="og:title" content="TrackRepost Dashboard" />
+  <meta property="og:description" content="Manage your campaigns, view credits, and grow your SoundCloud reach with TrackRepost.">
+  <meta property="og:image" content="/images/track-repost-logo.png" />
+  <meta property="og:url" content="https://www.trackrepost.com/dashboard.html" />
+  <meta name="theme-color" content="#0d0d0d" />
+
+  <!-- ✅ Styles & Firebase -->
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
+
   <style>
     body {
       background-color: #0d0d0d;
@@ -95,6 +107,8 @@
   </style>
 </head>
 <body>
+  <div id="site-header"></div>
+
   <div class="dashboard-card">
     <h1>📊 Dashboard</h1>
     <p class="user-email" id="user-email">Loading...</p>
@@ -156,10 +170,9 @@
       });
     }
   </script>
+
+  <script type="module" src="/js/header.js"></script>
 </body>
 </html>
-
-
-
 
 
