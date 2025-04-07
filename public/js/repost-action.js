@@ -31,7 +31,6 @@ if (!campaignId) {
   throw new Error("Missing campaign ID");
 }
 
-let playerReady = false;
 let trackPlayed = false;
 let campaignData = null;
 
@@ -140,34 +139,27 @@ const injectModalStyles = () => {
 };
 
 const setupPlayerListener = () => {
-  const player = document.getElementById("sc-player");
+  const iframe = document.getElementById("sc-player");
+  const widget = window.SC.Widget(iframe);
   let playTime = 0;
   let interval = null;
 
-  window.addEventListener("message", (event) => {
-    const widgetOrigin = "https://w.soundcloud.com";
-    if (event.origin !== widgetOrigin) return;
-
-    const widget = player.contentWindow;
-
-    if (event.data === "ready") {
-      widget.postMessage({ method: "addEventListener", value: "play" }, widgetOrigin);
-      playerReady = true;
-    }
-
-    if (event.data === "play" && !trackPlayed) {
-      playTime = 0;
-      interval = setInterval(() => {
-        playTime++;
-        if (playTime >= 3) {
-          clearInterval(interval);
-          trackPlayed = true;
-          document.getElementById("repost-button").disabled = false;
-          document.getElementById("play-status").textContent =
-            "✅ Track played. Repost unlocked!";
-        }
-      }, 1000);
-    }
+  widget.bind(window.SC.Widget.Events.READY, () => {
+    widget.bind(window.SC.Widget.Events.PLAY, () => {
+      if (!trackPlayed) {
+        playTime = 0;
+        interval = setInterval(() => {
+          playTime++;
+          if (playTime >= 3) {
+            clearInterval(interval);
+            trackPlayed = true;
+            document.getElementById("repost-button").disabled = false;
+            document.getElementById("play-status").textContent =
+              "✅ Track played. Repost unlocked!";
+          }
+        }, 1000);
+      }
+    });
   });
 };
 
@@ -301,6 +293,7 @@ const loadCampaign = async () => {
 };
 
 loadCampaign();
+
 
 
 
