@@ -9,14 +9,11 @@
   <!-- ✅ Firebase SDKs (compat versions) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <!-- ✅ Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
-
-  <!-- ✅ Initialize Firebase -->
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-  </script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
     .logo-header {
@@ -47,20 +44,19 @@
   </style>
 </head>
 <body>
-  <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" class="logo-header" />
-  </header>
+  <div id="site-header"></div>
 
   <main class="success-container">
     <h1>🎉 Payment Successful!</h1>
     <p id="message">Processing your credits...</p>
-    <a href="/dashboard">Go to Dashboard</a>
+    <a href="/dashboard.html">Go to Dashboard</a>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
+  <script type="module" src="/js/header.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
     const credits = params.get("credits");
@@ -83,4 +79,5 @@
   </script>
 </body>
 </html>
+
 
