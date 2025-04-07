@@ -1,26 +1,5 @@
-import {
-  getAuth,
-  onAuthStateChanged,
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  updateDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
-  addDoc,
-  serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-
-// ✅ Initialize Firebase from window.firebaseConfig
-const app = initializeApp(window.firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const db = firebase.firestore();
+const auth = firebase.auth();
 
 const container = document.getElementById("repost-container");
 const urlParams = new URLSearchParams(window.location.search);
@@ -34,7 +13,7 @@ if (!campaignId) {
 let trackPlayed = false;
 let campaignData = null;
 
-const buildRepostUI = (data) => {
+function buildRepostUI(data) {
   campaignData = data;
 
   container.innerHTML = `
@@ -48,9 +27,7 @@ const buildRepostUI = (data) => {
     </div>
     <iframe
       id="sc-player"
-      src="https://w.soundcloud.com/player/?url=${encodeURIComponent(
-        data.trackUrl
-      )}&color=%23ff5500"
+      src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500"
       frameborder="no"
       scrolling="no"
       allow="autoplay"
@@ -81,9 +58,9 @@ const buildRepostUI = (data) => {
   injectModalStyles();
   setupPlayerListener();
   setupRepostForm();
-};
+}
 
-const injectModalStyles = () => {
+function injectModalStyles() {
   const style = document.createElement("style");
   style.innerHTML = `
     .modal.hidden { display: none; }
@@ -136,9 +113,9 @@ const injectModalStyles = () => {
     }
   `;
   document.head.appendChild(style);
-};
+}
 
-const setupPlayerListener = () => {
+function setupPlayerListener() {
   const iframe = document.getElementById("sc-player");
   const widget = window.SC.Widget(iframe);
   let playTime = 0;
@@ -161,9 +138,9 @@ const setupPlayerListener = () => {
       }
     });
   });
-};
+}
 
-const setupRepostForm = () => {
+function setupRepostForm() {
   const form = document.getElementById("repost-form");
   const status = document.getElementById("status");
   const modal = document.getElementById("repost-modal");
@@ -178,22 +155,22 @@ const setupRepostForm = () => {
     modal.classList.add("hidden");
     processRepost(status);
   });
-};
+}
 
-const processRepost = async (status) => {
-  onAuthStateChanged(auth, async (user) => {
+async function processRepost(status) {
+  auth.onAuthStateChanged(async (user) => {
     if (!user) return (status.textContent = "❌ You must be logged in.");
 
-    const repostRef = doc(db, "reposts", `${user.uid}_${campaignId}`);
-    const repostSnap = await getDoc(repostRef);
-    if (repostSnap.exists()) {
+    const repostRef = db.collection("reposts").doc(`${user.uid}_${campaignId}`);
+    const repostSnap = await repostRef.get();
+    if (repostSnap.exists) {
       status.textContent = "⚠️ Already reposted.";
       return;
     }
 
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.exists() ? userSnap.data() : {};
+    const userRef = db.collection("users").doc(user.uid);
+    const userSnap = await userRef.get();
+    const userData = userSnap.exists ? userSnap.data() : {};
     const followers = userData.soundcloud?.followers || 0;
     const baseReward = Math.floor(followers / 100);
 
@@ -207,12 +184,10 @@ const processRepost = async (status) => {
     const windowStart = new Date(now);
     windowStart.setHours(resetHour, 0, 0, 0);
 
-    const repostQuery = query(
-      collection(db, "reposts"),
-      where("userId", "==", user.uid),
-      where("timestamp", ">", windowStart)
-    );
-    const repostSnapLimit = await getDocs(repostQuery);
+    const repostQuery = db.collection("reposts")
+      .where("userId", "==", user.uid)
+      .where("timestamp", ">", windowStart);
+    const repostSnapLimit = await repostQuery.get();
     const count = repostSnapLimit.docs.filter(doc => !doc.data().prompted).length;
 
     if (count >= 10) {
@@ -235,11 +210,13 @@ const processRepost = async (status) => {
       return;
     }
 
-    await setDoc(repostRef, {
+    const batch = db.batch();
+
+    batch.set(repostRef, {
       userId: user.uid,
       campaignId,
       trackUrl: campaignData.trackUrl,
-      timestamp: serverTimestamp(),
+      timestamp: new Date(),
       prompted: false,
       like,
       follow,
@@ -247,25 +224,28 @@ const processRepost = async (status) => {
       commentText
     });
 
-    await updateDoc(userRef, {
+    batch.update(userRef, {
       credits: (userData.credits || 0) + totalReward
     });
 
-    const campaignRef = doc(db, "campaigns", campaignId);
-    await updateDoc(campaignRef, {
+    const campaignRef = db.collection("campaigns").doc(campaignId);
+    batch.update(campaignRef, {
       credits: campaignData.credits - totalReward
     });
 
-    await addDoc(collection(db, "transactions"), {
+    const transactionRef = db.collection("transactions").doc();
+    batch.set(transactionRef, {
       userId: user.uid,
       type: "earned",
       amount: totalReward,
       reason: `Reposted ${campaignData.title}`,
-      timestamp: serverTimestamp()
+      timestamp: new Date()
     });
 
-    const allReposts = await getDocs(query(collection(db, "reposts"), where("userId", "==", user.uid)));
-    const total = allReposts.docs.length;
+    await batch.commit();
+
+    const allReposts = await db.collection("reposts").where("userId", "==", user.uid).get();
+    const total = allReposts.size;
 
     container.innerHTML = `
       <div class="success-box">
@@ -278,19 +258,19 @@ const processRepost = async (status) => {
       window.location.href = "explore.html";
     }, 3000);
   });
-};
+}
 
-const loadCampaign = async () => {
-  const campaignRef = doc(db, "campaigns", campaignId);
-  const campaignSnap = await getDoc(campaignRef);
-  if (!campaignSnap.exists()) {
+async function loadCampaign() {
+  const campaignRef = db.collection("campaigns").doc(campaignId);
+  const campaignSnap = await campaignRef.get();
+  if (!campaignSnap.exists) {
     container.innerHTML = "<p>❌ Campaign not found.</p>";
     return;
   }
 
   const data = campaignSnap.data();
   buildRepostUI(data);
-};
+}
 
 loadCampaign();
 
