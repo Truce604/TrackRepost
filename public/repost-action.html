@@ -6,20 +6,19 @@
   <title>Repost Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- SoundCloud Widget SDK -->
+  <!-- Firebase SDKs (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <!-- ✅ Global Config (Your Working Version) -->
+  <script src="/js/firebaseConfig.js"></script>
+
+  <!-- ✅ SoundCloud Widget SDK -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- Firebase Config (Modular Import) -->
-  <script type="module">
-    import { firebaseConfig } from "/js/firebaseConfig.js";
-    console.log("✅ Firebase config loaded");
-    console.log("✅ Square App ID:", firebaseConfig.squareAppId || "missing");
-    console.log("✅ Square Location ID:", firebaseConfig.squareLocationId || "missing");
-    window.firebaseConfig = firebaseConfig;
-  </script>
-
-  <!-- Modular repost logic (must come after config) -->
-  <script type="module" src="/js/repost-action.js" defer></script>
+  <!-- ✅ Repost logic (compat-safe) -->
+  <script src="/js/repost-action.js" defer></script>
 
   <style>
     body {
@@ -102,3 +101,4 @@
   </div>
 </body>
 </html>
+
