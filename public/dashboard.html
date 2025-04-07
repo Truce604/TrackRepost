@@ -10,7 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
-
   <style>
     body {
       background-color: #0d0d0d;
@@ -93,11 +92,6 @@
     a {
       color: #ffa500;
     }
-
-    #transaction-list {
-      margin-top: 20px;
-      text-align: left;
-    }
   </style>
 </head>
 <body>
@@ -108,9 +102,6 @@
     <p class="badge" id="user-badge">Badge: 🟢 Rookie</p>
 
     <div id="campaign-list" class="campaign-list"></div>
-
-    <h2 style="margin-top: 30px;">💰 Transaction History</h2>
-    <div id="transaction-list"></div>
 
     <button class="logout" onclick="logout()">Logout</button>
   </div>
@@ -136,7 +127,6 @@
       const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
       document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
 
-      // ✅ Load all campaigns
       const campaignList = document.getElementById("campaign-list");
       const campaignsSnap = await db.collection("campaigns")
         .where("userId", "==", user.uid)
@@ -144,50 +134,20 @@
 
       if (campaignsSnap.empty) {
         campaignList.innerHTML = "<p>No campaigns found.</p>";
-      } else {
-        campaignsSnap.forEach(doc => {
-          const data = doc.data();
-          const div = document.createElement("div");
-          div.className = "campaign";
-          div.innerHTML = `
-            <h3>🎵 ${data.title || "Untitled"}</h3>
-            <p>💳 ${data.credits} credits remaining</p>
-            <p><a href="${data.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
-          `;
-          campaignList.appendChild(div);
-        });
+        return;
       }
 
-      // ✅ Load transactions
-      const transactionList = document.getElementById("transaction-list");
-      const transactionsSnap = await db.collection("transactions")
-        .where("userId", "==", user.uid)
-        .orderBy("timestamp", "desc")
-        .limit(10)
-        .get();
-
-      if (transactionsSnap.empty) {
-        transactionList.innerHTML = "<p>No transactions yet.</p>";
-      } else {
-        transactionsSnap.forEach(tx => {
-          const data = tx.data();
-          const amount = data.amount || 0;
-          const reason = data.reason || "N/A";
-          const type = data.type === "earned" ? "🟢 Earned" : "🔻 Spent";
-          const ts = data.timestamp?.toDate().toLocaleString() || "Unknown";
-
-          const div = document.createElement("div");
-          div.style.marginBottom = "10px";
-          div.innerHTML = `
-            <p style="color:#aaa;">
-              ${type}: <strong>${amount}</strong> credits<br/>
-              📄 ${reason}<br/>
-              🕒 ${ts}
-            </p>
-          `;
-          transactionList.appendChild(div);
-        });
-      }
+      campaignsSnap.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "campaign";
+        div.innerHTML = `
+          <h3>🎵 ${data.title || "Untitled"}</h3>
+          <p>💳 ${data.credits} credits remaining</p>
+          <p><a href="${data.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
+        `;
+        campaignList.appendChild(div);
+      });
     });
 
     function logout() {
@@ -198,6 +158,7 @@
   </script>
 </body>
 </html>
+
 
 
 
