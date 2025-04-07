@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
+  <div id="site-header"></div>
+
+  <header style="text-align: center; margin-top: 40px;">
     <h1>💳 Buy Credits</h1>
   </header>
 
@@ -15,22 +17,24 @@
     <p id="creditBalance">Loading credits...</p>
     <p id="status"></p>
 
-    <button class="buy-btn" data-credits="500">Buy 500 Credits</button><br/><br/>
-    <button class="buy-btn" data-credits="1000">Buy 1000 Credits</button><br/><br/>
-    <button class="buy-btn" data-credits="2500" data-plan="Artist">Buy 2500 + Artist Plan</button><br/><br/>
-    <button class="buy-btn" data-credits="5000" data-plan="Network">Buy 5000 + Network Plan</button><br/><br/>
-    <button class="buy-btn" data-credits="25000" data-plan="Promoter">Buy 25,000 + Promoter Plan</button>
+    <button class="buy-btn" data-credits="500">Buy 500 Credits - $24.99</button><br/><br/>
+    <button class="buy-btn" data-credits="1000">Buy 1000 Credits - $34.99</button><br/><br/>
+    <button class="buy-btn" data-credits="2500" data-plan="Artist">2500 + 1 Month Artist Plan - $79.99</button><br/><br/>
+    <button class="buy-btn" data-credits="5000" data-plan="Network">5000 + 1 Month Network Plan - $139.99</button><br/><br/>
+    <button class="buy-btn" data-credits="25000" data-plan="Promoter">25,000 + 1 Month Promoter Plan - $549.99</button>
   </main>
 
   <footer style="text-align:center; padding: 20px;">
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- ✅ Firebase SDKs and logic at the bottom (so firebase is defined before use) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script type="module" src="/js/header.js"></script>
 
   <script>
     const auth = firebase.auth();
@@ -67,9 +71,6 @@
 
         document.getElementById("status").textContent = "Redirecting to payment...";
 
-        // ✅ Log the payload to help debug any 400 errors
-        console.log("Sending checkout payload:", { credits, userId, plan });
-
         try {
           const response = await fetch("/api/square/checkout", {
             method: "POST",
@@ -93,6 +94,5 @@
   </script>
 </body>
 </html>
-
 
 
