@@ -172,10 +172,10 @@ function handleRepost(status) {
         return;
       }
 
-      // ✅ START BATCH
-      console.log("🔥 Starting Firestore batch...");
+      // 🔥 Batch with debug logging
       const batch = db.batch();
 
+      console.log("📝 1. Adding to /reposts...");
       batch.set(repostRef, {
         userId,
         campaignId,
@@ -188,14 +188,17 @@ function handleRepost(status) {
         commentText
       });
 
+      console.log("💳 2. Updating /users credits...");
       batch.update(userRef, {
         credits: (userData.credits || 0) + reward
       });
 
+      console.log("📉 3. Updating /campaigns credits...");
       batch.update(campaignRef, {
         credits: campaignData.credits - reward
       });
 
+      console.log("🧾 4. Writing to /transactions...");
       batch.set(transactionRef, {
         userId,
         type: "earned",
@@ -204,8 +207,9 @@ function handleRepost(status) {
         timestamp: new Date()
       });
 
+      console.log("🚀 5. Committing batch...");
       await batch.commit();
-      console.log("✅ Repost + credits + log committed");
+      console.log("✅ Batch committed!");
 
       const allReposts = await db.collection("reposts")
         .where("userId", "==", userId).get();
