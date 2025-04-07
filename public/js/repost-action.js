@@ -1,3 +1,4 @@
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -8,6 +9,7 @@ const comment = params.get("comment") || "";
 
 let currentUser = null;
 let campaignData = null;
+let scWidget = null;
 
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
@@ -34,9 +36,31 @@ auth.onAuthStateChanged(async (user) => {
         <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
         <p>👍 Like: <strong>${liked ? "Yes (+1 credit)" : "No"}</strong></p>
         <p>💬 Comment: <em>${comment ? `"${comment}" (+2 credits)` : "None"}</em></p>
-        <button class="confirm-button" onclick="confirmRepost()">Repost Now</button>
+
+        <iframe id="sc-player" width="100%" height="140" scrolling="no" frameborder="no"
+          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=false"></iframe>
+
+        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable repost</button>
       </div>
     `;
+
+    // Wait for SoundCloud widget to load
+    const widgetScript = document.createElement("script");
+    widgetScript.src = "https://w.soundcloud.com/player/api.js";
+    widgetScript.onload = () => {
+      const iframeElement = document.getElementById("sc-player");
+      scWidget = SC.Widget(iframeElement);
+
+      // Enable repost button only after playback starts
+      scWidget.bind(SC.Widget.Events.PLAY, () => {
+        const btn = document.getElementById("repost-btn");
+        btn.disabled = false;
+        btn.textContent = "✅ Repost Now";
+        btn.onclick = confirmRepost;
+      });
+    };
+    document.body.appendChild(widgetScript);
+
   } catch (err) {
     console.error("Error loading campaign:", err);
     document.body.innerHTML = "<p>⚠️ Error loading campaign info.</p>";
@@ -125,4 +149,3 @@ async function confirmRepost() {
     alert("❌ Something went wrong while reposting.");
   }
 }
-
