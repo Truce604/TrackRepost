@@ -11,13 +11,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ Global Config (Your Working Version) -->
+  <!-- ✅ Global Firebase + Square config -->
   <script src="/js/firebaseConfig.js"></script>
 
   <!-- ✅ SoundCloud Widget SDK -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- ✅ Repost logic (compat-safe) -->
+  <!-- ✅ Repost logic -->
   <script src="/js/repost-action.js" defer></script>
 
   <style>
@@ -91,6 +91,50 @@
       margin-top: 15px;
       font-size: 0.95rem;
       color: #ccc;
+    }
+
+    .modal.hidden { display: none; }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: white;
+      max-width: 300px;
+    }
+    .repost-link {
+      display: block;
+      margin: 10px 0;
+      color: #ffa500;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    #confirm-manual-repost {
+      background: #ffa500;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .success-box {
+      margin-top: 20px;
+      background: #222;
+      border: 1px solid #4caf50;
+      padding: 15px;
+      border-radius: 8px;
+      color: #4caf50;
+      font-weight: bold;
     }
   </style>
 </head>
