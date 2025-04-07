@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Boosts - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 30px;
+    }
+
+    .boost {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    }
+
+    .boost h3 {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+    }
+
+    .boost p {
+      margin: 4px 0;
+      font-size: 0.95rem;
+      color: #bbb;
+    }
+
+    .boost a {
+      color: #ffa500;
+    }
+  </style>
+</head>
+<body>
+  <h1>📈 My Boosts</h1>
+  <div id="boosts">Loading your boosted tracks...</div>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById("boosts").innerHTML = "<p>Please log in to view your boosts.</p>";
+        return;
+      }
+
+      const boostsContainer = document.getElementById("boosts");
+      const repostsSnap = await db.collection("reposts")
+        .where("userId", "==", user.uid)
+        .orderBy("timestamp", "desc")
+        .get();
+
+      if (repostsSnap.empty) {
+        boostsContainer.innerHTML = "<p>You haven’t boosted any tracks yet.</p>";
+        return;
+      }
+
+      boostsContainer.innerHTML = "";
+      for (const doc of repostsSnap.docs) {
+        const repost = doc.data();
+        const campaignSnap = await db.collection("campaigns").doc(repost.campaignId).get();
+        const campaign = campaignSnap.exists ? campaignSnap.data() : {};
+
+        const earned = Math.floor((campaign?.followers || 0) / 100)
+          + (repost.liked ? 1 : 0)
+          + (repost.follow ? 2 : 0)
+          + (repost.comment && repost.commentText ? 2 : 0);
+
+        const div = document.createElement("div");
+        div.className = "boost";
+        div.innerHTML = `
+          <h3>${campaign.title || "Untitled"} by ${campaign.artist || "Unknown"}</h3>
+          <p>🎧 Genre: ${campaign.genre || "Unknown"}</p>
+          <p>💬 Commented: ${repost.comment ? `"${repost.commentText}"` : "No"}</p>
+          <p>💳 Credits Earned: ${earned}</p>
+          <p><a href="${repost.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
+        `;
+        boostsContainer.appendChild(div);
+      }
+    });
+  </script>
+</body>
+</html>
