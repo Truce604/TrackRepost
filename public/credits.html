@@ -3,13 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Buy Credits - TrackRepost</title>
+  <title>Buy Credits – TrackRepost</title>
+  <meta name="description" content="Buy credits to boost your tracks on SoundCloud through TrackRepost. Choose from multiple credit packages or enter a promo code to earn free credits.">
+  <meta name="keywords" content="SoundCloud promotion, buy credits, repost tracks, TrackRepost, music marketing">
+  <meta name="author" content="TrackRepost">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Buy Credits – TrackRepost">
+  <meta property="og:description" content="Boost your SoundCloud track visibility by purchasing credits or redeeming a promo code.">
+  <meta property="og:image" content="https://www.trackrepost.com/assets/social-preview.png">
+  <meta property="og:url" content="https://www.trackrepost.com/credits.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Buy Credits – TrackRepost">
+  <meta name="twitter:description" content="Boost your SoundCloud track visibility with TrackRepost.">
+  <meta name="twitter:image" content="https://www.trackrepost.com/assets/social-preview.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="site-header"></div>
-
-  <header style="text-align: center; margin-top: 40px;">
+  <header>
     <h1>💳 Buy Credits</h1>
   </header>
 
@@ -17,26 +35,35 @@
     <p id="creditBalance">Loading credits...</p>
     <p id="status"></p>
 
-    <button class="buy-btn" data-credits="500">Buy 500 Credits - $24.99</button><br/><br/>
-    <button class="buy-btn" data-credits="1000">Buy 1000 Credits - $34.99</button><br/><br/>
-    <button class="buy-btn" data-credits="2500" data-plan="Artist">2500 + 1 Month Artist Plan - $79.99</button><br/><br/>
-    <button class="buy-btn" data-credits="5000" data-plan="Network">5000 + 1 Month Network Plan - $139.99</button><br/><br/>
-    <button class="buy-btn" data-credits="25000" data-plan="Promoter">25,000 + 1 Month Promoter Plan - $549.99</button>
+    <button class="buy-btn" data-credits="500">Buy 500 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="1000">Buy 1000 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="2500" data-plan="Artist">Buy 2500 + Artist Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="5000" data-plan="Network">Buy 5000 + Network Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="25000" data-plan="Promoter">Buy 25,000 + Promoter Plan</button>
+
+    <hr style="margin: 40px auto; width: 50%; border: 1px solid #333;" />
+
+    <h3>🎁 Have a Coupon Code?</h3>
+    <div id="coupon-box">
+      <input type="text" id="coupon-input" placeholder="Enter coupon code" style="padding: 8px; border-radius: 6px; border: none; width: 220px;" />
+      <button id="apply-coupon-btn" style="margin-left: 10px; padding: 8px 16px; background: #ffa500; border: none; color: black; font-weight: bold; border-radius: 6px;">Apply</button>
+      <p id="coupon-result" style="margin-top: 10px; font-weight: bold;"></p>
+    </div>
   </main>
 
   <footer style="text-align:center; padding: 20px;">
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
-  <script type="module" src="/js/header.js"></script>
 
-  <script>
+  <script type="module">
+    import { applyCouponCode } from '/js/coupon-check.js';
+
     const auth = firebase.auth();
     const db = firebase.firestore();
 
@@ -91,8 +118,38 @@
         }
       });
     });
+
+    // ✅ Handle Coupon Logic
+    const couponInput = document.getElementById("coupon-input");
+    const applyBtn = document.getElementById("apply-coupon-btn");
+    const resultBox = document.getElementById("coupon-result");
+
+    applyBtn.addEventListener("click", async () => {
+      const code = couponInput.value.trim();
+      const reward = applyCouponCode(code);
+
+      if (reward > 0) {
+        const user = auth.currentUser;
+        if (!user) {
+          resultBox.textContent = "❌ Please log in to use a coupon.";
+          return;
+        }
+
+        const userRef = db.collection("users").doc(user.uid);
+        await userRef.update({
+          credits: firebase.firestore.FieldValue.increment(reward)
+        });
+
+        resultBox.textContent = `🎉 Coupon applied! You earned ${reward} free credits.`;
+        couponInput.value = "";
+      } else {
+        resultBox.textContent = "❌ Invalid coupon code.";
+      }
+    });
   </script>
 </body>
 </html>
+
+
 
 
