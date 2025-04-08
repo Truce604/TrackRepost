@@ -18,7 +18,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing required fields." });
     }
 
-    // ✅ Map credits to fixed prices (in cents)
     const priceMap = {
       500: 2499,
       1000: 3499,
@@ -28,7 +27,6 @@ export default async function handler(req, res) {
     };
 
     const amountInCents = priceMap[credits];
-
     if (!amountInCents) {
       return res.status(400).json({ error: "Invalid credit amount." });
     }
@@ -67,11 +65,16 @@ export default async function handler(req, res) {
     res.status(200).json({ checkoutUrl: result.checkout.checkoutPageUrl });
   } catch (error) {
     console.error("❌ Checkout handler error:", error);
+    if (error?.response?.text) {
+      const responseText = await error.response.text();
+      console.error("📦 Square error response body:", responseText);
+    }
     return res.status(500).json({
       error: "Internal Server Error",
       details: error?.message || "Unknown error",
     });
   }
 }
+
 
 
